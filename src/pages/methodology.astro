@@ -1,0 +1,163 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+<Layout title="方法论" description="松果投资体系方法论 — 11步筛选好公司、双因子找便宜、空仓保险躲股灾">
+  <section class="hero" style="padding: 36px 40px;">
+    <h1>方法论：<span class="gold">三步走</span></h1>
+    <p>
+      好公司 → 便宜买 → 极端风险离场。每一步都是可执行、可回测、可验证的规则，不靠感觉，靠数据。
+    </p>
+  </section>
+
+  <section class="card">
+    <h2 class="section-title">三步框架</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="num">1</div>
+        <div class="body">
+          <h3>好公司：11 步质量筛选</h3>
+          <p>
+            从全市场约 5000 家公司中，用 11 条硬规则筛出"长期赚钱、不欠太多债、盈利质量真实"的公司。
+            所有规则只看公开财报数据，可完整复现。
+          </p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="num">2</div>
+        <div class="body">
+          <h3>便宜买：双因子估值排序</h3>
+          <p>
+            在筛出的公司里，按「现金流收益率（FCF/EV）」从高到低排序，只买最便宜的少数几只，
+            并限制市值不超过 300 亿（机构覆盖少、定价效率低的中小盘更容易被低估）。
+          </p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="num">3</div>
+        <div class="body">
+          <h3>极端风险离场：空仓保险</h3>
+          <p>
+            当月度沪深300 跌幅超过 8%（股灾级信号）时，当月空仓、资金转投债券与黄金组合。
+            平时绝不触发，只在极端熊市启动——14 年间仅触发 13 次，每次都躲过了大跌。
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2 class="section-title">11 步筛选（质量门）</h2>
+    <p class="section-sub">全部基于公开财报数据（tushare 数据源），规则硬、可复现、无主观判断。</p>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>步骤</th>
+            <th>规则</th>
+            <th>白话解释</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>1</td><td>连续 7 年营业利润为正</td><td>主业长期赚钱</td></tr>
+          <tr><td>2</td><td>连续 7 年经营现金流为正</td><td>赚的是真金白银，不是纸面利润</td></tr>
+          <tr><td>3</td><td>连续 3 年 ROE（净资产收益率）&gt; 3%</td><td>股东的钱在用出效率</td></tr>
+          <tr><td>4</td><td>流通股占比 &gt; 20%</td><td>流通性达标，可实际交易</td></tr>
+          <tr><td>5</td><td>近 3 期 EBIT / 净利润 / 经营现金流均为正</td><td>盈利质量无瑕疵</td></tr>
+          <tr><td>6</td><td>现金流利润差为正</td><td>利润有现金流支撑，防造假</td></tr>
+          <tr><td>7</td><td>有息负债率 ≤ 60%</td><td>不背太重债务</td></tr>
+          <tr><td>8</td><td>ROIC（投入资本回报率）为正</td><td>投入的每一分钱都在产出</td></tr>
+          <tr><td>9</td><td>市值 ≤ 300 亿</td><td>机构定价真空带，低估概率更高</td></tr>
+          <tr><td>10</td><td>估值倍数 VC ∈ [0.90, 0.99]</td><td>相对内在价值有安全边际</td></tr>
+          <tr><td>11</td><td>上月跌幅超 4% 剔除</td><td>避开刚出现异常的个股</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2 class="section-title">双因子：怎么挑"最便宜"</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="num">F</div>
+        <div class="body">
+          <h3>现金流收益率（FCF/EV）</h3>
+          <p>
+            自由现金流 ÷ 企业价值。衡量"这家公司每 1 块钱的市值，每年能赚回多少真金白银"。
+            这是全体系唯一的排序核心——现金流比利润更难造假，是价值投资的经典指标。
+          </p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="num">W</div>
+        <div class="body">
+          <h3>分位加权</h3>
+          <p>
+            不搞平均主义：现金流收益率越高（越便宜）的公司权重越大。回测证明这比等权每年多贡献约 1 个百分点。
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="callout">
+      💡 <b>补充规则</b>：普通月份持有 Top4（单行业不超过 2 只）；当上月沪深300 涨幅超过 2%（牛市信号）时，
+      保留价值第 1 名 + 补入盈利增速最快的 2 只 = 3 只，牛市里兼顾进攻。
+    </div>
+  </section>
+
+  <section class="card">
+    <h2 class="section-title">空仓保险：只躲股灾，不踏空平常</h2>
+    <p class="section-sub">
+      这是整套体系回撤控制的关键，也是最反直觉的一步——它平时几乎不触发。
+    </p>
+    <div class="steps">
+      <div class="step">
+        <div class="num">1</div>
+        <div class="body">
+          <h3>触发条件</h3>
+          <p>上月沪深300 单月跌幅超过 8%——这是"极端熊市保险丝"，14 年里只响过 13 次（2015 股灾、2016 熔断、2018 熊市等）。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="num">2</div>
+        <div class="body">
+          <h3>触发后做什么</h3>
+          <p>当月清仓离场，资金转入 50% 十年国债 ETF + 50% 黄金 ETF 的组合（配置固定，不做临场调整）。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="num">3</div>
+        <div class="body">
+          <h3>什么时候回来</h3>
+          <p>下个月重新评估：市场不再触发保险丝，就自动恢复持仓——从不连续空仓，也不追涨杀跌。</p>
+        </div>
+      </div>
+    </div>
+    <div class="callout">
+      🛡️ <b>为什么有效</b>：回测证明把空仓阈值放松（比如跌 2% 就空仓）会频繁踏空、年化崩到 12%；
+      收紧到 -8% 后，只躲股灾级暴跌，年化反而从 23.08% 提升到 23.75%，回撤从 -34.71% 压到 -22.61%。
+      越极端的规则，越少犯错。
+    </div>
+  </section>
+
+  <section class="card">
+    <h2 class="section-title">调仓纪律</h2>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr><th>项</th><th>规则</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>调仓频率</td><td>每月一次（月末调仓）</td></tr>
+          <tr><td>持仓数量</td><td>普通月 4 只 / 牛市月 3 只（Top4 或 3，等权或加权）</td></tr>
+          <tr><td>行业约束</td><td>单行业不超过 2 只（防集中度风险）</td></tr>
+          <tr><td>满仓纪律</td><td>理论满仓，现金尽量压到最低（整百股约束下的残留忽略）</td></tr>
+          <tr><td>成本口径</td><td>佣金万 2.5 + 印花税 0.05% + ETF 切换成本，回测全链路含成本</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="callout">
+    ⚠️ <b>合规提示</b>：以上全部内容为投资方法论研究展示，历史回测数据不代表未来收益，不构成任何投资建议。
+    完整的版本演进与回测审计记录见 <a href="/about/">合规声明</a>。
+  </div>
+</Layout>

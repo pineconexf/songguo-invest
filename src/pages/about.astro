@@ -1,0 +1,108 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+<Layout title="合规声明" description="松果投资体系 — 数据来源、回测审计记录与完整免责声明">
+  <section class="hero" style="padding: 36px 40px;">
+    <h1>合规声明：<span class="gold">诚实与透明</span></h1>
+    <p>本站坚持三条底线：数据可复现、口径不美化、不构成投资建议。</p>
+  </section>
+
+  <section class="card">
+    <h2 class="section-title">关于本站</h2>
+    <p class="section-sub">
+      本站是「松果商业笔记」的内容矩阵之一，定位为<b>投资方法论研究展示站</b>——对标格林布拉特「神奇公式」网站的公开数据展示模式，
+      用数据权威建立信任。本站不是荐股站：不提供个股推荐、不收取荐股费用、不做代客理财、不承诺任何收益。
+    </p>
+  </section>
+
+  <section class="card">
+    <h2 class="section-title">数据来源</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="num">1</div>
+        <div class="body">
+          <h3>财报数据</h3>
+          <p>全部公司财务数据来自公开财报（tushare 数据源），覆盖 A 股全市场，含资产负债表、利润表、现金流量表与财务指标。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="num">2</div>
+        <div class="body">
+          <h3>价格数据</h3>
+          <p>复权价计算，月度频率，与真实交易价格一致；基准采用沪深300 官方指数点位。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="num">3</div>
+        <div class="body">
+          <h3>成本假设</h3>
+          <p>佣金万 2.5（乐观档）、印花税 0.05%、空仓月 ETF 切换成本。成本假设公开透明，可自行复算。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2 class="section-title">回测审计记录（2026 年 8 月）</h2>
+    <p class="section-sub">本站数据不是"拍脑袋的数字"，是经过独立审计与修正后的结果。审计过程公开如下：</p>
+    <div class="steps">
+      <div class="step">
+        <div class="num">1</div>
+        <div class="body">
+          <h3>发现前视偏差</h3>
+          <p>独立审计发现旧版回测存在系统性前视偏差：信号判定月与收益月错位绑定（官方信号语义是月末判定 → 下月生效，旧回测误用当月收益）。旧口径年化 40.99% 实为偏差产物，真实口径仅约 1.6%。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="num">2</div>
+        <div class="body">
+          <h3>全体系重算</h3>
+          <p>按正确口径（信号滞后一月 + 禁止未来函数 + 复权价）重算全部历史版本，识别出唯一真实的 alpha 来源（防御月持仓胜率），并废弃全部虚高版本。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="num">3</div>
+        <div class="body">
+          <h3>数据修复</h3>
+          <p>修复 6 个报告期底层数据量纲损坏（估值倍数被错误缩放 1 万倍导致估值过滤失效），修复后重跑验证，数字全面改善且更可信。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="num">4</div>
+        <div class="body">
+          <h3>统计显著性检验</h3>
+          <p>对最终版本做参数扫描（108 组）与 PBO/DSR 显著性检验：确认参数非样本内过拟合最优解，alpha 真实但量级有限——这是诚实的研究结论。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="num">5</div>
+        <div class="body">
+          <h3>版本定稿</h3>
+          <p>V31 基金版（无杠杆）与 V32 进阶版（1.5x 融资杠杆）为现行定稿版本，选股逻辑完全相同，差异仅在杠杆。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2 class="section-title">完整免责声明</h2>
+    <div class="callout warn">
+      <p>1. 本站所有收益数据均为<b>历史回测结果</b>，非实盘业绩，不代表未来收益，不构成对收益的任何承诺或保证。</p>
+      <p>2. 本站内容为<b>投资方法论研究展示</b>，不构成投资建议，不构成对任何证券、基金、期货或其他金融产品的推荐或要约。</p>
+      <p>3. 投资有风险，入市需谨慎。读者依据本站信息作出的任何投资决策，风险自担。</p>
+      <p>4. 本站不从事证券投资咨询业务，不收取任何荐股费用，不做代客理财。</p>
+      <p>5. 融资杠杆（进阶版）会放大收益与亏损，仅适合具备相应风险承受能力的专业投资者。</p>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2 class="section-title">关于「松果商业笔记」</h2>
+    <p class="section-sub">
+      松果商业笔记是一个以商业与投资研究为核心的内容品牌，通过公众号等渠道发布产业研究、投资方法论与商业洞察。
+      本站数据与内容同源同口径，欢迎关注交流。
+    </p>
+    <div class="callout">
+      📮 关注「松果商业笔记」公众号，获取月度策略复盘与深度研究内容。
+    </div>
+  </section>
+</Layout>

@@ -1,0 +1,110 @@
+---
+import Layout from '../layouts/Layout.astro';
+import strategy from '../data/strategy.json';
+
+const cmp = strategy.monthly_compare;
+const rows = cmp.months.map((m: string, i: number) => ({
+  m,
+  v31: cmp.v31[i],
+  hs: cmp.hs300[i],
+  ex: cmp.excess[i],
+}));
+
+// 统计摘要
+const total = rows.length;
+const winMonths = rows.filter((r) => r.v31 > 0).length;
+const beatMonths = rows.filter((r) => r.ex > 0).length;
+const winRate = (winMonths / total) * 100;
+const beatRate = (beatMonths / total) * 100;
+const avgExcess = rows.reduce((s, r) => s + r.ex, 0) / total;
+
+const recent12 = rows.slice(-12).reverse();
+const fullTable = [...rows].reverse();
+---
+<Layout title="月度榜单" description="松果投资体系月度榜单 — 策略月度收益 vs 沪深300 逐月对比，方法论展示不构成投资建议">
+  <section class="hero" style="padding: 36px 40px;">
+    <h1>月度榜单：<span class="gold">方法论运行轨迹</span></h1>
+    <p>
+      策略每月收益与沪深300 的逐月对比。本页展示的是方法论的历史运行轨迹，<b>不涉及任何个股，不构成任何推荐</b>。
+    </p>
+  </section>
+
+  <section class="metric-grid">
+    <div class="metric-card">
+      <div class="label">月度胜率（正收益月占比）</div>
+      <div class="value gold">{winRate.toFixed(1)}%</div>
+      <div class="sub">{winMonths} / {total} 个月</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">跑赢沪深300 的月份占比</div>
+      <div class="value green">{beatRate.toFixed(1)}%</div>
+      <div class="sub">{beatMonths} / {total} 个月</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">月均超额收益</div>
+      <div class="value gold">+{avgExcess.toFixed(2)}pp</div>
+      <div class="sub">相对沪深300</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2 class="section-title">最近 12 个月</h2>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>月份</th>
+            <th>V31 基金版</th>
+            <th>沪深300</th>
+            <th>超额</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            recent12.map((r) => (
+              <tr>
+                <td>{r.m}</td>
+                <td class:list={r.v31 >= 0 ? 'pos' : 'neg'}>{r.v31 >= 0 ? '+' : ''}{r.v31.toFixed(2)}%</td>
+                <td class:list={r.hs >= 0 ? 'pos' : 'neg'}>{r.hs >= 0 ? '+' : ''}{r.hs.toFixed(2)}%</td>
+                <td class:list={r.ex >= 0 ? 'pos' : 'neg'}>{r.ex >= 0 ? '+' : ''}{r.ex.toFixed(2)}pp</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2 class="section-title">完整历史月度明细（{total} 个月）</h2>
+    <p class="section-sub">2012.04 - 2026.07，按时间倒序。数据源：<a href="/about/">回测审计</a>后的含成本口径。</p>
+    <div class="table-wrap" style="max-height: 560px; overflow-y: auto;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>月份</th>
+            <th>V31 基金版</th>
+            <th>沪深300</th>
+            <th>超额</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            fullTable.map((r) => (
+              <tr>
+                <td>{r.m}</td>
+                <td class:list={r.v31 >= 0 ? 'pos' : 'neg'}>{r.v31 >= 0 ? '+' : ''}{r.v31.toFixed(2)}%</td>
+                <td class:list={r.hs >= 0 ? 'pos' : 'neg'}>{r.hs >= 0 ? '+' : ''}{r.hs.toFixed(2)}%</td>
+                <td class:list={r.ex >= 0 ? 'pos' : 'neg'}>{r.ex >= 0 ? '+' : ''}{r.ex.toFixed(2)}pp</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="callout">
+    ⚠️ <b>免责声明</b>：月度收益为历史回测结果（含成本口径），不代表未来收益；本页不展示任何个股，不构成对任何证券的推荐。
+  </div>
+</Layout>

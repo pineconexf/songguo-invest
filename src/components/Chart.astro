@@ -1,0 +1,18 @@
+---
+/**
+ * 通用 ECharts 容器组件
+ * 用法：<Chart option={optionObject} height="420px" />
+ * 页面需引入 charts.ts 脚本触发渲染：<script>import '../scripts/charts.ts';</script>
+ */
+interface Props {
+  option: Record<string, unknown>;
+  height?: string;
+  id?: string;
+}
+
+const { option, height = '400px', id } = Astro.props;
+const uid = id ?? `chart-${Math.random().toString(36).slice(2, 9)}`;
+// 转义 < 防止 JSON 注入 HTML
+const optJson = JSON.stringify(option).replace(/</g, '\\u003c');
+---
+<div class="chart" id={uid} data-option={optJson} style={`height:${height}`}></div>

@@ -1,0 +1,242 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Chart from '../components/Chart.astro';
+import strategy from '../data/strategy.json';
+
+const v31 = strategy.meta.v31;
+const hs300 = strategy.meta.hs300;
+const GOLD = '#c8a24b';
+const GRAY = '#9ca3af';
+const RED = '#d64545';
+const NAVY = '#1e2761';
+
+const navMonths = strategy.nav.months.map((ym: string) => `${ym.slice(0, 4)}-${ym.slice(4)}`);
+
+// 1. 净值曲线
+const navOption = {
+  tooltip: {
+    trigger: 'axis',
+    valueFormatter: (v: number | null) => (v == null ? '-' : `${(v as number).toFixed(2)} 倍`),
+  },
+  legend: { data: ['V31 基金版', '沪深300'], top: 0, textStyle: { color: '#555' } },
+  grid: { left: 56, right: 20, top: 42, bottom: 52 },
+  xAxis: { type: 'category', data: navMonths, boundaryGap: false, axisLabel: { interval: 23, color: '#888' } },
+  yAxis: { type: 'value', name: '净值（倍数）', nameTextStyle: { color: '#888' }, scale: true, axisLabel: { color: '#888' }, splitLine: { lineStyle: { color: '#eef0f5' } } },
+  dataZoom: [
+    { type: 'inside', start: 0, end: 100 },
+    { type: 'slider', height: 16, bottom: 8, start: 0, end: 100 },
+  ],
+  series: [
+    { name: 'V31 基金版', type: 'line', data: strategy.nav.v31, smooth: true, symbol: 'none', lineStyle: { width: 2.5, color: GOLD }, areaStyle: { opacity: 0.08, color: GOLD } },
+    { name: '沪深300', type: 'line', data: strategy.nav.hs300, smooth: true, symbol: 'none', lineStyle: { width: 1.5, color: GRAY, type: 'dashed' } },
+  ],
+};
+
+// 2. 年度收益柱状图
+const yearlyOption = {
+  tooltip: {
+    trigger: 'axis',
+    valueFormatter: (v: number | null) => (v == null ? '-' : `${(v as number).toFixed(2)}%`),
+  },
+  legend: { data: ['V31 基金版', '沪深300'], top: 0, textStyle: { color: '#555' } },
+  grid: { left: 56, right: 20, top: 42, bottom: 32 },
+  xAxis: { type: 'category', data: strategy.yearly.years, axisLabel: { color: '#888' } },
+  yAxis: { type: 'value', name: '年度收益（%）', nameTextStyle: { color: '#888' }, axisLabel: { color: '#888', formatter: '{value}%' }, splitLine: { lineStyle: { color: '#eef0f5' } } },
+  series: [
+    { name: 'V31 基金版', type: 'bar', data: strategy.yearly.v31, itemStyle: { color: GOLD, borderRadius: [3, 3, 0, 0] }, barMaxWidth: 26 },
+    { name: '沪深300', type: 'bar', data: strategy.yearly.hs300, itemStyle: { color: GRAY, borderRadius: [3, 3, 0, 0] }, barMaxWidth: 26 },
+  ],
+};
+
+// 3. 回撤面积图
+const ddOption = {
+  tooltip: {
+    trigger: 'axis',
+    valueFormatter: (v: number | null) => (v == null ? '-' : `${(v as number).toFixed(2)}%`),
+  },
+  legend: { data: ['V31 基金版 回撤'], top: 0, textStyle: { color: '#555' } },
+  grid: { left: 56, right: 20, top: 42, bottom: 52 },
+  xAxis: { type: 'category', data: navMonths, boundaryGap: false, axisLabel: { interval: 23, color: '#888' } },
+  yAxis: { type: 'value', name: '回撤（%）', nameTextStyle: { color: '#888' }, axisLabel: { color: '#888', formatter: '{value}%' }, splitLine: { lineStyle: { color: '#eef0f5' } } },
+  dataZoom: [
+    { type: 'inside', start: 0, end: 100 },
+    { type: 'slider', height: 16, bottom: 8, start: 0, end: 100 },
+  ],
+  series: [
+    {
+      name: 'V31 基金版 回撤',
+      type: 'line',
+      data: strategy.drawdown.v31.map((v: number) => Number((v * 100).toFixed(2))),
+      smooth: true,
+      symbol: 'none',
+      lineStyle: { width: 1.5, color: RED },
+      areaStyle: { color: RED, opacity: 0.15 },
+      markLine: {
+        silent: true,
+        symbol: 'none',
+        label: { show: false },
+        data: [{ yAxis: -22.66, lineStyle: { color: RED, type: 'dashed', width: 1 } }],
+      },
+    },
+  ],
+};
+
+// 4. 最近 24 个月对比
+const recent = strategy.monthly_compare;
+const lastN = 24;
+const rows = recent.months
+  .map((m: string, i: number) => ({
+    m,
+    v31: recent.v31[i],
+    hs: recent.hs300[i],
+    ex: recent.excess[i],
+  }))
+  .slice(-lastN)
+  .reverse();
+---
+<Layout title="回测验证" description="松果投资体系回测验证 — 14年净值曲线、年度收益、回撤全景、逐月对比，数据可复现经审计">
+  <section class="hero" style="padding: 36px 40px;">
+    <h1>回测验证：<span class="gold">数据透明，可复现</span></h1>
+    <p>
+      14 年、172 个月、逐月逐年的完整数据。所有数字可由公开财报数据复现，回测逻辑经过独立审计，含成本口径。
+    </p>
+  </section>
+
+  <section class="card">
+    <h2 class="section-title">核心指标对比</h2>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>指标</th>
+            <th>V31 基金版</th>
+            <th>沪深300</th>
+            <th>超额</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>年化收益率</td>
+            <td class="pos">+{v31.annual_return.toFixed(2)}%</td>
+            <td>{hs300.annual_return.toFixed(2)}%</td>
+            <td class="pos">+{(v31.annual_return - hs300.annual_return).toFixed(2)}pp</td>
+          </tr>
+          <tr>
+            <td>最大回撤</td>
+            <td class="neg">{v31.mdd.toFixed(2)}%</td>
+            <td class="neg">{hs300.mdd.toFixed(2)}%</td>
+            <td class="pos">改善 {(v31.mdd - hs300.mdd).toFixed(2)}pp</td>
+          </tr>
+          <tr>
+            <td>累计收益（172 个月）</td>
+            <td class="pos">+{v31.cumulative.toFixed(1)}%</td>
+            <td>+{hs300.cumulative.toFixed(1)}%</td>
+            <td class="pos">+{(v31.cumulative - hs300.cumulative).toFixed(1)}pp</td>
+          </tr>
+          <tr>
+            <td>Calmar（年化/回撤）</td>
+            <td>{v31.calmar.toFixed(2)}</td>
+            <td>{hs300.calmar.toFixed(2)}</td>
+            <td>-</td>
+          </tr>
+          <tr>
+            <td>回测窗口</td>
+            <td colSpan={3}>{strategy.meta.window.start} - {strategy.meta.window.end}（{strategy.meta.window.months} 个月）</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2 class="section-title">14 年净值曲线</h2>
+    <p class="section-sub">起点 1.00。金色为策略净值（约 22.6 倍），灰色虚线为同期沪深300（约 1.75 倍）。可拖动下方滑块查看任意时间段。</p>
+    <Chart option={navOption} height="440px" />
+  </section>
+
+  <section class="card">
+    <h2 class="section-title">年度收益（V31 vs 沪深300）</h2>
+    <p class="section-sub">14 个完整年度中，策略有 11 年跑赢沪深300（2014/2017/2020 大盘蓝筹暴涨年跑输，属价值风格暴露，非选股错误）。</p>
+    <Chart option={yearlyOption} height="380px" />
+  </section>
+
+  <section class="card">
+    <h2 class="section-title">回撤全景</h2>
+    <p class="section-sub">
+      每次净值从高点回落的过程。红线为最大回撤 -22.66% 的标记线。14 年中最大的回撤发生在 2015-2016 股灾段，
+      空仓保险躲过了 2015 年 8-9 月连续暴跌（那两个月单月跌幅分别约 -14% 和 -12%）。
+    </p>
+    <Chart option={ddOption} height="380px" />
+  </section>
+
+  <section class="card">
+    <h2 class="section-title">最近 24 个月月度收益（V31 vs 沪深300）</h2>
+    <p class="section-sub">完整 172 个月逐月明细见 <a href="/ranking/">月度榜单</a> 页。</p>
+    <div class="table-wrap" style="max-height: 480px; overflow-y: auto;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>月份</th>
+            <th>V31 基金版</th>
+            <th>沪深300</th>
+            <th>超额</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            rows.map((r) => (
+              <tr>
+                <td>{r.m}</td>
+                <td class:list={r.v31 >= 0 ? 'pos' : 'neg'}>{r.v31 >= 0 ? '+' : ''}{r.v31.toFixed(2)}%</td>
+                <td class:list={r.hs >= 0 ? 'pos' : 'neg'}>{r.hs >= 0 ? '+' : ''}{r.hs.toFixed(2)}%</td>
+                <td class:list={r.ex >= 0 ? 'pos' : 'neg'}>{r.ex >= 0 ? '+' : ''}{r.ex.toFixed(2)}pp</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2 class="section-title">数据口径与审计记录</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="num">1</div>
+        <div class="body">
+          <h3>含成本口径</h3>
+          <p>佣金万 2.5 + 印花税 0.05% + 空仓月债券/黄金 ETF 切换成本（ETF 免印花税），全部计入。成本每年约侵蚀 1.1-2.5 个百分点，真实摩擦不藏。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="num">2</div>
+        <div class="body">
+          <h3>无未来函数</h3>
+          <p>信号判定严格滞后一个月对齐：用上月收盘数据做本月决策，禁止用当月（未知）信息。2026 年 8 月独立审计曾发现旧版本回测含前视偏差（年化虚高至 40%+），已全体系重算，本站数据为审计修正后的口径。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="num">3</div>
+        <div class="body">
+          <h3>数据修复</h3>
+          <p>审计中发现 6 个报告期底层数据量纲损坏（估值倍数被缩放 1 万倍），已修复并重跑；修复后年化 10.55% → 11.39%（V25 时期口径），后续版本均为修复后数据。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="num">4</div>
+        <div class="body">
+          <h3>保守方向原则</h3>
+          <p>所有口径分歧（月份断档、空仓月归属等）一律按保守方向处理，宁可低估收益，不虚增。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="callout">
+    ⚠️ <b>重要提示</b>：历史回测能证明方法论在过去 14 年的有效性，但未来市场结构会变，回测不代表未来收益。本站不构成任何投资建议。
+  </div>
+
+  <script>
+    import '../scripts/charts.ts';
+  </script>
+</Layout>
