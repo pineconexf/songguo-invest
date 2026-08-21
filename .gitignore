@@ -16,3 +16,5 @@ Thumbs.db
 # 本地环境
 .env
 .env.*
+screenshots/_profile_*
+screenshots/*.png
