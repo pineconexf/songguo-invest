@@ -1,0 +1,199 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Chart from '../components/Chart.astro';
+
+// 组合层数据（来自双版本组合报告）
+const portfolioA = {
+  name: '版本A',
+  subtitle: '稳健配置 · 安全气囊',
+  config: '个股 75% × 宏观 25%',
+  annual: '+20.5%',
+  mdd: '-17.9%',
+  corr: '0.35',
+  fit: '大资金、怕波动、不想盯盘',
+};
+
+const portfolioB = {
+  name: '版本B',
+  subtitle: '进取配置 · 第二引擎',
+  config: '个股 50% × 宏观 50%（含杠杆）',
+  annual: '+40.2%',
+  mdd: '-33.7%',
+  corr: '0.35',
+  fit: '小资金、敢搏、有期权账户',
+  note: '4 年短样本（期权2022年才上市）',
+};
+---
+<Layout
+  title="组合管理"
+  description="松果双版本组合 — 版本A（V31×V1）求稳，版本B（V32×V2）进取。宏观与个股节奏错开，攻守兼备。"
+>
+  <!-- Hero -->
+  <section class="hero" style="padding: 56px 48px;">
+    <div class="hero-inner">
+      <span class="eyebrow">Portfolio · 组合管理</span>
+      <h1>
+        两个引擎，<span class="gold">节奏错开</span><br />一个进攻时另一个防守
+      </h1>
+      <p class="hero-lead">
+        宏观策略与个股策略的相关性仅 0.35——把它们组合起来，一个进攻时另一个在防守。
+        不预测市场，只配置风险。
+      </p>
+    </div>
+  </section>
+
+  <!-- 双版本对照 -->
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">Two Portfolios</div>
+      <h2 class="section-title">双版本组合对照</h2>
+      <p class="section-sub">
+        同一套底层逻辑的两个配置档位：版本A 是安全气囊（求稳），版本B 是第二引擎（进取）。
+      </p>
+    </div>
+    <div class="master-grid" style="grid-template-columns: repeat(2, 1fr);">
+      <div class="master-card">
+        <div class="master-name">{portfolioA.name}</div>
+        <div class="master-school">{portfolioA.subtitle}</div>
+        <div style="margin: 14px 0;">
+          <div style="background:var(--navy-800); color:#fff; border-radius:8px; padding:14px 16px; display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:13px;">14 年年化</span>
+            <span style="font-size:22px; font-weight:700; color:var(--gold-300);">{portfolioA.annual}</span>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:10px;">
+            <div style="text-align:center; background:var(--surface-alt); border-radius:8px; padding:10px 6px;">
+              <div style="font-size:14px; font-weight:700; color:var(--navy-800);">{portfolioA.mdd}</div>
+              <div style="font-size:11px; color:var(--text-3);">最大回撤</div>
+            </div>
+            <div style="text-align:center; background:var(--surface-alt); border-radius:8px; padding:10px 6px;">
+              <div style="font-size:14px; font-weight:700; color:var(--navy-800);">{portfolioA.corr}</div>
+              <div style="font-size:11px; color:var(--text-3);">相关性</div>
+            </div>
+            <div style="text-align:center; background:var(--surface-alt); border-radius:8px; padding:10px 6px;">
+              <div style="font-size:12px; font-weight:700; color:var(--navy-800);">{portfolioA.config}</div>
+              <div style="font-size:11px; color:var(--text-3);">配置</div>
+            </div>
+          </div>
+        </div>
+        <div style="font-size:13px; color:var(--text-2); background:var(--green-bg); border-radius:8px; padding:10px 12px;">
+          ✅ 适合：{portfolioA.fit}
+        </div>
+      </div>
+
+      <div class="master-card">
+        <div class="master-name">{portfolioB.name}</div>
+        <div class="master-school">{portfolioB.subtitle}</div>
+        <div style="margin: 14px 0;">
+          <div style="background:var(--gold-600); color:#fff; border-radius:8px; padding:14px 16px; display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:13px;">组合年化（4年）</span>
+            <span style="font-size:22px; font-weight:700; color:#fff;">{portfolioB.annual}</span>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:10px;">
+            <div style="text-align:center; background:var(--surface-alt); border-radius:8px; padding:10px 6px;">
+              <div style="font-size:14px; font-weight:700; color:var(--navy-800);">{portfolioB.mdd}</div>
+              <div style="font-size:11px; color:var(--text-3);">最大回撤</div>
+            </div>
+            <div style="text-align:center; background:var(--surface-alt); border-radius:8px; padding:10px 6px;">
+              <div style="font-size:14px; font-weight:700; color:var(--navy-800);">{portfolioB.corr}</div>
+              <div style="font-size:11px; color:var(--text-3);">相关性</div>
+            </div>
+            <div style="text-align:center; background:var(--surface-alt); border-radius:8px; padding:10px 6px;">
+              <div style="font-size:12px; font-weight:700; color:var(--navy-800);">{portfolioB.config}</div>
+              <div style="font-size:11px; color:var(--text-3);">配置</div>
+            </div>
+          </div>
+        </div>
+        <div style="font-size:13px; color:var(--text-2); background:var(--green-bg); border-radius:8px; padding:10px 12px; margin-bottom:8px;">
+          ✅ 适合：{portfolioB.fit}
+        </div>
+        <div style="font-size:12.5px; color:#7a2e2e; background:var(--red-bg); border-radius:8px; padding:10px 12px;">
+          ⚠️ {portfolioB.note}，2026 年曾回撤 -21.8%，别把 40% 当必然。
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 组合逻辑 -->
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">Why It Works</div>
+      <h2 class="section-title">为什么组合比单策略稳</h2>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="num">1</div>
+        <div class="body">
+          <h3>节奏错开</h3>
+          <p>个股策略靠选股 alpha，宏观策略靠流动性择时。两者驱动因素不同，相关性仅 0.35——不会同时大幅回撤。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="num">2</div>
+        <div class="body">
+          <h3>互补机制</h3>
+          <p>宏观策略在流动性收紧时空仓，恰好规避了个股策略最难熬的普跌段；流动性宽松时两者一起进攻。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="num">3</div>
+        <div class="body">
+          <h3>风险预算</h3>
+          <p>先定能承受的最大回撤（版本A -17.9% / 版本B -33.7%），再倒推配置比例。风险优先，收益是结果。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 傻瓜决策表 -->
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">Decision Guide</div>
+      <h2 class="section-title">傻瓜决策表</h2>
+      <p class="section-sub">你是哪种投资者？选哪个版本？</p>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>你的情况</th>
+            <th>选择</th>
+            <th>理由</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>大资金、怕波动、不想盯盘</td>
+            <td><b>版本A</b></td>
+            <td>个股 75% + 宏观 25%，14 年年化 20.5%，回撤控制在 -17.9%</td>
+          </tr>
+          <tr>
+            <td>小资金、敢搏、有期权账户</td>
+            <td><b>版本B</b></td>
+            <td>个股 50% + 宏观 50%，组合年化 40.2%（4 年短样本，注意风险）</td>
+          </tr>
+          <tr>
+            <td>想平衡</td>
+            <td>版本B 保守档</td>
+            <td>个股 70% + 宏观 30%，在进取与稳健之间折中</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout" style="margin-top: 20px;">
+      <b>诚实说明</b>：版本A 的 14 年数据是硬的；版本B 的漂亮数字只有 4 年历史（期权 2022 年才上市），
+      2026 年它就亏了 21.8%——别把 40% 当必然，杠杆组合只适合能承受深度回撤的人。
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="card" style="text-align:center; padding: 48px;">
+    <h2 class="section-title" style="border:none; padding:0; margin-bottom:12px;">想知道当前该进攻还是防守？</h2>
+    <p class="section-sub" style="margin: 0 auto 24px; max-width: 520px;">
+      宏观时钟信号 + 四层体系，帮你建立自己的决策框架。
+    </p>
+    <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+      <a href="/macro/" class="btn btn-gold">查看宏观研究 →</a>
+      <a href="/methodology/" class="btn btn-ghost" style="background:var(--navy-800); color:#fff;">四层体系</a>
+    </div>
+  </section>
+</Layout>

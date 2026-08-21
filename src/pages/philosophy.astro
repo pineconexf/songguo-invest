@@ -1,0 +1,173 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const masters = [
+  {
+    name: '本杰明·格雷厄姆',
+    school: '价值投资奠基人',
+    desc: '安全边际、内在价值、市场先生。主张用定量标准筛选低估资产，分散持有。',
+    apply: '低估值筛选 + 分散投资',
+  },
+  {
+    name: '沃伦·巴菲特',
+    school: '长期价值投资',
+    desc: '护城河、能力圈、长期持有。只买看得懂的优质企业，把股票当生意。',
+    apply: 'ROE 筛选 + 优质企业偏好',
+  },
+  {
+    name: '乔尔·格林布拉特',
+    school: '神奇公式',
+    desc: '高ROIC + 低EV/EBIT 双因子量化选股，把价值投资变成可复制的公式。',
+    apply: '价值 + 质量双因子模型',
+  },
+  {
+    name: '霍华德·马克斯',
+    school: '周期与风险',
+    desc: '周期定位、风险控制、第二层思维。理解市场情绪的钟摆运动。',
+    apply: '宏观时钟 + 市场情绪指标',
+  },
+  {
+    name: '雷·达里奥',
+    school: '全天候策略',
+    desc: '风险平价、经济机器原理、资产配置框架。不预测市场，只配置风险。',
+    apply: '双版本组合（A/B）架构',
+  },
+  {
+    name: '彼得·林奇',
+    school: '成长投资',
+    desc: 'PEG 估值、六种股票分类、从生活中发现十倍股。',
+    apply: '行业增长匹配 + 成长股筛选',
+  },
+  {
+    name: '乔治·索罗斯',
+    school: '宏观对冲',
+    desc: '反身性理论、趋势投资、宏观对冲。认知偏差会自我强化。',
+    apply: '宏观信号 + 趋势确认',
+  },
+  {
+    name: '约翰·邓普顿',
+    school: '逆向投资',
+    desc: '极度悲观点买入，全球配置。在最大悲观处寻找最大回报。',
+    apply: '市场恐慌时加仓信号',
+  },
+  {
+    name: '詹姆斯·西蒙斯',
+    school: '量化交易',
+    desc: '统计套利、因子模型、模型驱动。用数学寻找市场的统计规律。',
+    apply: '因子构建 + 回测验证',
+  },
+  {
+    name: '杰西·利弗莫尔',
+    school: '趋势跟踪',
+    desc: '关键点位、资金管理、顺势而为。市场永远沿着阻力最小的方向。',
+    apply: '技术确认 + 仓位管理',
+  },
+];
+---
+<Layout
+  title="投资理念"
+  description="松果投资体系的理念与使命 — 融合十位投资大师智慧，本土化改造，14年A股实战验证。"
+>
+  <!-- Hero -->
+  <section class="hero" style="padding: 56px 48px;">
+    <div class="hero-inner">
+      <span class="eyebrow">Philosophy · 投资哲学</span>
+      <h1>
+        让普通投资者也能用上<br /><span class="gold">专业级的投资体系</span>
+      </h1>
+      <p class="hero-lead">
+        投资是一场马拉松，不是百米冲刺。「松果」取自松树的果实——
+        坚韧、长期、穿越周期。我们相信，正确的体系 + 严格的纪律，胜过聪明的一次次押注。
+      </p>
+    </div>
+  </section>
+
+  <!-- 核心理念 -->
+  <section class="metric-grid" style="grid-template-columns: repeat(4, 1fr);">
+    <div class="metric-card">
+      <div class="label">核心理念 01</div>
+      <div class="value" style="font-size: 22px;">数据驱动</div>
+      <div class="sub">每一个结论，都来自14年回测的验证</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">核心理念 02</div>
+      <div class="value" style="font-size: 22px;">风险第一</div>
+      <div class="sub">先想怎么亏，再想怎么赚</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">核心理念 03</div>
+      <div class="value" style="font-size: 22px;">长期主义</div>
+      <div class="sub">不赌短期波动，赚周期的钱</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">核心理念 04</div>
+      <div class="value" style="font-size: 22px;">独立思考</div>
+      <div class="sub">不追热点，不人云亦云</div>
+    </div>
+  </section>
+
+  <!-- 方法论融合 -->
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">Methodology Sources</div>
+      <h2 class="section-title">十位大师 · 一种融合</h2>
+      <p class="section-sub">
+        松果体系不是简单复制某一位大师的理论，而是取各家之长、融合本土化——
+        价值为基、量化为术、周期为纲、趋势为辅、本土化为魂。
+      </p>
+    </div>
+    <div class="master-grid">
+      {
+        masters.map((m) => (
+          <div class="master-card">
+            <div class="master-name">{m.name}</div>
+            <div class="master-school">{m.school}</div>
+            <div class="master-desc">{m.desc}</div>
+            <div class="master-apply">
+              松果应用：<b>{m.apply}</b>
+            </div>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  <!-- 差异化定位 -->
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">What We Are Not</div>
+      <h2 class="section-title">不是什么，是什么</h2>
+    </div>
+    <div class="link-cards" style="grid-template-columns: repeat(2, 1fr);">
+      <div class="link-card" style="cursor: default;">
+        <h3>❌ 不是简单复制西方理论</h3>
+        <p>A股有散户结构、政策市、板块轮动的独特特征，直接照搬海外理论会水土不服。</p>
+      </div>
+      <div class="link-card" style="cursor: default;">
+        <h3>❌ 不是纯价值死扛</h3>
+        <p>价值投资不意味着买入后不管，极端风险时要有离场机制——空仓保险。</p>
+      </div>
+      <div class="link-card" style="cursor: default;">
+        <h3>✅ 价值为基</h3>
+        <p>安全边际 + 护城河，只买好公司、只在便宜时买。</p>
+      </div>
+      <div class="link-card" style="cursor: default;">
+        <h3>✅ 量化为术</h3>
+        <p>因子筛选 + 回测验证，把主观判断变成可检验的规则。</p>
+      </div>
+      <div class="link-card" style="cursor: default;">
+        <h3>✅ 周期为纲</h3>
+        <p>宏观时钟判断大势，决定仓位进攻还是防守。</p>
+      </div>
+      <div class="link-card" style="cursor: default;">
+        <h3>✅ 本土化为魂</h3>
+        <p>14年A股实战验证，含成本、经审计、可复现。</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="callout">
+    <b>我们的信念</b>：投资方法的真正壁垒，不是发现了什么秘密，而是——
+    敢不敢把方法写成规则、把规则交给时间、在回撤中依然坚持。
+  </div>
+</Layout>

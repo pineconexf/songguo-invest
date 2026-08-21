@@ -1,0 +1,117 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const tools = [
+  {
+    type: '查询计算类',
+    name: '估值计算器',
+    desc: '输入股票代码，多维度估值分析：PE/PB/ROE/现金流，一眼看清贵还是便宜。',
+    status: 'live',
+    statusLabel: '即将上线',
+    cta: '免费使用',
+  },
+  {
+    type: '资讯讯息类',
+    name: '每日资讯解读',
+    desc: '每日宏观/行业/个股资讯深度解读，帮你在信息洪流中抓住关键信号。',
+    status: 'live',
+    statusLabel: '即将上线',
+    cta: '订阅提醒',
+  },
+  {
+    type: '行业研究类',
+    name: '行业研究报告',
+    desc: '行业研究报告自动生成：景气度、竞争格局、估值水位、政策催化一页看懂。',
+    status: 'soon',
+    statusLabel: '规划中',
+    cta: '了解详情',
+  },
+  {
+    type: '资讯讯息类',
+    name: '个股解读',
+    desc: '个股多维度解读：基本面、行业地位、估值水平、风险提示。',
+    status: 'soon',
+    statusLabel: '规划中',
+    cta: '了解详情',
+  },
+  {
+    type: '查询计算类',
+    name: '回测验证工具',
+    desc: '策略历史回测验证：把你的选股思路放回 14 年数据里检验。',
+    status: 'soon',
+    statusLabel: '规划中',
+    cta: '了解详情',
+  },
+  {
+    type: '行业研究类',
+    name: '行业对比工具',
+    desc: '跨行业横向对比：估值、增速、资金流，找出相对低估的赛道。',
+    status: 'soon',
+    statusLabel: '规划中',
+    cta: '了解详情',
+  },
+];
+---
+<Layout
+  title="工具服务"
+  description="松果投资工具 — 估值计算器、每日资讯解读、行业研究报告、回测验证工具，把投资方法论变成可用的工具。"
+>
+  <!-- Hero -->
+  <section class="hero" style="padding: 56px 48px;">
+    <div class="hero-inner">
+      <span class="eyebrow">Tools · 工具服务</span>
+      <h1>
+        把投资方法论，<br />变成<span class="gold">可用的工具</span>
+      </h1>
+      <p class="hero-lead">
+        松果体系不仅是理念，更是工具：估值计算、资讯解读、行业研究、回测验证——
+        让专业级的分析能力，普通人也能上手。
+      </p>
+    </div>
+  </section>
+
+  <!-- 工具网格 -->
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">Tool Suite</div>
+      <h2 class="section-title">工具全家桶</h2>
+      <p class="section-sub">
+        从查询计算到行业研究，覆盖投资决策的每一步。核心工具免费开放，深度功能陆续上线。
+      </p>
+    </div>
+    <div class="tool-grid">
+      {
+        tools.map((t) => (
+          <div class="tool-card">
+            <span class="tool-type">{t.type}</span>
+            <h3>{t.name}</h3>
+            <p>{t.desc}</p>
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px;">
+              <span class:list={['tool-status', t.status]}>{t.statusLabel}</span>
+              <span style="font-size:13px; font-weight:600; color:var(--gold-600);">{t.cta} →</span>
+            </div>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  <!-- 公众号引流 -->
+  <section class="card" style="text-align:center; padding: 48px; background: linear-gradient(160deg, var(--navy-900), var(--navy-700)); color:#fff; border: 1px solid rgba(200,162,75,0.2);">
+    <div class="section-kicker" style="color: var(--gold-300);">Follow Us</div>
+    <h2 class="section-title" style="color:#fff; border:none; padding:0; margin:12px 0;">订阅「松果商业笔记」</h2>
+    <p class="section-sub" style="color: rgba(255,255,255,0.8); margin: 0 auto 28px; max-width: 520px;">
+      每日资讯解读、行业研究报告、策略月报——第一时间送达。
+      公众号/知乎/雪球/百家号同步更新。
+    </p>
+    <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+      <a href="/about/" class="btn btn-gold">了解更多 →</a>
+      <span class="btn btn-ghost" style="pointer-events: none;">公众号：松果商业笔记</span>
+    </div>
+  </section>
+
+  <div class="callout">
+    <b>合规声明</b>：所有工具输出均为数据分析与研究方法论展示，不构成投资建议。
+    任何工具结果都不应作为买卖决策的唯一依据。投资有风险，入市需谨慎。
+  </div>
+</Layout>

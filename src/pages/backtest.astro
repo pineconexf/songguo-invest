@@ -94,16 +94,25 @@ const rows = recent.months
   .slice(-lastN)
   .reverse();
 ---
-<Layout title="回测验证" description="松果投资体系回测验证 — 14年净值曲线、年度收益、回撤全景、逐月对比，数据可复现经审计">
-  <section class="hero" style="padding: 36px 40px;">
-    <h1>回测验证：<span class="gold">数据透明，可复现</span></h1>
-    <p>
-      14 年、172 个月、逐月逐年的完整数据。所有数字可由公开财报数据复现，回测逻辑经过独立审计，含成本口径。
-    </p>
+<Layout title="策略验证" description="松果投资体系回测验证 — 14年净值曲线、年度收益、回撤全景、逐月对比，数据可复现经审计">
+  <section class="hero" style="padding: 56px 48px;">
+    <div class="hero-inner">
+      <span class="eyebrow">Track Record · 回测验证</span>
+      <h1>
+        <span class="gold">数据透明</span>，可复现<br />经审计的回测记录
+      </h1>
+      <p class="hero-lead">
+        14 年、172 个月、逐月逐年的完整数据。所有数字可由公开数据复现，
+        回测逻辑经过独立审计，含成本口径，无未来函数。
+      </p>
+    </div>
   </section>
 
   <section class="card">
-    <h2 class="section-title">核心指标对比</h2>
+    <div class="section-head">
+      <div class="section-kicker">Key Metrics</div>
+      <h2 class="section-title">核心指标对比</h2>
+    </div>
     <div class="table-wrap">
       <table class="data-table">
         <thead>
@@ -149,19 +158,28 @@ const rows = recent.months
   </section>
 
   <section class="card">
-    <h2 class="section-title">14 年净值曲线</h2>
+    <div class="section-head">
+      <div class="section-kicker">Net Value</div>
+      <h2 class="section-title">14 年净值曲线</h2>
+    </div>
     <p class="section-sub">起点 1.00。金色为策略净值（约 22.6 倍），灰色虚线为同期沪深300（约 1.75 倍）。可拖动下方滑块查看任意时间段。</p>
     <Chart option={navOption} height="440px" />
   </section>
 
   <section class="card">
-    <h2 class="section-title">年度收益（V31 vs 沪深300）</h2>
+    <div class="section-head">
+      <div class="section-kicker">Annual</div>
+      <h2 class="section-title">年度收益（V31 vs 沪深300）</h2>
+    </div>
     <p class="section-sub">14 个完整年度中，策略有 11 年跑赢沪深300（2014/2017/2020 大盘蓝筹暴涨年跑输，属价值风格暴露，非选股错误）。</p>
     <Chart option={yearlyOption} height="380px" />
   </section>
 
   <section class="card">
-    <h2 class="section-title">回撤全景</h2>
+    <div class="section-head">
+      <div class="section-kicker">Drawdown</div>
+      <h2 class="section-title">回撤全景</h2>
+    </div>
     <p class="section-sub">
       每次净值从高点回落的过程。红线为最大回撤 -22.66% 的标记线。14 年中最大的回撤发生在 2015-2016 股灾段，
       空仓保险躲过了 2015 年 8-9 月连续暴跌（那两个月单月跌幅分别约 -14% 和 -12%）。
@@ -170,7 +188,10 @@ const rows = recent.months
   </section>
 
   <section class="card">
-    <h2 class="section-title">最近 24 个月月度收益（V31 vs 沪深300）</h2>
+    <div class="section-head">
+      <div class="section-kicker">Recent 24M</div>
+      <h2 class="section-title">最近 24 个月月度收益（V31 vs 沪深300）</h2>
+    </div>
     <p class="section-sub">完整 172 个月逐月明细见 <a href="/ranking/">月度榜单</a> 页。</p>
     <div class="table-wrap" style="max-height: 480px; overflow-y: auto;">
       <table class="data-table">
@@ -199,7 +220,10 @@ const rows = recent.months
   </section>
 
   <section class="card">
-    <h2 class="section-title">数据口径与审计记录</h2>
+    <div class="section-head">
+      <div class="section-kicker">Audit</div>
+      <h2 class="section-title">数据口径与审计记录</h2>
+    </div>
     <div class="steps">
       <div class="step">
         <div class="num">1</div>

@@ -56,16 +56,30 @@ const navOption = {
   ],
 };
 ---
-<Layout title="首页" description="松果投资体系 — 14年真实回测验证的A股价值投资方法论展示">
+<Layout
+  title="首页"
+  description="松果投资体系 — 融合东西方投资智慧、经14年真实回测验证的A股量化价值投资方法论。年化+24.30%，同期沪深300仅+3.97%。"
+>
+  <!-- ============ Hero 大区 ============ -->
   <section class="hero">
-    <h1>用 <span class="gold">14 年真实回测</span> 说话的价值投资体系</h1>
-    <p>
-      一套「好公司、便宜买、极端风险离场」的 A 股投资方法论：2012.04 - 2026.07 共 172 个月历史回测，
-      年化收益率 <b>+24.3%</b>，同期沪深300 年化仅 +3.97%。数据为历史回测展示，不构成投资建议。
-    </p>
-    <span class="tagline">数据驱动 · 纪律执行 · 长期主义</span>
+    <div class="hero-inner">
+      <span class="eyebrow">14 年 · 172 个月 · A股实战回测</span>
+      <h1>
+        一套<span class="gold">穿越牛熊</span>的<br />A股量化价值投资体系
+      </h1>
+      <p class="hero-lead">
+        融合格雷厄姆、巴菲特、格林布拉特等十位投资大师的智慧，本土化改造为
+        <b>宏观 → 行业 → 个股 → 组合</b>四层架构。
+        2012-2026 真实回测：年化 <b>+24.30%</b>，同期沪深300 仅 +3.97%。
+      </p>
+      <div class="hero-actions">
+        <a href="/philosophy/" class="btn btn-gold">了解投资理念 →</a>
+        <a href="/backtest/" class="btn btn-ghost">查看回测数据</a>
+      </div>
+    </div>
   </section>
 
+  <!-- ============ 数据墙 ============ -->
   <section class="metric-grid">
     <div class="metric-card">
       <div class="label">14 年年化收益率</div>
@@ -89,68 +103,124 @@ const navOption = {
     </div>
   </section>
 
+  <!-- ============ 四层体系概览 ============ -->
   <section class="card">
-    <h2 class="section-title">14 年净值曲线（V31 基金版 vs 沪深300）</h2>
-    <p class="section-sub">
-      起点 1.00，金色为策略净值，灰色虚线为同期沪深300。两者累计收益相差约 20 倍——超额主要来自选股 alpha 与空仓保险。
-    </p>
-    <Chart option={navOption} height="440px" />
-  </section>
-
-  <section class="card">
-    <h2 class="section-title">这套体系是什么</h2>
-    <div class="link-cards">
-      <a href="/methodology/" class="link-card">
-        <h3><span class="gold">方法论</span> · 三步走</h3>
-        <p>11 步筛选好公司 → 双因子找便宜 → 空仓保险躲股灾。小白也能看懂的投资逻辑。</p>
+    <div class="section-head">
+      <div class="section-kicker">Framework</div>
+      <h2 class="section-title">四层体系架构</h2>
+      <p class="section-sub">
+        松果投资体系不是单一策略，而是从宏观到个股的完整决策链——每一层独立可验证，层间协同形成闭环。
+      </p>
+    </div>
+    <div class="layer-stack">
+      <a href="/macro/" class="layer">
+        <span class="layer-index">01</span>
+        <span class="layer-name">宏观层</span>
+        <span class="layer-desc">宏观时钟六轴评分，判断大势方向，决定仓位进攻或防守</span>
+        <span class="layer-tag">V1 常规 / V2 杠杆</span>
       </a>
-      <a href="/backtest/" class="link-card">
-        <h3><span class="gold">回测验证</span> · 数据透明</h3>
-        <p>14 年逐月净值、年度收益、回撤全景，全部数据可复现、经审计、含成本。</p>
+      <a href="/methodology/" class="layer">
+        <span class="layer-index">02</span>
+        <span class="layer-name">行业层</span>
+        <span class="layer-desc">行业因子筛选，识别景气赛道，避开衰退行业</span>
+        <span class="layer-tag">行业轮动</span>
       </a>
-      <a href="/ranking/" class="link-card">
-        <h3><span class="gold">月度榜单</span> · 方法论展示</h3>
-        <p>策略月度收益 vs 沪深300 逐月对比。展示方法论运行轨迹，不构成任何推荐。</p>
+      <a href="/backtest/" class="layer">
+        <span class="layer-index">03</span>
+        <span class="layer-name">个股层</span>
+        <span class="layer-desc">11 步筛选好公司 + 双因子找便宜 + 空仓保险躲股灾</span>
+        <span class="layer-tag">V31 基金 / V32 进阶</span>
+      </a>
+      <a href="/portfolio/" class="layer">
+        <span class="layer-index">04</span>
+        <span class="layer-name">组合层</span>
+        <span class="layer-desc">双版本组合：宏观×个股融合，进攻防守节奏错开</span>
+        <span class="layer-tag">版本A / 版本B</span>
       </a>
     </div>
   </section>
 
+  <!-- ============ 净值曲线 ============ -->
   <section class="card">
-    <h2 class="section-title">关于版本</h2>
-    <p class="section-sub">
-      同一套选股逻辑的两个执行版本：无杠杆的「基金版」面向稳健配置场景；含融资杠杆的「进阶版」面向能承受更高波动的专业场景。本页展示基金版，进阶版数据作为研究参考后续开放。
-    </p>
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>版本</th>
-          <th>杠杆</th>
-          <th>年化</th>
-          <th>最大回撤</th>
-          <th>Calmar</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>V31 基金版（本页主展示）</td>
-          <td>无</td>
-          <td class="pos">+24.30%</td>
-          <td class="neg">-22.66%</td>
-          <td>1.07</td>
-        </tr>
-        <tr>
-          <td>V32 进阶版（杠杆研究参考）</td>
-          <td>1.5x 融资</td>
-          <td class="pos">+34.71%</td>
-          <td class="neg">-33.65%</td>
-          <td>1.03</td>
-        </tr>
-      </tbody>
-    </table>
+    <div class="section-head">
+      <div class="section-kicker">Track Record</div>
+      <h2 class="section-title">14 年净值曲线（V31 基金版 vs 沪深300）</h2>
+      <p class="section-sub">
+        起点 1.00，金色为策略净值，灰色虚线为同期沪深300。两者累计收益相差约 20 倍——
+        超额主要来自选股 alpha 与空仓保险。数据为历史回测，不构成投资建议。
+      </p>
+    </div>
+    <Chart option={navOption} height="440px" />
+  </section>
+
+  <!-- ============ 为什么不同 ============ -->
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">Why Different</div>
+      <h2 class="section-title">这套体系为什么不同</h2>
+    </div>
+    <div class="link-cards">
+      <a href="/philosophy/" class="link-card">
+        <h3><span class="gold">理念</span> · 融合十位大师</h3>
+        <p>格雷厄姆的安全边际、巴菲特的护城河、格林布拉特的量化筛选、马克斯的周期判断——融合而非模仿。</p>
+      </a>
+      <a href="/backtest/" class="link-card">
+        <h3><span class="gold">数据</span> · 透明可复现</h3>
+        <p>14 年逐月净值、年度收益、回撤全景，全部含成本口径、经审计、可复现。不玩幸存者偏差。</p>
+      </a>
+      <a href="/portfolio/" class="link-card">
+        <h3><span class="gold">组合</span> · 攻守兼备</h3>
+        <p>宏观×个股双版本组合，两个引擎节奏错开，一个进攻时另一个防守，管理回撤不靠运气。</p>
+      </a>
+    </div>
+  </section>
+
+  <!-- ============ 版本对照 ============ -->
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">Versions</div>
+      <h2 class="section-title">两个执行版本</h2>
+      <p class="section-sub">
+        同一套选股逻辑的两个执行版本：无杠杆的「基金版」面向稳健配置场景；含融资杠杆的「进阶版」面向能承受更高波动的专业场景。
+      </p>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>版本</th>
+            <th>杠杆</th>
+            <th>年化</th>
+            <th>最大回撤</th>
+            <th>Calmar</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>V31 基金版（主展示）</td>
+            <td>无</td>
+            <td class="pos">+24.30%</td>
+            <td class="neg">-22.66%</td>
+            <td>1.07</td>
+          </tr>
+          <tr>
+            <td>V32 进阶版（研究参考）</td>
+            <td>1.5x 融资</td>
+            <td class="pos">+34.71%</td>
+            <td class="neg">-33.65%</td>
+            <td>1.03</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout warn" style="margin-top: 16px;">
+      ⚠️ V32 进阶版为杠杆回测研究，杠杆会放大亏损，仅作方法论研究参考，不构成任何投资建议。
+    </div>
   </section>
 
   <div class="callout">
-    ⚠️ <b>免责声明</b>：本站全部数据为历史回测结果（含成本口径），非实盘业绩，不代表未来收益，不构成任何投资建议，亦不构成对任何证券或产品的推荐。投资有风险，入市需谨慎。
+    <b>免责声明</b>：本站全部数据为历史回测结果（含成本口径），非实盘业绩，不代表未来收益，
+    不构成任何投资建议，亦不构成对任何证券或产品的推荐。投资有风险，入市需谨慎。
   </div>
 
   <script>

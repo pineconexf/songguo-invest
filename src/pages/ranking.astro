@@ -22,11 +22,17 @@ const recent12 = rows.slice(-12).reverse();
 const fullTable = [...rows].reverse();
 ---
 <Layout title="月度榜单" description="松果投资体系月度榜单 — 策略月度收益 vs 沪深300 逐月对比，方法论展示不构成投资建议">
-  <section class="hero" style="padding: 36px 40px;">
-    <h1>月度榜单：<span class="gold">方法论运行轨迹</span></h1>
-    <p>
-      策略每月收益与沪深300 的逐月对比。本页展示的是方法论的历史运行轨迹，<b>不涉及任何个股，不构成任何推荐</b>。
-    </p>
+  <section class="hero" style="padding: 56px 48px;">
+    <div class="hero-inner">
+      <span class="eyebrow">Monthly Ranking · 月度榜单</span>
+      <h1>
+        方法论的<span class="gold">运行轨迹</span><br />逐月可查
+      </h1>
+      <p class="hero-lead">
+        策略每月收益与沪深300 的逐月对比。本页展示的是方法论的历史运行轨迹，
+        <b>不涉及任何个股，不构成任何推荐</b>。
+      </p>
+    </div>
   </section>
 
   <section class="metric-grid">
@@ -48,7 +54,10 @@ const fullTable = [...rows].reverse();
   </section>
 
   <section class="card">
-    <h2 class="section-title">最近 12 个月</h2>
+    <div class="section-head">
+      <div class="section-kicker">Recent 12M</div>
+      <h2 class="section-title">最近 12 个月</h2>
+    </div>
     <div class="table-wrap">
       <table class="data-table">
         <thead>
@@ -76,7 +85,10 @@ const fullTable = [...rows].reverse();
   </section>
 
   <section class="card">
-    <h2 class="section-title">完整历史月度明细（{total} 个月）</h2>
+    <div class="section-head">
+      <div class="section-kicker">Full History</div>
+      <h2 class="section-title">完整历史月度明细（{total} 个月）</h2>
+    </div>
     <p class="section-sub">2012.04 - 2026.07，按时间倒序。数据源：<a href="/about/">回测审计</a>后的含成本口径。</p>
     <div class="table-wrap" style="max-height: 560px; overflow-y: auto;">
       <table class="data-table">

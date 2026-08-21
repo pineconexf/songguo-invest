@@ -6,15 +6,20 @@ interface Props {
   description?: string;
 }
 
-const { title, description = '松果投资体系 — 14年真实回测验证的 A 股价值投资方法论展示' } = Astro.props;
+const { title, description = '松果投资体系 — 融合东西方智慧、经14年真实回测验证的A股量化价值投资方法论' } =
+  Astro.props;
 const current = Astro.url.pathname;
 
 const navItems = [
   { href: '/', label: '首页' },
-  { href: '/methodology/', label: '方法论' },
-  { href: '/backtest/', label: '回测验证' },
+  { href: '/philosophy/', label: '理念' },
+  { href: '/methodology/', label: '体系' },
+  { href: '/macro/', label: '宏观研究' },
+  { href: '/backtest/', label: '策略验证' },
+  { href: '/portfolio/', label: '组合管理' },
   { href: '/ranking/', label: '月度榜单' },
-  { href: '/about/', label: '合规声明' },
+  { href: '/tools/', label: '工具服务' },
+  { href: '/about/', label: '关于' },
 ];
 ---
 <!doctype html>
@@ -30,7 +35,10 @@ const navItems = [
   <body>
     <header class="site-header">
       <nav class="nav container">
-        <a href="/" class="brand">🐿️ <span class="gold">松果</span>投资体系</a>
+        <a href="/" class="brand">
+          <span class="brand-mark">松</span>
+          <span><span class="gold">松果</span>投资体系</span>
+        </a>
         <div class="nav-links">
           {
             navItems.map((item) => (
@@ -53,10 +61,12 @@ const navItems = [
     <footer class="site-footer">
       <div class="container">
         <p class="disclaimer">
-          本网站为投资方法论的历史回测研究展示，数据为 2012-2026 年 172 个月回测结果（含成本口径），
-          历史表现不代表未来收益，不构成任何投资建议，亦不构成对任何产品的推荐。
+          本站为投资方法论的历史回测研究展示，数据为 2012-2026 年 172 个月回测结果（含成本口径），
+          历史表现不代表未来收益，不构成任何投资建议，亦不构成对任何产品的推荐。投资有风险，入市需谨慎。
         </p>
-        <p>© 2026 松果商业笔记 · 数据驱动 · 纪律执行 · 长期主义</p>
+        <p class="footer-meta">
+          © 2026 松果商业笔记 · 数据驱动 · 纪律执行 · 长期主义
+        </p>
       </div>
     </footer>
   </body>
