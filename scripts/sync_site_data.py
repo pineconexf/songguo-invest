@@ -48,17 +48,13 @@ def main():
         if not ok:
             print("    ⚠️ 历史选股同步失败（可能数据源未更新），跳过")
 
-    # 3. 实盘记录校验
-    print("\n[3/3] 实盘档案 (live_records.json)")
-    live_path = os.path.join(SITE, "src", "data", "live_records.json")
-    if os.path.exists(live_path):
-        try:
-            d = json.load(open(live_path, encoding='utf-8'))
-            print(f"  ✅ 存在: {d.get('count', '?')} 期")
-        except Exception as e:
-            print(f"  ⚠️ 解析失败: {e}")
-    else:
-        print("  ⚠️ 不存在，请先整理实盘记录")
+    # 3. 档案数据存在性校验（history_records / macro_signal）
+    for fname in ["history_records.json", "macro_signal.json"]:
+        fp = os.path.join(SITE, "src", "data", fname)
+        if os.path.exists(fp):
+            print(f"  ✅ {fname} 存在")
+        else:
+            print(f"  ⚠️ {fname} 缺失，请先运行对应 build 脚本")
 
     # 4. 构建
     if do_build:

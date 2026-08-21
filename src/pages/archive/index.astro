@@ -3,7 +3,6 @@ import Layout from '../../layouts/Layout.astro';
 import strategy from '../../data/strategy.json';
 import macro from '../../data/macro_signal.json';
 import history from '../../data/history_records.json';
-import live from '../../data/live_records.json';
 
 const cards = [
   {
@@ -17,24 +16,16 @@ const cards = [
   {
     href: '/archive/monthly/',
     title: '月度选股档案',
-    desc: '每月 Top5 名单 + 投前投后对比',
-    stat: `${strategy.meta.window.months} 月`,
-    sub: `${history.count} 月含完整个股档案`,
+    desc: '每月选股名单 + 权重 + 投前投后',
+    stat: `${history.count} 月`,
+    sub: 'Top4 + FCF加权 · 全量个股可查',
     tag: '个股可追溯',
-  },
-  {
-    href: '/archive/live/',
-    title: '实盘运行档案',
-    desc: '每次操作的完整逻辑复盘',
-    stat: `${live.periods.length} 期`,
-    sub: '预判逻辑·宏观·个股·投前投后·组合',
-    tag: '持续追加',
   },
 ];
 ---
 <Layout
   title="历史档案"
-  description="松果历史档案 — 宏观信号809周、月度选股124月、实盘运行逐期，全部数据可追溯。"
+  description="松果历史档案 — 宏观信号809周、月度选股172月，全部数据可追溯。"
 >
   <!-- Hero -->
   <section class="hero" style="padding: 48px 40px;">
@@ -44,7 +35,7 @@ const cards = [
         每一期<span class="gold">操作前后</span>的逻辑<br />全部可查
       </h1>
       <p class="hero-lead">
-        宏观周度信号、月度选股名单、实盘运行轨迹——三层档案，逐期记录预判逻辑与结果，
+        宏观周度信号、月度选股名单——两层档案，逐期记录选股逻辑与结果，
         让「当时怎么想的」和「后来怎么样了」对得上号。
       </p>
     </div>
@@ -88,12 +79,12 @@ const cards = [
       <div class="metric-card">
         <div class="label">个股选股档案月</div>
         <div class="value green">{history.count}</div>
-        <div class="sub">每月 Top5 名单</div>
+        <div class="sub">Top4 + FCF加权</div>
       </div>
       <div class="metric-card">
-        <div class="label">实盘/虚拟记录期</div>
-        <div class="value">{live.periods.length}</div>
-        <div class="sub">持续追加中</div>
+        <div class="label">含权重个股记录</div>
+        <div class="value">{(history.months ?? []).reduce((s, m) => s + (m.picks?.length ?? 0), 0)}</div>
+        <div class="sub">不等权（FCF排名加权）</div>
       </div>
     </div>
   </section>
@@ -106,8 +97,8 @@ const cards = [
     </div>
     <div class="link-cards" style="grid-template-columns: repeat(2, 1fr);">
       <a href="/portfolio/" class="link-card">
-        <h3><span class="gold">组合管理</span> · 双版本对照</h3>
-        <p>版本A（V31×V1）求稳、版本B（V32×V2）进取，组合层数据验证。</p>
+        <h3><span class="gold">组合管理</span> · 宏观×个股融合</h3>
+        <p>宏观 V1 管仓位、个股 V31 管选股，无杠杆组合管理。</p>
       </a>
       <a href="/ranking/" class="link-card">
         <h3><span class="gold">月度榜单</span> · 逐月表现</h3>
@@ -117,6 +108,6 @@ const cards = [
   </section>
 
   <div class="callout">
-    <b>档案机制</b>：宏观信号与月度选股档案由数据管线自动生成（回算历史全量）；实盘/虚拟档案每期整理入库，往后持续追加。所有数据与定稿口径一致，含成本，可复现。
+    <b>档案机制</b>：宏观信号与月度选股档案由数据管线自动生成（回算历史全量），数据与定稿口径一致（宏观 V1 + 个股 V31），含成本，可复现。本档案不涉及任何杠杆版本与实盘数据。
   </div>
 </Layout>

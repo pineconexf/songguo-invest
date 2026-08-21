@@ -14,23 +14,11 @@ const versions = [
     highlight: '样本外与全样本年化几乎一致（+10.04% vs +10.16%），证明 5bp 是结构性有效阈值，非过拟合。',
     risk: '2021 年结构性行情中信号失效（-1.7% vs 基准 +16.5%）——纯宏观策略的已知边界。',
   },
-  {
-    name: 'V2 杠杆版',
-    type: '期权对冲',
-    desc: '双频叠加：宽松时买现货，收紧时买认沽期权。用期权工具把"空仓"变成"对冲"。',
-    stats: [
-      { label: '组合年化', value: '双版本' },
-      { label: '杠杆方式', value: '现货+认沽' },
-      { label: '适用场景', value: '专业对冲' },
-    ],
-    highlight: '与个股策略融合形成双版本组合：版本A（V31×V1）求稳、版本B（V32×V2）进取。',
-    risk: '期权工具 2022 年才上市，历史数据仅 4 年，样本较短，需谨慎看待。',
-  },
 ];
 ---
 <Layout
   title="宏观研究"
-  description="松果宏观时钟 — Shibor 流动性信号 walk-forward 样本外验证，V1 常规版与 V2 杠杆版。"
+  description="松果宏观时钟 — Shibor 流动性信号 walk-forward 样本外验证，V1 常规版。"
 >
   <!-- Hero -->
   <section class="hero" style="padding: 56px 48px;">
@@ -76,11 +64,11 @@ const versions = [
     </div>
   </section>
 
-  <!-- 双版本 -->
+  <!-- V1 常规版 -->
   <section class="card">
     <div class="section-head">
-      <div class="section-kicker">Two Versions</div>
-      <h2 class="section-title">两个执行版本</h2>
+      <div class="section-kicker">V1 Strategy</div>
+      <h2 class="section-title">V1 常规版（定案策略）</h2>
     </div>
     <div class="master-grid">
       {

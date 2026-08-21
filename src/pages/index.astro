@@ -117,7 +117,7 @@ const navOption = {
         <span class="layer-index">01</span>
         <span class="layer-name">宏观层</span>
         <span class="layer-desc">宏观时钟六轴评分，判断大势方向，决定仓位进攻或防守</span>
-        <span class="layer-tag">V1 常规 / V2 杠杆</span>
+        <span class="layer-tag">V1 常规版</span>
       </a>
       <a href="/methodology/" class="layer">
         <span class="layer-index">02</span>
@@ -129,13 +129,13 @@ const navOption = {
         <span class="layer-index">03</span>
         <span class="layer-name">个股层</span>
         <span class="layer-desc">11 步筛选好公司 + 双因子找便宜 + 空仓保险躲股灾</span>
-        <span class="layer-tag">V31 基金 / V32 进阶</span>
+        <span class="layer-tag">V31 基金版</span>
       </a>
       <a href="/portfolio/" class="layer">
         <span class="layer-index">04</span>
         <span class="layer-name">组合层</span>
         <span class="layer-desc">双版本组合：宏观×个股融合，进攻防守节奏错开</span>
-        <span class="layer-tag">版本A / 版本B</span>
+        <span class="layer-tag">单策略</span>
       </a>
     </div>
   </section>
@@ -175,21 +175,20 @@ const navOption = {
     </div>
   </section>
 
-  <!-- ============ 版本对照 ============ -->
+  <!-- ============ 策略定案 ============ -->
   <section class="card">
     <div class="section-head">
-      <div class="section-kicker">Versions</div>
-      <h2 class="section-title">两个执行版本</h2>
+      <div class="section-kicker">Strategy</div>
+      <h2 class="section-title">策略定案：V31 基金版</h2>
       <p class="section-sub">
-        同一套选股逻辑的两个执行版本：无杠杆的「基金版」面向稳健配置场景；含融资杠杆的「进阶版」面向能承受更高波动的专业场景。
+        本站采用单一策略口径——个股策略 <b>V31 基金版</b>（无杠杆，选股 Top4 + FCF/EV 加权），宏观策略 <b>V1 常规版</b>（Shibor 信号 × 中证500）。不涉及任何杠杆工具。
       </p>
     </div>
     <div class="table-wrap">
       <table class="data-table">
         <thead>
           <tr>
-            <th>版本</th>
-            <th>杠杆</th>
+            <th>策略</th>
             <th>年化</th>
             <th>最大回撤</th>
             <th>Calmar</th>
@@ -197,29 +196,27 @@ const navOption = {
         </thead>
         <tbody>
           <tr>
-            <td>V31 基金版（主展示）</td>
-            <td>无</td>
+            <td>V31 基金版（无杠杆）</td>
             <td class="pos">+24.30%</td>
             <td class="neg">-22.66%</td>
             <td>1.07</td>
           </tr>
           <tr>
-            <td>V32 进阶版（研究参考）</td>
-            <td>1.5x 融资</td>
-            <td class="pos">+34.71%</td>
-            <td class="neg">-33.65%</td>
-            <td>1.03</td>
+            <td>沪深300 同期</td>
+            <td>+3.97%</td>
+            <td class="neg">-40.56%</td>
+            <td>0.10</td>
           </tr>
         </tbody>
       </table>
     </div>
-    <div class="callout warn" style="margin-top: 16px;">
-      ⚠️ V32 进阶版为杠杆回测研究，杠杆会放大亏损，仅作方法论研究参考，不构成任何投资建议。
+    <div class="callout" style="margin-top: 16px;">
+      本站不展示任何杠杆版本（V32 进阶版 / 宏观 V2 杠杆版），所有数据为无杠杆的历史回测展示。
     </div>
   </section>
 
   <div class="callout">
-    <b>免责声明</b>：本站全部数据为历史回测结果（含成本口径），非实盘业绩，不代表未来收益，
+    <b>免责声明</b>：本站全部数据为历史回测结果（含成本口径），不代表未来收益，
     不构成任何投资建议，亦不构成对任何证券或产品的推荐。投资有风险，入市需谨慎。
   </div>
 
