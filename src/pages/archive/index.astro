@@ -1,0 +1,122 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import strategy from '../../data/strategy.json';
+import macro from '../../data/macro_signal.json';
+import history from '../../data/history_records.json';
+import live from '../../data/live_records.json';
+
+const cards = [
+  {
+    href: '/archive/macro/',
+    title: '宏观信号档案',
+    desc: 'Shibor 周度信号全量追溯',
+    stat: `${macro.stats.total_weeks} 周`,
+    sub: '2011 ~ 2026 · 宽松/收紧逐周可查',
+    tag: '全量可追溯',
+  },
+  {
+    href: '/archive/monthly/',
+    title: '月度选股档案',
+    desc: '每月 Top5 名单 + 投前投后对比',
+    stat: `${strategy.meta.window.months} 月`,
+    sub: `${history.count} 月含完整个股档案`,
+    tag: '个股可追溯',
+  },
+  {
+    href: '/archive/live/',
+    title: '实盘运行档案',
+    desc: '每次操作的完整逻辑复盘',
+    stat: `${live.periods.length} 期`,
+    sub: '预判逻辑·宏观·个股·投前投后·组合',
+    tag: '持续追加',
+  },
+];
+---
+<Layout
+  title="历史档案"
+  description="松果历史档案 — 宏观信号809周、月度选股124月、实盘运行逐期，全部数据可追溯。"
+>
+  <!-- Hero -->
+  <section class="hero" style="padding: 48px 40px;">
+    <div class="hero-inner">
+      <span class="eyebrow">Archive · 历史档案</span>
+      <h1>
+        每一期<span class="gold">操作前后</span>的逻辑<br />全部可查
+      </h1>
+      <p class="hero-lead">
+        宏观周度信号、月度选股名单、实盘运行轨迹——三层档案，逐期记录预判逻辑与结果，
+        让「当时怎么想的」和「后来怎么样了」对得上号。
+      </p>
+    </div>
+  </section>
+
+  <!-- 档案卡片 -->
+  <section class="master-grid" style="grid-template-columns: repeat(3, 1fr);">
+    {
+      cards.map((c) => (
+        <a href={c.href} class="master-card" style="text-decoration:none; display:flex; flex-direction:column; gap:10px;">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
+            <div class="master-name" style="margin:0;">{c.title}</div>
+            <span style="font-size:11px; padding:2px 10px; border-radius:999px; background:var(--gold-100); color:var(--gold-600); font-weight:600;">{c.tag}</span>
+          </div>
+          <div class="master-desc">{c.desc}</div>
+          <div style="font-size:28px; font-weight:700; color:var(--navy-800);">{c.stat}</div>
+          <div style="font-size:12.5px; color:var(--text-3);">{c.sub}</div>
+          <div style="margin-top:auto; color:var(--gold-600); font-size:14px; font-weight:600;">进入档案 →</div>
+        </a>
+      ))
+    }
+  </section>
+
+  <!-- 数据总量 -->
+  <section class="card" style="margin-top: 24px;">
+    <div class="section-head">
+      <div class="section-kicker">Coverage</div>
+      <h2 class="section-title">档案覆盖范围</h2>
+    </div>
+    <div class="metric-grid">
+      <div class="metric-card">
+        <div class="label">宏观信号周数</div>
+        <div class="value gold">{macro.stats.total_weeks}</div>
+        <div class="sub">{macro.stats.loose_pct}% 宽松周</div>
+      </div>
+      <div class="metric-card">
+        <div class="label">策略回测月数</div>
+        <div class="value">{strategy.meta.window.months}</div>
+        <div class="sub">2012.04 ~ 2026.07</div>
+      </div>
+      <div class="metric-card">
+        <div class="label">个股选股档案月</div>
+        <div class="value green">{history.count}</div>
+        <div class="sub">每月 Top5 名单</div>
+      </div>
+      <div class="metric-card">
+        <div class="label">实盘/虚拟记录期</div>
+        <div class="value">{live.periods.length}</div>
+        <div class="sub">持续追加中</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 相关页面 -->
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">Related</div>
+      <h2 class="section-title">相关页面</h2>
+    </div>
+    <div class="link-cards" style="grid-template-columns: repeat(2, 1fr);">
+      <a href="/portfolio/" class="link-card">
+        <h3><span class="gold">组合管理</span> · 双版本对照</h3>
+        <p>版本A（V31×V1）求稳、版本B（V32×V2）进取，组合层数据验证。</p>
+      </a>
+      <a href="/ranking/" class="link-card">
+        <h3><span class="gold">月度榜单</span> · 逐月表现</h3>
+        <p>策略月度收益 vs 沪深300 完整历史，月度胜率统计。</p>
+      </a>
+    </div>
+  </section>
+
+  <div class="callout">
+    <b>档案机制</b>：宏观信号与月度选股档案由数据管线自动生成（回算历史全量）；实盘/虚拟档案每期整理入库，往后持续追加。所有数据与定稿口径一致，含成本，可复现。
+  </div>
+</Layout>

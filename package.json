@@ -10,7 +10,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "data": "python scripts/build_strategy_data.py"
+    "data": "python scripts/build_strategy_data.py",
+    "sync": "python scripts/sync_site_data.py --build"
   },
   "dependencies": {
     "astro": "^7.2.2",

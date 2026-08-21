@@ -1,0 +1,213 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Chart from '../../components/Chart.astro';
+import strategy from '../../data/strategy.json';
+import history from '../../data/history_records.json';
+
+const v31 = strategy.meta.v31;
+const GOLD = '#c8a24b';
+const GRAY = '#9ca3af';
+const GREEN = '#0f9d58';
+const RED = '#d64545';
+const NAVY = '#1e2761';
+
+// 月度收益柱状图（可点击）
+const months = strategy.nav.months.map((ym: string) => `${ym.slice(0, 4)}-${ym.slice(4)}`);
+const monthlyRets = strategy.monthly_compare?.v31 ?? [];
+const hsMonthly = strategy.monthly_compare?.hs300 ?? [];
+
+const monthlyOption = {
+  tooltip: {
+    trigger: 'axis',
+    valueFormatter: (v: number | null) => (v == null ? '-' : `${(v as number).toFixed(2)}%`),
+  },
+  legend: { data: ['V31 基金版', '沪深300'], top: 0, textStyle: { color: '#555' } },
+  grid: { left: 56, right: 20, top: 42, bottom: 52 },
+  xAxis: { type: 'category', data: months, axisLabel: { interval: 23, color: '#888' } },
+  yAxis: {
+    type: 'value', name: '月度收益（%）', nameTextStyle: { color: '#888' },
+    axisLabel: { color: '#888', formatter: '{value}%' }, splitLine: { lineStyle: { color: '#eef0f5' } },
+  },
+  dataZoom: [
+    { type: 'inside', start: 0, end: 100 },
+    { type: 'slider', height: 16, bottom: 8, start: 0, end: 100 },
+  ],
+  series: [
+    {
+      name: 'V31 基金版',
+      type: 'bar',
+      data: monthlyRets,
+      itemStyle: {
+        color: (p: any) => (p.value >= 0 ? GOLD : RED),
+        borderRadius: [3, 3, 0, 0],
+      },
+      barMaxWidth: 14,
+      emphasis: { itemStyle: { shadowBlur: 8, shadowColor: 'rgba(200,162,75,0.5)' } },
+    },
+    {
+      name: '沪深300',
+      type: 'line',
+      data: hsMonthly,
+      smooth: true,
+      symbol: 'none',
+      lineStyle: { width: 1.2, color: GRAY, type: 'dashed' },
+    },
+  ],
+};
+---
+<Layout
+  title="月度档案"
+  description="松果月度档案 — 172个月策略收益全量可追溯，点击查看每月选股名单与投前投后对比。"
+>
+  <!-- Hero -->
+  <section class="hero" style="padding: 48px 40px;">
+    <div class="hero-inner">
+      <span class="eyebrow">Monthly Archive · 月度档案</span>
+      <h1>
+        <span class="gold">{strategy.meta.window.months}</span> 个月<br />逐月选股档案
+      </h1>
+      <p class="hero-lead">
+        {strategy.meta.window.start} ~ {strategy.meta.window.end}，每月 Top5 名单 + 投前投后收益全量可查。
+        点击下方任意月份横条，展开该月的选股逻辑与个股表现。
+      </p>
+    </div>
+  </section>
+
+  <!-- 数据墙 -->
+  <section class="metric-grid">
+    <div class="metric-card">
+      <div class="label">覆盖月份</div>
+      <div class="value">{strategy.meta.window.months}</div>
+      <div class="sub">2012.04 ~ 2026.07</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">年化收益率</div>
+      <div class="value gold">+{v31.annual_return.toFixed(2)}%</div>
+      <div class="sub">V31 基金版（含成本）</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">历史选股档案</div>
+      <div class="value green">{history.count}</div>
+      <div class="sub">2016.04 起逐月 Top5</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">最大回撤</div>
+      <div class="value red">-{v31.mdd.toFixed(2)}%</div>
+      <div class="sub">同期沪深300 -40.56%</div>
+    </div>
+  </section>
+
+  <!-- 月度收益柱状图 -->
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">Monthly Returns</div>
+      <h2 class="section-title">172 个月收益全景（点击横条看详情）</h2>
+      <p class="section-sub">
+        金色为正收益月，红色为负收益月。点击下方搜索或直接看右侧「档案详情」区。
+      </p>
+    </div>
+    <Chart option={monthlyOption} height="440px" />
+  </section>
+
+  <!-- 搜索 + 档案详情 -->
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">Record Detail</div>
+      <h2 class="section-title">月度档案详情</h2>
+      <p class="section-sub">输入月份（如 202607 / 2020-03）查看该月选股名单与投前投后对比。有详细档案的月份（2016.04 起）展示个股，其余展示策略收益。</p>
+    </div>
+    <input
+      id="rec-search"
+      type="text"
+      placeholder="输入月份，如 202607 或 2020-03"
+      style="width:100%; padding:12px 16px; border:1px solid var(--border-strong); border-radius:8px; font-size:15px; margin-bottom:16px;"
+    />
+    <div id="rec-results"></div>
+  </section>
+
+  <!-- 数据 -->
+  <script type="application/json" id="__HISTORY_DATA__" set:html={JSON.stringify(history)}></script>
+  <script type="application/json" id="__STRATEGY_META__" set:html={JSON.stringify({ months: strategy.nav.months, monthly_compare: strategy.monthly_compare })}></script>
+
+  <script>
+    import '../../scripts/charts.ts';
+
+    const history = JSON.parse(document.getElementById('__HISTORY_DATA__')?.textContent ?? '{"months":[]}');
+    const meta = JSON.parse(document.getElementById('__STRATEGY_META__')?.textContent ?? '{}');
+    const input = document.getElementById('rec-search');
+    const results = document.getElementById('rec-results');
+
+    function normalize(ym: string): string {
+      // 202607 → 202607; 2020-03 → 202003
+      const s = ym.replace(/[^0-9]/g, '');
+      if (s.length === 6) return s;
+      if (s.length === 7) return s.slice(0, 4) + s.slice(5);
+      return s;
+    }
+
+    function renderRecord(ym6: string) {
+      if (!ym6 || ym6.length !== 6) {
+        results.innerHTML = '<p style="color:var(--text-3);font-size:14px;">请输入 6 位月份，如 202607</p>';
+        return;
+      }
+      // 1. 找历史选股档案
+      const rec = history.months?.find((m: any) => m.ym === ym6);
+      // 2. 找策略月度收益
+      const mi = meta.months?.indexOf(ym6);
+      const ret = mi >= 0 ? meta.monthly_compare?.v31?.[mi] : null;
+      const hs = mi >= 0 ? meta.monthly_compare?.hs300?.[mi] : null;
+
+      if (!rec && ret == null) {
+        results.innerHTML = `<p style="color:var(--red);font-size:14px;">未找到 ${ym6} 的数据</p>`;
+        return;
+      }
+
+      let html = '';
+      // 策略收益卡
+      if (ret != null) {
+        html += `
+          <div style="background:var(--surface-alt);border-radius:10px;padding:16px;margin-bottom:14px;">
+            <b style="font-size:15px;color:var(--navy-800);">${ym6.slice(0,4)} 年 ${ym6.slice(4)} 月 · 策略表现</b>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px;">
+              <div style="text-align:center;"><div style="font-size:18px;font-weight:700;color:${ret >= 0 ? 'var(--green)' : 'var(--red)'};">${ret >= 0 ? '+' : ''}${ret.toFixed(2)}%</div><div style="font-size:11px;color:var(--text-3);">V31 基金版</div></div>
+              <div style="text-align:center;"><div style="font-size:18px;font-weight:700;color:${hs >= 0 ? 'var(--green)' : 'var(--red)'};">${hs >= 0 ? '+' : ''}${hs.toFixed(2)}%</div><div style="font-size:11px;color:var(--text-3);">沪深300</div></div>
+              <div style="text-align:center;"><div style="font-size:18px;font-weight:700;color:${(ret - hs) >= 0 ? 'var(--green)' : 'var(--red)'};">${(ret - hs) >= 0 ? '+' : ''}${(ret - hs).toFixed(2)}pp</div><div style="font-size:11px;color:var(--text-3);">超额</div></div>
+            </div>
+          </div>`;
+      }
+
+      // 选股档案卡
+      if (rec) {
+        html += `
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px;">
+            <b style="font-size:15px;color:var(--navy-800);">${ym6.slice(0,4)} 年 ${ym6.slice(4)} 月 · 选股名单（${rec.picks?.length ?? 0} 只）</b>
+            <p style="font-size:12.5px;color:var(--text-3);margin:6px 0 10px;">报告期 ${rec.report_qe} · 候选 ${rec.candidate_count} 只 → 等权 Top${rec.picks?.length ?? 0}</p>
+            <table class="data-table"><thead><tr><th>代码</th><th>行业</th><th>FCF/EV</th><th>VC估值</th><th>投前月</th><th>投后月</th></tr></thead><tbody>
+            ${(rec.picks ?? []).map((p: any) => `
+              <tr>
+                <td>${p.ts_code}</td>
+                <td>${p.industry ?? '—'}</td>
+                <td>${p.fcf_ev ?? '—'}</td>
+                <td>${p.vc ?? '—'}</td>
+                <td class="${p.prev_ret != null && p.prev_ret < 0 ? 'neg' : 'pos'}">${p.prev_ret != null ? (p.prev_ret > 0 ? '+' : '') + p.prev_ret.toFixed(2) + '%' : '—'}</td>
+                <td class="${p.next_ret != null && p.next_ret < 0 ? 'neg' : 'pos'}">${p.next_ret != null ? (p.next_ret > 0 ? '+' : '') + p.next_ret.toFixed(2) + '%' : '—'}</td>
+              </tr>`).join('')}
+            </tbody></table>
+            <p style="font-size:12px;color:var(--text-3);margin-top:8px;">投前月 = 选股时点的上一月收益（止损过滤依据）；投后月 = 持仓月实际收益。</p>
+          </div>`;
+      }
+
+      results.innerHTML = html;
+    }
+
+    input?.addEventListener('input', () => {
+      const ym6 = normalize(input.value);
+      if (ym6.length === 6) renderRecord(ym6);
+      else results.innerHTML = '';
+    });
+  </script>
+
+  <div class="callout">
+    <b>数据说明</b>：2012.04-2016.03 为策略层收益追溯（该阶段底层选股数据未留存）；2016.04 起为完整逐月选股档案（Top5 名单 + 投前投后）。全部为历史回测口径，含成本，不构成投资建议。
+  </div>
+</Layout>

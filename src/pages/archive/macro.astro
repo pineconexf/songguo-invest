@@ -1,0 +1,246 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Chart from '../../components/Chart.astro';
+import macro from '../../data/macro_signal.json';
+
+const stats = macro.stats;
+const GOLD = '#c8a24b';
+const NAVY = '#1e2761';
+const GREEN = '#0f9d58';
+const RED = '#d64545';
+
+// 生成图表数据：shibor 走势 + 信号标记
+const chartWeeks = macro.weeks.map((w) => w.week);
+const shiborData = macro.weeks.map((w) => w.shibor);
+const looseWeeks = macro.weeks.filter((w) => w.signal === '宽松').map((w) => [w.week, w.shibor]);
+
+const macroOption = {
+  tooltip: {
+    trigger: 'axis',
+    formatter: (params: any[]) => {
+      const idx = params[0]?.dataIndex ?? 0;
+      const w = macro.weeks[idx];
+      return `<b>${w.week}</b><br/>Shibor 1W: ${w.shibor}%<br/>环比: ${w.diff_bp ?? '—'}bp<br/>信号: ${w.signal}<br/>HS300周: ${w.hs300_ret != null ? (w.hs300_ret * 100).toFixed(2) + '%' : '—'}<br/>中证500周: ${w.zz500_ret != null ? (w.zz500_ret * 100).toFixed(2) + '%' : '—'}`;
+    },
+  },
+  legend: { data: ['Shibor 1W 周均值', '宽松信号'], top: 0, textStyle: { color: '#555' } },
+  grid: { left: 56, right: 20, top: 42, bottom: 52 },
+  xAxis: { type: 'category', data: chartWeeks, boundaryGap: false, axisLabel: { interval: 99, color: '#888' } },
+  yAxis: {
+    type: 'value', name: 'Shibor（%）', nameTextStyle: { color: '#888' },
+    axisLabel: { color: '#888' }, splitLine: { lineStyle: { color: '#eef0f5' } },
+  },
+  dataZoom: [
+    { type: 'inside', start: 70, end: 100 },
+    { type: 'slider', height: 16, bottom: 8, start: 70, end: 100 },
+  ],
+  series: [
+    {
+      name: 'Shibor 1W 周均值',
+      type: 'line',
+      data: shiborData,
+      smooth: true,
+      symbol: 'none',
+      lineStyle: { width: 2, color: NAVY },
+      areaStyle: { opacity: 0.06, color: NAVY },
+    },
+    {
+      name: '宽松信号',
+      type: 'scatter',
+      data: looseWeeks,
+      symbolSize: 5,
+      itemStyle: { color: GREEN, opacity: 0.6 },
+      tooltip: { show: false },
+    },
+  ],
+};
+
+// 按年份聚合统计
+const byYear: Record<string, { loose: number; tight: number; total: number }> = {};
+for (const w of macro.weeks) {
+  const year = w.week.slice(0, 4);
+  if (!byYear[year]) byYear[year] = { loose: 0, tight: 0, total: 0 };
+  byYear[year].total++;
+  if (w.signal === '宽松') byYear[year].loose++;
+  else byYear[year].tight++;
+}
+const yearRows = Object.entries(byYear)
+  .map(([year, v]) => ({
+    year,
+    loose: v.loose,
+    tight: v.tight,
+    total: v.total,
+    pct: Math.round((v.loose / v.total) * 100),
+  }))
+  .sort((a, b) => a.year.localeCompare(b.year));
+---
+<Layout
+  title="宏观信号档案"
+  description="松果宏观信号档案 — 809周Shibor全量数据可追溯，宽松/收紧信号时间线，每周期前后表现。"
+>
+  <!-- Hero -->
+  <section class="hero" style="padding: 48px 40px;">
+    <div class="hero-inner">
+      <span class="eyebrow">Macro Archive · 宏观档案</span>
+      <h1>
+        <span class="gold">{stats.total_weeks}</span> 周宏观信号<br />全量可追溯
+      </h1>
+      <p class="hero-lead">
+        Shibor 1W 周均值环比下行 &gt;5bp → 宽松（买入中证500），否则空仓。
+        {stats.start} ~ {stats.end} 共 {stats.total_weeks} 周，宽松 {stats.loose_weeks} 周（{stats.loose_pct}%）。
+        每个信号都对应当时的市场表现，可逐周点击追溯。
+      </p>
+    </div>
+  </section>
+
+  <!-- 数据墙 -->
+  <section class="metric-grid">
+    <div class="metric-card">
+      <div class="label">总周数</div>
+      <div class="value">{stats.total_weeks}</div>
+      <div class="sub">{stats.start} ~ {stats.end}</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">宽松信号周</div>
+      <div class="value green">{stats.loose_weeks}</div>
+      <div class="sub">占 {stats.loose_pct}%</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">收紧信号周</div>
+      <div class="value red">{stats.tight_weeks}</div>
+      <div class="sub">占 {(100 - stats.loose_pct).toFixed(1)}%</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">信号阈值</div>
+      <div class="value" style="font-size: 24px;">5bp</div>
+      <div class="sub">walk-forward 样本外验证通过</div>
+    </div>
+  </section>
+
+  <!-- Shibor 走势图 -->
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">Shibor Trend</div>
+      <h2 class="section-title">Shibor 1W 周均值走势（含宽松信号标记）</h2>
+      <p class="section-sub">
+        绿点为宽松信号周（环比下行&gt;5bp）。拖动下方滑块缩放查看任意时段，鼠标悬停看该周详细数据。
+      </p>
+    </div>
+    <Chart option={macroOption} height="460px" />
+  </section>
+
+  <!-- 分年统计 -->
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">By Year</div>
+      <h2 class="section-title">分年宽松/收紧分布</h2>
+      <p class="section-sub">每年有多少周处于宽松信号（买入）状态——牛市年份宽松周多，熊市年份收紧周多。</p>
+    </div>
+    <div class="table-wrap" style="max-height: 460px; overflow-y: auto;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>年份</th>
+            <th>宽松周</th>
+            <th>收紧周</th>
+            <th>宽松占比</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            yearRows.map((y) => (
+              <tr>
+                <td>{y.year}</td>
+                <td class="pos">{y.loose}</td>
+                <td class="neg">{y.tight}</td>
+                <td>{y.pct}%</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 最新信号 -->
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">Latest</div>
+      <h2 class="section-title">最新信号状态</h2>
+    </div>
+    {
+      (() => {
+        const last = macro.weeks[macro.weeks.length - 1];
+        const isLoose = last.signal === '宽松';
+        return (
+          <div class:list={['callout', !isLoose && 'warn']} style="font-size: 15px;">
+            <b>{last.week} · Shibor {last.shibor}% · 环比 {last.diff_bp ?? '—'}bp</b><br/>
+            当前信号：<b>{last.signal}</b> → {last.action}。{stats.note}
+          </div>
+        );
+      })()
+    }
+  </section>
+
+  <!-- 搜索框（客户端过滤） -->
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">Search</div>
+      <h2 class="section-title">按周搜索信号</h2>
+      <p class="section-sub">输入周编号（如 2026W34 / 2020W10）或年份（如 2015），快速定位。</p>
+    </div>
+    <input
+      id="macro-search"
+      type="text"
+      placeholder="输入周编号或年份，如 2020W10 或 2015"
+      style="width:100%; padding:12px 16px; border:1px solid var(--border-strong); border-radius:8px; font-size:15px; margin-bottom:16px;"
+    />
+    <div id="macro-results" style="max-height:420px; overflow-y:auto;"></div>
+  </section>
+
+  <script>
+    import '../../scripts/charts.ts';
+
+    // 客户端搜索：周编号/年份过滤
+    const weeks = JSON.parse(
+      document.getElementById('__MACRO_DATA__')?.textContent ?? '[]'
+    );
+    const input = document.getElementById('macro-search');
+    const results = document.getElementById('macro-results');
+
+    function render(q: string) {
+      const query = q.trim().toUpperCase();
+      if (!query) {
+        results.innerHTML = '<p style="color:var(--text-3);font-size:14px;">输入关键词开始搜索</p>';
+        return;
+      }
+      const matched = weeks.filter((w: any) => w.week.toUpperCase().includes(query));
+      if (matched.length === 0) {
+        results.innerHTML = '<p style="color:var(--red);font-size:14px;">未找到匹配的周</p>';
+        return;
+      }
+      const rows = matched
+        .slice(0, 50)
+        .map(
+          (w: any) => `
+          <div style="padding:12px 14px;border-bottom:1px solid var(--border);font-size:14px;">
+            <b>${w.week}</b> · Shibor ${w.shibor}% · 环比 ${w.diff_bp ?? '—'}bp ·
+            <span style="color:${w.signal === '宽松' ? 'var(--green)' : 'var(--red)'};font-weight:600;">${w.signal}</span>
+            ${w.hs300_ret != null ? ` · HS300周 ${(w.hs300_ret * 100).toFixed(2)}%` : ''}
+            ${w.zz500_ret != null ? ` · 中证500周 ${(w.zz500_ret * 100).toFixed(2)}%` : ''}
+          </div>`
+        )
+        .join('');
+      results.innerHTML = rows + (matched.length > 50 ? `<p style="color:var(--text-3);font-size:12px;padding:8px;">…共 ${matched.length} 条，仅显示前 50 条</p>` : '');
+    }
+
+    input?.addEventListener('input', () => render(input.value));
+  </script>
+
+  <!-- 全量数据（供搜索脚本读取） -->
+  <script type="application/json" id="__MACRO_DATA__" set:html={JSON.stringify(macro.weeks)}></script>
+
+  <div class="callout" style="margin-top: 16px;">
+    <b>口径说明</b>：Shibor 数据来自公开市场数据（tushare），信号判定严格按「本周 vs 上周 5 交易日均值环比」规则，与实盘信号脚本同口径。历史信号为回算结果，不构成投资建议。
+  </div>
+</Layout>
