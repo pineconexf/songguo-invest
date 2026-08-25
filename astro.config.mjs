@@ -3,8 +3,9 @@ import { defineConfig } from 'astro/config';
 
 // https://astro.build/config
 export default defineConfig({
-  // 部署后替换为实际域名
-  site: 'https://songguo-invest.pages.dev',
+  // GitHub Pages 仓库子路径部署（2026-08-25）：base 必须匹配仓库名，否则资源 404 页面裸奔
+  site: 'https://pineconexf.github.io',
+  base: '/songguo-invest/',
   output: 'static',
   compressHTML: true,
 });

@@ -21,7 +21,8 @@ echo "③ 更新 gh-pages 分支..."
 git checkout -q gh-pages
 rm -rf index.html _astro about archive backtest favicon.svg macro methodology philosophy portfolio ranking tools dist .nojekyll
 cp -r "$TMP"/* . && touch .nojekyll
-git add -A
+# ⚠️ 显式文件列表，禁止 git add -A（gh-pages 分支无 .gitignore，-A 会把 node_modules 提交进仓库并污染分支切换）
+git add index.html _astro about archive backtest favicon.ico favicon.svg macro methodology philosophy portfolio ranking tools .nojekyll
 git commit -q -m "deploy: $(date +%Y%m%d-%H%M) 构建产物"
 git push origin gh-pages 2>&1 | tail -1
 git checkout -q main
