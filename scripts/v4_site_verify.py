@@ -46,21 +46,29 @@ print('Slogan 渲染:', ev("document.querySelector('.slogan') ? document.querySe
 print('nav 颜色:', ev("getComputedStyle(document.querySelector('.nav-link')).color"))
 print('CSS rules:', ev("document.styleSheets[0] ? document.styleSheets[0].cssRules.length : 0"))
 
-# 2) 爬全站内链（href 是 /songguo-invest/ 开头的路径形式）
-print('=== 全站内链检查 ===')
-links = ev(f"""Array.from(new Set(Array.from(document.querySelectorAll('a[href^="/songguo-invest/"]')).map(a => a.getAttribute('href'))))""") or []
-# 逐页收集更多链接：访问每个主页面再爬
-pages = ['/', '/philosophy/', '/methodology/', '/macro/', '/backtest/', '/portfolio/', '/ranking/', '/tools/', '/archive/', '/about/']
-all_links = set(links)
+# 2) 爬全站所有内链（无盲区：所有 a[href]，含无前缀的，解析成绝对 URL 检查）
+# ⚠️ SITE 已含 /songguo-invest，pages 用不带前缀的路径（避免双重前缀 404 页污染收集）
+print('=== 全站内链检查（无盲区）===')
+pages = ['/', '/philosophy/', '/methodology/', '/macro/',
+         '/backtest/', '/portfolio/', '/ranking/',
+         '/tools/', '/tools/valuator/', '/tools/compound/',
+         '/archive/', '/archive/macro/', '/archive/monthly/',
+         '/about/']
+all_links = set()
 for pg in pages:
     cmd('Page.navigate', {'url': SITE + pg})
-    time.sleep(2.5)
-    more = ev("""Array.from(document.querySelectorAll('a[href^="/songguo-invest/"]')).map(a => a.getAttribute('href'))""") or []
+    time.sleep(2)
+    more = ev("""Array.from(document.querySelectorAll('a[href]')).map(a => a.getAttribute('href')).filter(h => h && !h.startsWith('#') && !h.startsWith('http'))""") or []
     all_links.update(more)
-print(f'共 {len(all_links)} 个内链，逐页 HTTP 检查...')
+# 解析成绝对 URL
+def resolve(h):
+    if h.startswith('/'):
+        return 'https://pineconexf.github.io' + h
+    return SITE + '/' + h
+print(f'共 {len(all_links)} 个内链（含无前缀的），逐页 HTTP 检查...')
 bad = []
 for link in sorted(all_links):
-    url = 'https://pineconexf.github.io' + link  # link 已含 /songguo-invest/ 前缀
+    url = resolve(link)
     try:
         req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
         r = urllib.request.urlopen(req, timeout=15)
