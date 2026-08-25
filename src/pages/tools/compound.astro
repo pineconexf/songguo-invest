@@ -1,0 +1,79 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+<Layout
+  title="复利计算器"
+  description="松果复利计算器 — 输入本金、年化收益率、年限，计算复利终值。免费工具，不构成投资建议。"
+>
+  <section class="hero" style="padding: 56px 48px;">
+    <div class="hero-inner">
+      <span class="eyebrow">Free Tool · 免费工具</span>
+      <h1>
+        复利是第八大奇迹。<br /><span class="gold">算一笔账，你就懂了</span>
+      </h1>
+      <p class="hero-lead">
+        年化 24.30%（V31 含成本口径）14 年能变多少？换成 10%、15% 又差多少？
+        输入数字，立刻看见时间的力量。
+      </p>
+    </div>
+  </section>
+
+  <section class="card" style="max-width: 640px; margin: 0 auto;">
+    <div class="section-head">
+      <div class="section-kicker">Compound · 复利计算</div>
+      <h2 class="section-title">输入你的参数</h2>
+    </div>
+    <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap: var(--sp-4); margin-bottom: var(--sp-4);">
+      <label class="valuator-field">
+        <span>本金（元）</span>
+        <input id="c-principal" type="number" step="1000" min="0" value="100000" />
+      </label>
+      <label class="valuator-field">
+        <span>年化收益率（%）</span>
+        <input id="c-rate" type="number" step="0.5" min="0" value="10" />
+      </label>
+      <label class="valuator-field">
+        <span>投资年限（年）</span>
+        <input id="c-years" type="number" step="1" min="1" value="10" />
+      </label>
+      <label class="valuator-field">
+        <span>每年追加投入（元，可选）</span>
+        <input id="c-add" type="number" step="1000" min="0" value="0" />
+      </label>
+    </div>
+    <button id="c-run" class="btn btn-gold" style="width:100%;">计算 →</button>
+
+    <div id="c-result" style="display:none; margin-top: var(--sp-5); border-top: 1px solid rgba(139,94,60,0.15); padding-top: var(--sp-4);">
+      <div style="text-align:center;">
+        <div id="c-final" class="value gold" style="font-size:44px;">--</div>
+        <div style="font-size:13px; color: var(--navy-600);">期末总资产</div>
+        <div id="c-meta" style="font-size:14px; color: var(--navy-700); margin-top: 10px;">--</div>
+      </div>
+      <div class="callout" style="margin-top: var(--sp-4);">
+        <b>对照</b>：同期沪深300 年化约 3.97%。若 10 年本金 10 万、每年追加 1 万，按 3.97% 复利期末约 19.6 万——
+        与按体系执行（示例年化 24.30%）的差距，就是"体系化稳健投资"的价值。数据为历史回测，不构成投资建议。
+      </div>
+    </div>
+  </section>
+
+  <script>
+    function run() {
+      const $ = (id: string) => document.getElementById(id) as HTMLInputElement;
+      const p = parseFloat($('c-principal').value) || 0;
+      const r = (parseFloat($('c-rate').value) || 0) / 100;
+      const n = parseInt($('c-years').value) || 1;
+      const a = parseFloat($('c-add').value) || 0;
+      // 复利终值：本金复利 + 每年追加的年金复利（期末追加）
+      let total = p * Math.pow(1 + r, n);
+      if (a > 0) { for (let i = 1; i <= n; i++) total += a * Math.pow(1 + r, n - i); }
+      const profit = total - p - a * n;
+      const fmt = (v: number) => v >= 10000 ? (v / 10000).toFixed(1) + ' 万' : v.toFixed(0) + ' 元';
+      ($('c-final') as HTMLElement).textContent = fmt(total);
+      ($('c-meta') as HTMLElement).textContent =
+        `本金 ${fmt(p)} + 追加 ${a * n >= 10000 ? fmt(a * n) : (a * n) + ' 元'}，` +
+        `总投入 ${fmt(p + a * n)}，收益 ${fmt(profit)}（年化 ${(r * 100).toFixed(1)}%，${n} 年）`;
+      ($('c-result') as HTMLElement).style.display = 'block';
+    }
+    document.getElementById('c-run')?.addEventListener('click', run);
+  </script>
+</Layout>

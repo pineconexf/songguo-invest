@@ -265,12 +265,47 @@ button {
   font-size: 16.5px;
   color: rgba(255, 255, 255, 0.82);
   max-width: 620px;
-  margin-bottom: var(--sp-5);
+  margin-bottom: var(--sp-2);
 }
 
 .hero .hero-lead b {
   color: #fff;
   font-weight: 600;
+}
+
+/* Slogan（2026-08-25 找回原句）：金色衬线感 tagline，介于 lead 与数字锚点之间 */
+.hero .slogan {
+  font-size: 15px;
+  letter-spacing: 0.06em;
+  color: var(--gold-400);
+  font-weight: 500;
+  margin: 0 auto var(--sp-4);
+  max-width: 620px;
+}
+
+/* 估值计算器表单 */
+.valuator-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--navy-700);
+  font-weight: 600;
+}
+.valuator-field input {
+  padding: 11px 14px;
+  border: 1px solid rgba(139, 94, 60, 0.25);
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--navy-900);
+  background: var(--cream, #faf6ef);
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+.valuator-field input:focus {
+  outline: none;
+  border-color: var(--gold-500);
+  box-shadow: 0 0 0 3px rgba(217, 164, 65, 0.15);
 }
 
 .hero .hero-actions {

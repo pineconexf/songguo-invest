@@ -19,7 +19,8 @@ echo "② dist 暂存完成: $(ls "$TMP" | wc -l) 项"
 
 echo "③ 更新 gh-pages 分支..."
 git checkout -q gh-pages
-rm -rf index.html _astro about archive backtest favicon.svg macro methodology philosophy portfolio ranking tools dist .nojekyll
+# ⚠️ rm 清单不含 dist/node_modules（dist 已不入 gh-pages；node_modules 是 untracked，删了会丢 main 的依赖）
+rm -rf index.html _astro about archive backtest favicon.ico favicon.svg macro methodology philosophy portfolio ranking tools .nojekyll
 cp -r "$TMP"/* . && touch .nojekyll
 # ⚠️ 显式文件列表，禁止 git add -A（gh-pages 分支无 .gitignore，-A 会把 node_modules 提交进仓库并污染分支切换）
 git add index.html _astro about archive backtest favicon.ico favicon.svg macro methodology philosophy portfolio ranking tools .nojekyll

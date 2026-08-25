@@ -1,0 +1,130 @@
+---
+import Layout from '../../layouts/Layout.astro';
+
+// 估值计算器 MVP（2026-08-25）：纯前端、无后端、输入即算
+// 判定逻辑对标松果体系口径：质量看 ROE（V27.2 收紧信号）、估值看 PB/PE 组合（V30 分位思路）
+// 合规：方法论演示工具，不构成投资建议
+---
+<Layout
+  title="估值计算器"
+  description="松果估值计算器 — 输入 PE/PB/ROE/股息率，按松果体系口径给出质量-估值-股息三维画像与贵贱档位。免费工具，不构成投资建议。"
+>
+  <section class="hero" style="padding: 56px 48px;">
+    <div class="hero-inner">
+      <span class="eyebrow">Free Tool · 免费工具</span>
+      <h1>
+        这只股票贵不贵？<br /><span class="gold">按松果体系口径算给你看</span>
+      </h1>
+      <p class="hero-lead">
+        不预测涨跌。只回答一个问题：以当前的 <b>质量、估值、股息</b> 三维度，
+        这只股票在松果体系里属于什么档位。输入指标，30 秒出结果。
+      </p>
+    </div>
+  </section>
+
+  <section class="card" style="max-width: 760px; margin: 0 auto;">
+    <div class="section-head">
+      <div class="section-kicker">Valuator · 三维画像</div>
+      <h2 class="section-title">输入基本面指标</h2>
+      <p class="section-sub">数值来自你看到的财报/行情（PE·PB·ROE·股息率），或券商 App 直接查。</p>
+    </div>
+
+    <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap: var(--sp-4); margin-bottom: var(--sp-4);">
+      <label class="valuator-field">
+        <span>市盈率 PE（倍）</span>
+        <input id="v-pe" type="number" step="0.1" min="0" placeholder="如 18.5" />
+      </label>
+      <label class="valuator-field">
+        <span>市净率 PB（倍）</span>
+        <input id="v-pb" type="number" step="0.01" min="0" placeholder="如 2.3" />
+      </label>
+      <label class="valuator-field">
+        <span>ROE 净资产收益率（%）</span>
+        <input id="v-roe" type="number" step="0.1" min="0" placeholder="如 12.5" />
+      </label>
+      <label class="valuator-field">
+        <span>股息率（%，可选）</span>
+        <input id="v-dy" type="number" step="0.1" min="0" placeholder="如 2.8" />
+      </label>
+    </div>
+
+    <button id="v-run" class="btn btn-gold" style="width:100%;">开始体检 →</button>
+
+    <!-- 结果区（初始隐藏） -->
+    <div id="v-result" style="display:none; margin-top: var(--sp-5); border-top: 1px solid rgba(139,94,60,0.15); padding-top: var(--sp-4);">
+      <div style="display:flex; align-items:center; gap: var(--sp-4); flex-wrap: wrap;">
+        <div style="text-align:center;">
+          <div id="v-score" class="value gold" style="font-size:44px;">--</div>
+          <div style="font-size:13px; color: var(--navy-600);">综合评分（0-100）</div>
+        </div>
+        <div>
+          <div id="v-grade" class="slogan" style="font-size:22px; margin:0;">--</div>
+          <div id="v-oneword" style="font-size:14px; color: var(--navy-600); margin-top:4px;">--</div>
+        </div>
+      </div>
+      <div id="v-bars" style="margin-top: var(--sp-4); display:grid; gap: var(--sp-2);"></div>
+      <div class="callout" style="margin-top: var(--sp-4);">
+        <b>数据说明</b>：本工具为方法论演示，指标由你手动输入，结果按松果体系公开口径计算（质量 ROE 门槛、估值 PB/PE 分档、股息增强），
+        <b>不构成投资建议</b>，不代表任何证券的买卖推荐。投资有风险，入市需谨慎。
+      </div>
+    </div>
+  </section>
+
+  <div class="callout" style="max-width: 760px; margin: var(--sp-4) auto 0;">
+    <b>维度口径</b>：质量（ROE）——近 3 年 ROE 能否持续 &gt;8%（V27.2 收紧信号）；估值（PB/PE）——
+    PB 与 PE 组合分档（V30 分位思路的简化版）；股息（增强项）——&gt;3% 视为有现金回报托底。
+    完整体系见 <a href="/songguo-invest/methodology/">四层体系架构</a>。
+  </div>
+
+  <script>
+    function run() {
+      const $ = (id: string) => document.getElementById(id) as HTMLInputElement;
+      const pe = parseFloat($('v-pe').value), pb = parseFloat($('v-pb').value);
+      const roe = parseFloat($('v-roe').value), dy = parseFloat($('v-dy').value) || 0;
+      const miss: string[] = [];
+      if (!(pe >= 0)) miss.push('PE'); if (!(pb >= 0)) miss.push('PB'); if (!(roe >= 0)) miss.push('ROE');
+      if (miss.length) { alert('请填写：' + miss.join('、')); return; }
+
+      // —— 三维评分（0-100）——
+      // 质量分：ROE >=15 满分，8% 门槛 60 分，每降 1 分减 4 分，最低 0
+      const q = Math.max(0, Math.min(100, roe >= 15 ? 100 : 60 + (roe - 8) * 4));
+      // 估值分：PB<=1.5 且 PE<=15 → 100；PB<=3 且 PE<=25 → 75；PB<=5 且 PE<=40 → 50；否则 20
+      let v = 20;
+      if (pb <= 1.5 && pe <= 15) v = 100;
+      else if (pb <= 3 && pe <= 25) v = 75;
+      else if (pb <= 5 && pe <= 40) v = 50;
+      // 股息增强：>=3% +8，>=5% +12
+      const d = dy >= 5 ? 12 : dy >= 3 ? 8 : dy > 0 ? 4 : 0;
+      const total = Math.round(q * 0.4 + v * 0.45 + d + (dy > 0 ? 4 : 0) * 0); // 质量40% 估值45% 股息直接加分
+
+      // —— 档位 ——
+      let grade = '偏贵', word = '估值高于体系舒适区，需等待更好的价格或更强的质量';
+      if (total >= 80) { grade = '便宜区间'; word = '低估值+质量达标，属于松果体系的舒适买入带（仍需个案验证基本面）'; }
+      else if (total >= 65) { grade = '合理区间'; word = '估值与质量匹配，可放进观察池跟踪'; }
+      else if (total >= 50) { grade = '中性区间'; word = '质量或估值有一项拖后腿，建议拆开看分项'; }
+
+      ($('v-score') as HTMLElement).textContent = String(total);
+      ($('v-grade') as HTMLElement).textContent = grade;
+      ($('v-oneword') as HTMLElement).textContent = word;
+      ($('v-result') as HTMLElement).style.display = 'block';
+
+      // 分项条
+      const bars = [
+        { name: '质量（ROE）', val: Math.round(q), hint: `ROE ${roe}%${roe >= 15 ? ' · 优秀' : roe >= 8 ? ' · 达标' : ' · 低于门槛'}` },
+        { name: '估值（PB/PE）', val: Math.round(v), hint: `PB ${pb} / PE ${pe} · ${pb <= 3 && pe <= 25 ? '合理带' : '偏高带'}` },
+        { name: '股息增强', val: Math.min(100, Math.round(d * 8.33)), hint: dy > 0 ? `股息率 ${dy}% · ${dy >= 3 ? '有托底' : '偏低'}` : '未填写' },
+      ];
+      ($('v-bars') as HTMLElement).innerHTML = bars.map((b) => `
+        <div>
+          <div style="display:flex; justify-content:space-between; font-size:13px; color:var(--navy-700); margin-bottom:4px;">
+            <span>${b.name} <span style="color:var(--navy-600);">${b.hint}</span></span>
+            <span style="font-weight:700; color:var(--gold-600);">${b.val} 分</span>
+          </div>
+          <div style="height:8px; background:rgba(139,94,60,0.12); border-radius:4px; overflow:hidden;">
+            <div style="width:${b.val}%; height:100%; background:linear-gradient(90deg, var(--gold-500), var(--gold-400)); border-radius:4px;"></div>
+          </div>
+        </div>`).join('');
+    }
+    document.getElementById('v-run')?.addEventListener('click', run);
+  </script>
+</Layout>

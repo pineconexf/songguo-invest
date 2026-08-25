@@ -5,50 +5,60 @@ const tools = [
   {
     type: '查询计算类',
     name: '估值计算器',
-    desc: '输入股票代码，多维度估值分析：PE/PB/ROE/现金流，一眼看清贵还是便宜。',
+    desc: '输入 PE/PB/ROE/股息率，按松果体系口径给出质量-估值-股息三维画像与贵贱档位。纯前端，30 秒出结果。',
     status: 'live',
-    statusLabel: '即将上线',
+    statusLabel: '已上线',
     cta: '免费使用',
+    href: '/songguo-invest/tools/valuator/',
+  },
+  {
+    type: '查询计算类',
+    name: '复利计算器',
+    desc: '年化收益 × 年限，算一笔账：你的长期复利目标需要怎样的年化，或某个年化十年后变多少。',
+    status: 'live',
+    statusLabel: '已上线',
+    cta: '免费使用',
+    href: '/songguo-invest/tools/compound/',
   },
   {
     type: '资讯讯息类',
     name: '每日资讯解读',
     desc: '每日宏观/行业/个股资讯深度解读，帮你在信息洪流中抓住关键信号。',
-    status: 'live',
-    statusLabel: '即将上线',
-    cta: '订阅提醒',
+    status: 'soon',
+    statusLabel: '开发中',
+    cta: '敬请期待',
   },
   {
     type: '行业研究类',
     name: '行业研究报告',
     desc: '行业研究报告自动生成：景气度、竞争格局、估值水位、政策催化一页看懂。',
     status: 'soon',
-    statusLabel: '规划中',
-    cta: '了解详情',
+    statusLabel: '开发中',
+    cta: '敬请期待',
   },
   {
     type: '资讯讯息类',
     name: '个股解读',
     desc: '个股多维度解读：基本面、行业地位、估值水平、风险提示。',
     status: 'soon',
-    statusLabel: '规划中',
-    cta: '了解详情',
+    statusLabel: '开发中',
+    cta: '敬请期待',
   },
   {
     type: '查询计算类',
     name: '回测验证工具',
     desc: '策略历史回测验证：把你的选股思路放回 14 年数据里检验。',
     status: 'soon',
-    statusLabel: '规划中',
-    cta: '了解详情',
+    statusLabel: '开发中',
+    cta: '敬请期待',
   },
   {
     type: '行业研究类',
     name: '行业对比工具',
     desc: '跨行业横向对比：估值、增速、资金流，找出相对低估的赛道。',
     status: 'soon',
-    statusLabel: '规划中',
-    cta: '了解详情',
+    statusLabel: '开发中',
+    cta: '敬请期待',
   },
 ];
 ---
@@ -88,7 +98,11 @@ const tools = [
             <p>{t.desc}</p>
             <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px;">
               <span class:list={['tool-status', t.status]}>{t.statusLabel}</span>
-              <span style="font-size:13px; font-weight:600; color:var(--gold-600);">{t.cta} →</span>
+              {t.href ? (
+                <a href={t.href} style="font-size:13px; font-weight:600; color:var(--gold-600); text-decoration:none;">{t.cta} →</a>
+              ) : (
+                <span style="font-size:13px; font-weight:600; color:var(--navy-500);">{t.cta}</span>
+              )}
             </div>
           </div>
         ))
@@ -105,7 +119,7 @@ const tools = [
       公众号/知乎/雪球/百家号同步更新。
     </p>
     <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
-      <a href="/about/" class="btn btn-gold">了解更多 →</a>
+      <a href="/songguo-invest/about/" class="btn btn-gold">了解更多 →</a>
       <span class="btn btn-ghost" style="pointer-events: none;">公众号：松果商业笔记</span>
     </div>
   </section>
