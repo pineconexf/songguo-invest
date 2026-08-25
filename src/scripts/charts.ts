@@ -27,11 +27,11 @@ echarts.use([
   CanvasRenderer,
 ]);
 
-const NAVY = '#1e2761';
-const GOLD = '#c8a24b';
-const GREEN = '#1a9e5c';
-const RED = '#d64545';
-const GRAY = '#9ca3af';
+const NAVY = '#5c3a21';
+const GOLD = '#d9a441';
+const GREEN = '#4a7c59';
+const RED = '#b3543e';
+const GRAY = '#9a8c7a';
 
 export const theme = { NAVY, GOLD, GREEN, RED, GRAY };
 

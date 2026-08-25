@@ -5,11 +5,11 @@ import strategy from '../../data/strategy.json';
 import history from '../../data/history_records.json';
 
 const v31 = strategy.meta.v31;
-const GOLD = '#c8a24b';
-const GRAY = '#9ca3af';
-const GREEN = '#0f9d58';
-const RED = '#d64545';
-const NAVY = '#1e2761';
+const GOLD = '#d9a441';
+const GRAY = '#a39684';
+const GREEN = '#4a7c59';
+const RED = '#b3543e';
+const NAVY = '#5c3a21';
 
 // 月度收益柱状图（可点击）
 const months = strategy.nav.months.map((ym: string) => `${ym.slice(0, 4)}-${ym.slice(4)}`);
@@ -23,10 +23,10 @@ const monthlyOption = {
   },
   legend: { data: ['V31 基金版', '沪深300'], top: 0, textStyle: { color: '#555' } },
   grid: { left: 56, right: 20, top: 42, bottom: 52 },
-  xAxis: { type: 'category', data: months, axisLabel: { interval: 23, color: '#888' } },
+  xAxis: { type: 'category', data: months, axisLabel: { interval: 23, color: '#8a7a66' } },
   yAxis: {
-    type: 'value', name: '月度收益（%）', nameTextStyle: { color: '#888' },
-    axisLabel: { color: '#888', formatter: '{value}%' }, splitLine: { lineStyle: { color: '#eef0f5' } },
+    type: 'value', name: '月度收益（%）', nameTextStyle: { color: '#8a7a66' },
+    axisLabel: { color: '#8a7a66', formatter: '{value}%' }, splitLine: { lineStyle: { color: '#f0e8d9' } },
   },
   dataZoom: [
     { type: 'inside', start: 0, end: 100 },

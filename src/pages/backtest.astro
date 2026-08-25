@@ -5,10 +5,10 @@ import strategy from '../data/strategy.json';
 
 const v31 = strategy.meta.v31;
 const hs300 = strategy.meta.hs300;
-const GOLD = '#c8a24b';
-const GRAY = '#9ca3af';
-const RED = '#d64545';
-const NAVY = '#1e2761';
+const GOLD = '#d9a441';
+const GRAY = '#a39684';
+const RED = '#b3543e';
+const NAVY = '#5c3a21';
 
 const navMonths = strategy.nav.months.map((ym: string) => `${ym.slice(0, 4)}-${ym.slice(4)}`);
 
@@ -20,8 +20,8 @@ const navOption = {
   },
   legend: { data: ['V31 基金版', '沪深300'], top: 0, textStyle: { color: '#555' } },
   grid: { left: 56, right: 20, top: 42, bottom: 52 },
-  xAxis: { type: 'category', data: navMonths, boundaryGap: false, axisLabel: { interval: 23, color: '#888' } },
-  yAxis: { type: 'value', name: '净值（倍数）', nameTextStyle: { color: '#888' }, scale: true, axisLabel: { color: '#888' }, splitLine: { lineStyle: { color: '#eef0f5' } } },
+  xAxis: { type: 'category', data: navMonths, boundaryGap: false, axisLabel: { interval: 23, color: '#8a7a66' } },
+  yAxis: { type: 'value', name: '净值（倍数）', nameTextStyle: { color: '#8a7a66' }, scale: true, axisLabel: { color: '#8a7a66' }, splitLine: { lineStyle: { color: '#f0e8d9' } } },
   dataZoom: [
     { type: 'inside', start: 0, end: 100 },
     { type: 'slider', height: 16, bottom: 8, start: 0, end: 100 },
@@ -40,8 +40,8 @@ const yearlyOption = {
   },
   legend: { data: ['V31 基金版', '沪深300'], top: 0, textStyle: { color: '#555' } },
   grid: { left: 56, right: 20, top: 42, bottom: 32 },
-  xAxis: { type: 'category', data: strategy.yearly.years, axisLabel: { color: '#888' } },
-  yAxis: { type: 'value', name: '年度收益（%）', nameTextStyle: { color: '#888' }, axisLabel: { color: '#888', formatter: '{value}%' }, splitLine: { lineStyle: { color: '#eef0f5' } } },
+  xAxis: { type: 'category', data: strategy.yearly.years, axisLabel: { color: '#8a7a66' } },
+  yAxis: { type: 'value', name: '年度收益（%）', nameTextStyle: { color: '#8a7a66' }, axisLabel: { color: '#8a7a66', formatter: '{value}%' }, splitLine: { lineStyle: { color: '#f0e8d9' } } },
   series: [
     { name: 'V31 基金版', type: 'bar', data: strategy.yearly.v31, itemStyle: { color: GOLD, borderRadius: [3, 3, 0, 0] }, barMaxWidth: 26 },
     { name: '沪深300', type: 'bar', data: strategy.yearly.hs300, itemStyle: { color: GRAY, borderRadius: [3, 3, 0, 0] }, barMaxWidth: 26 },
@@ -56,8 +56,8 @@ const ddOption = {
   },
   legend: { data: ['V31 基金版 回撤'], top: 0, textStyle: { color: '#555' } },
   grid: { left: 56, right: 20, top: 42, bottom: 52 },
-  xAxis: { type: 'category', data: navMonths, boundaryGap: false, axisLabel: { interval: 23, color: '#888' } },
-  yAxis: { type: 'value', name: '回撤（%）', nameTextStyle: { color: '#888' }, axisLabel: { color: '#888', formatter: '{value}%' }, splitLine: { lineStyle: { color: '#eef0f5' } } },
+  xAxis: { type: 'category', data: navMonths, boundaryGap: false, axisLabel: { interval: 23, color: '#8a7a66' } },
+  yAxis: { type: 'value', name: '回撤（%）', nameTextStyle: { color: '#8a7a66' }, axisLabel: { color: '#8a7a66', formatter: '{value}%' }, splitLine: { lineStyle: { color: '#f0e8d9' } } },
   dataZoom: [
     { type: 'inside', start: 0, end: 100 },
     { type: 'slider', height: 16, bottom: 8, start: 0, end: 100 },

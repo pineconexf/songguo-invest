@@ -5,8 +5,8 @@ import strategy from '../data/strategy.json';
 
 const v31 = strategy.meta.v31;
 const hs300 = strategy.meta.hs300;
-const GOLD = '#c8a24b';
-const GRAY = '#9ca3af';
+const GOLD = '#d9a441';
+const GRAY = '#a39684';
 
 const navMonths = strategy.nav.months.map((ym: string) => `${ym.slice(0, 4)}-${ym.slice(4)}`);
 
@@ -21,15 +21,15 @@ const navOption = {
     type: 'category',
     data: navMonths,
     boundaryGap: false,
-    axisLabel: { interval: 23, color: '#888' },
+    axisLabel: { interval: 23, color: '#8a7a66' },
   },
   yAxis: {
     type: 'value',
     name: '净值（倍数）',
-    nameTextStyle: { color: '#888' },
+    nameTextStyle: { color: '#8a7a66' },
     scale: true,
-    axisLabel: { color: '#888' },
-    splitLine: { lineStyle: { color: '#eef0f5' } },
+    axisLabel: { color: '#8a7a66' },
+    splitLine: { lineStyle: { color: '#f0e8d9' } },
   },
   dataZoom: [
     { type: 'inside', start: 0, end: 100 },
@@ -56,58 +56,97 @@ const navOption = {
   ],
 };
 ---
+<!--
+  V4 首页 · 浏览路径设计（2026-08-25）
+  理念来源：《别让AI直接做网站：先让它设计浏览路径》（AI之炼金术士）
+  滚动剧本：每屏只解决一个信任问题
+    第1幕 钩子     → 你是谁？凭什么让我停下？        （痛点 + 中心承诺 + 真实数字锚点）
+    第2幕 证据     → 数字是真的吗？                  （数据墙 + 172个月脚印，真实资产证据位）
+    第3幕 方法     → 怎么做到的？                    （四层体系，可解释非黑箱）
+    第4幕 反对意见 → 是不是拟合出来的？              （审计记录逐步点亮，公开自己的黑历史）
+    第5幕 行动     → 然后呢？我能带走什么？          （免费工具 + 公众号引流 + 合规）
+  动效纪律：去掉动画有信息损失才保留；叙事动画宁慢勿快。
+  真实资产在证据位，全站数据为真实回测，不引入任何生成图。
+-->
 <Layout
   title="首页"
-  description="松果投资体系 — 融合东西方投资智慧、经14年真实回测验证的A股量化价值投资方法论。年化+24.30%，同期沪深300仅+3.97%。"
+  description="松果投资体系 — 14年真实回测验证的A股投资体系。年化+24.30%，同期沪深300仅+3.97%。全部数据含成本口径、经审计、可复现。"
 >
-  <!-- ============ Hero 大区 ============ -->
-  <section class="hero">
+
+  <!-- ============ 第1幕 · 钩子：你是谁，凭什么让我停下 ============ -->
+  <section class="hero" id="hook">
     <div class="hero-inner">
-      <span class="eyebrow">14 年 · 172 个月 · A股实战回测</span>
-      <h1>
-        一套<span class="gold">穿越牛熊</span>的<br />A股量化价值投资体系
+      <span class="eyebrow reveal">14 年 · 172 个月 · A股真实回测</span>
+      <h1 class="reveal">
+        散户总亏钱，<br /><span class="gold">不是不努力，是没有体系</span>
       </h1>
-      <p class="hero-lead">
-        融合格雷厄姆、巴菲特、格林布拉特等十位投资大师的智慧，本土化改造为
-        <b>宏观 → 行业 → 个股 → 组合</b>四层架构。
-        2012-2026 真实回测：年化 <b>+24.30%</b>，同期沪深300 仅 +3.97%。
+      <p class="hero-lead reveal">
+        我们把专业机构的投资逻辑——宏观择时、行业筛选、个股定价、组合风控——
+        做成了普通人能照做的四层体系，然后用 <b>14 年真实回测</b>验证给你看。
       </p>
-      <div class="hero-actions">
-        <a href="/philosophy/" class="btn btn-gold">了解投资理念 →</a>
-        <a href="/backtest/" class="btn btn-ghost">查看回测数据</a>
+      <div class="trust-sigil reveal">
+        <span class="sigil-num" data-count="22.6" data-decimals="1" data-suffix="倍">0.0倍</span>
+        <span class="sigil-label">14 年累计收益，含成本口径，全部可复现</span>
+      </div>
+      <div class="hero-actions reveal">
+        <a href="#evidence" class="btn btn-gold">看证据 ↓</a>
+        <a href="/philosophy/" class="btn btn-ghost">先了解理念</a>
       </div>
     </div>
   </section>
 
-  <!-- ============ 数据墙 ============ -->
-  <section class="metric-grid">
-    <div class="metric-card">
-      <div class="label">14 年年化收益率</div>
-      <div class="value gold">+24.30%</div>
-      <div class="sub">同期沪深300：+3.97%</div>
+  <!-- ============ 第2幕 · 证据：数字是真的吗 ============ -->
+  <section class="card" id="evidence">
+    <div class="section-head">
+      <div class="section-kicker">Evidence · 真实证据</div>
+      <h2 class="section-title">14 年，172 个月，每一笔都算过成本</h2>
+      <p class="section-sub">
+        这些不是宣传数字，是逐月回测、含佣金与印花税摩擦后的结果。
+        每个数字都可以在我们的数据档案里逐月查到。
+      </p>
     </div>
-    <div class="metric-card">
-      <div class="label">最大回撤</div>
-      <div class="value red">-22.66%</div>
-      <div class="sub">沪深300 同期 -40.56%</div>
-    </div>
-    <div class="metric-card">
-      <div class="label">风险调整收益（Calmar）</div>
-      <div class="value green">1.07</div>
-      <div class="sub">年化 ÷ 最大回撤</div>
-    </div>
-    <div class="metric-card">
-      <div class="label">14 年累计收益</div>
-      <div class="value gold">+2159.6%</div>
-      <div class="sub">约 22.6 倍（含成本口径）</div>
+    <div class="metric-grid">
+      <div class="metric-card reveal">
+        <div class="label">14 年年化收益率</div>
+        <div class="value gold" data-count="24.30" data-prefix="+" data-suffix="%" data-decimals="2">+0.00%</div>
+        <div class="sub">同期沪深300：+3.97%</div>
+      </div>
+      <div class="metric-card reveal">
+        <div class="label">最大回撤</div>
+        <div class="value red" data-count="-22.66" data-suffix="%" data-decimals="2">0.00%</div>
+        <div class="sub">沪深300 同期 -40.56%</div>
+      </div>
+      <div class="metric-card reveal">
+        <div class="label">风险调整收益（Calmar）</div>
+        <div class="value green" data-count="1.07" data-decimals="2">0.00</div>
+        <div class="sub">年化 ÷ 最大回撤</div>
+      </div>
+      <div class="metric-card reveal">
+        <div class="label">14 年累计收益</div>
+        <div class="value gold" data-count="2159.6" data-prefix="+" data-suffix="%" data-decimals="1">+0.0%</div>
+        <div class="sub">约 22.6 倍（含成本口径）</div>
+      </div>
     </div>
   </section>
 
-  <!-- ============ 四层体系概览 ============ -->
-  <section class="card">
+  <section class="card reveal">
     <div class="section-head">
-      <div class="section-kicker">Framework</div>
-      <h2 class="section-title">四层体系架构</h2>
+      <div class="section-kicker">Track Record · 脚印</div>
+      <h2 class="section-title">这不是一个数字，是 172 个月的脚印</h2>
+      <p class="section-sub">
+        起点 1.00，金色为策略净值，灰色虚线为同期沪深300。
+        每一格都是真实的一个月——含股灾、含熔断、含 2018 年阴跌。
+        数据为历史回测，不构成投资建议。
+      </p>
+    </div>
+    <Chart option={navOption} height="440px" />
+  </section>
+
+  <!-- ============ 第3幕 · 方法：怎么做到的 ============ -->
+  <section class="card reveal">
+    <div class="section-head">
+      <div class="section-kicker">Method · 可解释的方法</div>
+      <h2 class="section-title">不是黑箱。每一步都讲得清。</h2>
       <p class="section-sub">
         松果投资体系不是单一策略，而是从宏观到个股的完整决策链——每一层独立可验证，层间协同形成闭环。
       </p>
@@ -140,78 +179,77 @@ const navOption = {
     </div>
   </section>
 
-  <!-- ============ 净值曲线 ============ -->
+  <!-- ============ 第4幕 · 反对意见：是不是拟合出来的 ============ -->
   <section class="card">
     <div class="section-head">
-      <div class="section-kicker">Track Record</div>
-      <h2 class="section-title">14 年净值曲线（V31 基金版 vs 沪深300）</h2>
+      <div class="section-kicker">Audit · 我们公开自己的黑历史</div>
+      <h2 class="doubt-title">你可能会怀疑：回测是不是拟合出来的？</h2>
       <p class="section-sub">
-        起点 1.00，金色为策略净值，灰色虚线为同期沪深300。两者累计收益相差约 20 倍——
-        超额主要来自选股 alpha 与空仓保险。数据为历史回测，不构成投资建议。
+        合理。所以我们把审计过程全部公开——<b>包括我们自己抓出来的错</b>。
+        每条逐步点亮，读完你就知道这套数据经得起查。
       </p>
     </div>
-    <Chart option={navOption} height="440px" />
+    <div class="steps">
+      <div class="step steps-step">
+        <div class="num">1</div>
+        <div class="body">
+          <h3>含成本口径</h3>
+          <p>佣金万 2.5 + 印花税 0.05% + 空仓月债券/黄金 ETF 切换成本，全部计入。成本每年约侵蚀 1.1-2.5 个百分点，真实摩擦不藏。</p>
+        </div>
+      </div>
+      <div class="step steps-step">
+        <div class="num">2</div>
+        <div class="body">
+          <h3>无未来函数</h3>
+          <p>信号判定严格滞后一个月对齐。2026 年 8 月独立审计曾发现旧版本含前视偏差（年化虚高至 40%+），已全体系重算——本站数据是<b>自曝问题后修正</b>的口径。</p>
+        </div>
+      </div>
+      <div class="step steps-step">
+        <div class="num">3</div>
+        <div class="body">
+          <h3>数据修复</h3>
+          <p>审计中发现 6 个报告期底层数据量纲损坏（估值倍数被缩放 1 万倍），已修复并重跑，后续版本均为修复后数据。</p>
+        </div>
+      </div>
+      <div class="step steps-step">
+        <div class="num">4</div>
+        <div class="body">
+          <h3>保守方向原则</h3>
+          <p>所有口径分歧（月份断档、空仓月归属等）一律按保守方向处理，<b>宁可低估收益，不虚增</b>。</p>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top: var(--sp-4);">
+      <a href="/backtest/" class="btn btn-ghost">查看完整审计与逐月数据 →</a>
+    </div>
   </section>
 
-  <!-- ============ 为什么不同 ============ -->
+  <!-- ============ 第5幕 · 行动：你能带走什么 ============ -->
   <section class="card">
     <div class="section-head">
-      <div class="section-kicker">Why Different</div>
-      <h2 class="section-title">这套体系为什么不同</h2>
+      <div class="section-kicker">Action · 你能带走什么</div>
+      <h2 class="section-title">体系是公开的。工具是免费的。</h2>
+      <p class="section-sub">
+        我们不收订阅费、不卖课程。你带走三样东西：判断大势的工具、验证策略的数据、以及一套不用拍脑袋的方法。
+      </p>
     </div>
     <div class="link-cards">
-      <a href="/philosophy/" class="link-card">
-        <h3><span class="gold">理念</span> · 融合十位大师</h3>
-        <p>格雷厄姆的安全边际、巴菲特的护城河、格林布拉特的量化筛选、马克斯的周期判断——融合而非模仿。</p>
+      <a href="/macro/" class="link-card action-card">
+        <h3><span class="gold">宏观时钟</span> · 现在该攻还是守</h3>
+        <p>六轴宏观评分，告诉你当前市场的进攻/防守信号——先看方向，再谈个股。</p>
       </a>
-      <a href="/backtest/" class="link-card">
-        <h3><span class="gold">数据</span> · 透明可复现</h3>
-        <p>14 年逐月净值、年度收益、回撤全景，全部含成本口径、经审计、可复现。不玩幸存者偏差。</p>
+      <a href="/backtest/" class="link-card action-card">
+        <h3><span class="gold">策略数据</span> · 172 个月逐月可查</h3>
+        <p>净值、年度收益、回撤、审计记录，全部公开可复现。不玩幸存者偏差。</p>
       </a>
-      <a href="/portfolio/" class="link-card">
-        <h3><span class="gold">组合</span> · 攻守兼备</h3>
-        <p>宏观×个股双版本组合，两个引擎节奏错开，一个进攻时另一个防守，管理回撤不靠运气。</p>
+      <a href="/archive/" class="link-card action-card">
+        <h3><span class="gold">历史档案</span> · 809 周信号 + 124 月选股</h3>
+        <p>每一次宏观判断、每一月选股记录都在这里，投前投后对比看得见。</p>
       </a>
     </div>
-  </section>
-
-  <!-- ============ 策略定案 ============ -->
-  <section class="card">
-    <div class="section-head">
-      <div class="section-kicker">Strategy</div>
-      <h2 class="section-title">策略定案：V31 基金版</h2>
-      <p class="section-sub">
-        本站采用单一策略口径——个股策略 <b>V31 基金版</b>（无杠杆，选股 Top4 + FCF/EV 加权），宏观策略 <b>V1 常规版</b>（Shibor 信号 × 中证500）。不涉及任何杠杆工具。
-      </p>
-    </div>
-    <div class="table-wrap">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>策略</th>
-            <th>年化</th>
-            <th>最大回撤</th>
-            <th>Calmar</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>V31 基金版（无杠杆）</td>
-            <td class="pos">+24.30%</td>
-            <td class="neg">-22.66%</td>
-            <td>1.07</td>
-          </tr>
-          <tr>
-            <td>沪深300 同期</td>
-            <td>+3.97%</td>
-            <td class="neg">-40.56%</td>
-            <td>0.10</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="callout" style="margin-top: 16px;">
-      本站不展示任何杠杆版本（V32 进阶版 / 宏观 V2 杠杆版），所有数据为无杠杆的历史回测展示。
+    <div class="callout" style="margin-top: var(--sp-5);">
+      <b>每周一篇深度文章</b>：关注公众号「松果商业笔记」，把体系拆成每周一篇讲给你听。
+      观点用本站数据佐证，不荐股、不喊单。
     </div>
   </section>
 
@@ -222,5 +260,6 @@ const navOption = {
 
   <script>
     import '../scripts/charts.ts';
+    import '../scripts/scroll-narrative.ts';
   </script>
 </Layout>

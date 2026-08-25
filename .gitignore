@@ -18,3 +18,6 @@ Thumbs.db
 .env.*
 screenshots/_profile_*
 screenshots/*.png
+
+# V4 验收临时 profile
+screenshots/v4/_profile*

@@ -1,40 +1,42 @@
 /* ================================================================
    松果投资体系 · 设计系统 V3
-   品牌：深蓝 #1E2761 + 金 #C8A24B —— 专业金融研究所气质
-   原则：克制阴影 / 精细排版 / 数字优先 / 深蓝夜空+浅色阅读区
+   品牌：松果色（松果棕 #8B5E3C + 琥珀金 #D9A441 + 松针绿 #4A7C59 + 米白 #FAF6EF）
+   —— 温暖沉稳、长期主义、纸感自然
+   原则：克制阴影 / 精细排版 / 数字优先 / 深松果棕品牌区+浅米阅读区
+   （变量名保留 --navy/--gold 旧名，值为松果色，HTML层零改动。权威规范见 skill pinecone-visual-system）
    ================================================================ */
 
 :root {
   /* ---- 品牌色阶 ---- */
-  --navy-950: #0a0f2c;
-  --navy-900: #0d1233;
-  --navy-800: #141a40;
-  --navy-700: #1e2761;   /* 主品牌蓝 */
-  --navy-600: #2c3a8f;
-  --navy-500: #3d4fb0;
-  --navy-100: #e8eaf6;
+  --navy-950: #3a2415;
+  --navy-900: #4a2e1a;
+  --navy-800: #5c3a21;   /* 深松果棕(Hero主底) */
+  --navy-700: #734a2b;   /* 主品牌(深棕褐) */
+  --navy-600: #8b5e3c;
+  --navy-500: #a26b45;
+  --navy-100: #f3ead9;
 
-  --gold-600: #a8873a;
-  --gold-500: #c8a24b;   /* 主金 */
-  --gold-400: #d9bc7a;
-  --gold-300: #e8d5a4;
-  --gold-100: #faf4e3;
+  --gold-600: #b7832e;
+  --gold-500: #d9a441;   /* 主金(琥珀金) */
+  --gold-400: #e3b966;
+  --gold-300: #ecd19a;
+  --gold-100: #fbf3df;
 
   /* ---- 中性色 ---- */
-  --bg: #f7f8fb;
+  --bg: #faf6ef;
   --surface: #ffffff;
-  --surface-alt: #f2f4f9;
-  --text: #171a2b;
-  --text-2: #464c63;
-  --text-3: #868da6;
-  --border: #e3e5ee;
-  --border-strong: #ccd0e0;
+  --surface-alt: #f3ead9;
+  --text: #4a4238;
+  --text-2: #6b5f50;
+  --text-3: #9a8c7a;
+  --border: #e8dcc8;
+  --border-strong: #d3c2a6;
 
   /* ---- 功能色 ---- */
-  --green: #0f9d58;
-  --green-bg: #e7f6ee;
-  --red: #d64545;
-  --red-bg: #fdeeee;
+  --green: #4a7c59;
+  --green-bg: #e7f0ea;
+  --red: #b3543e;
+  --red-bg: #f9ece8;
 
   /* ---- 间距系统（4px 基数） ---- */
   --sp-1: 4px;
@@ -53,10 +55,10 @@
   --r-lg: 16px;
   --r-full: 999px;
 
-  /* ---- 阴影（克制三层） ---- */
-  --shadow-sm: 0 1px 2px rgba(13, 18, 51, 0.05);
-  --shadow-md: 0 4px 16px rgba(13, 18, 51, 0.08);
-  --shadow-lg: 0 16px 48px rgba(13, 18, 51, 0.14);
+  /* ---- 阴影（克制三层，基色从蓝改松果棕） ---- */
+  --shadow-sm: 0 1px 2px rgba(74, 46, 26, 0.06);
+  --shadow-md: 0 4px 16px rgba(74, 46, 26, 0.10);
+  --shadow-lg: 0 16px 48px rgba(74, 46, 26, 0.16);
 
   /* ---- 字体 ---- */
   --font-sans: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
@@ -904,3 +906,110 @@ table.data-table {
     animation: none !important;
   }
 }
+
+/* ============================================================
+   滚动叙事（V4 · 2026-08-25）
+   设计原则：每屏只解决一个信任问题；动效承担叙事功能，
+   去掉动画有信息损失才保留。叙事动画宁慢勿快。
+   ============================================================ */
+
+/* 屏幕叙事容器：滚动到视口时渐显上移（仅 JS 可用时生效，无 JS 直接可见） */
+html.js .reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    opacity 0.7s ease,
+    transform 0.7s ease;
+}
+
+html.js .reveal.in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* 第一屏钩子：不等待滚动，直接入场（轻微延迟营造呼吸感） */
+.hero .reveal,
+.hook .reveal {
+  transition-delay: 0.15s;
+}
+
+/* 审计步骤：逐条点亮（叙事=“每一步都查过”，点亮顺序不可逆） */
+html.js .steps-step {
+  opacity: 0.38;
+  transform: translateX(-6px);
+  transition:
+    opacity 0.6s ease,
+    transform 0.6s ease;
+}
+
+html.js .steps-step.lit {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* 招牌动作：首屏真实数字锚点（大、慢、稳） */
+.trust-sigil {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  margin-top: var(--sp-4);
+}
+
+.trust-sigil .sigil-num {
+  font-size: clamp(56px, 8vw, 88px);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  background: linear-gradient(120deg, var(--gold-600), var(--gold-400));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.trust-sigil .sigil-label {
+  font-size: 14px;
+  color: var(--navy-400, #8a7a66);
+  max-width: 180px;
+  line-height: 1.5;
+}
+
+/* 反对意见幕：标题即承认怀疑，副标题给证据承诺 */
+.doubt-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--navy-900, #241a10);
+  margin-bottom: var(--sp-2);
+}
+
+.doubt-title::before {
+  content: '“';
+  color: var(--gold-600, #a8873a);
+}
+
+.doubt-title::after {
+  content: '”';
+  color: var(--gold-600, #a8873a);
+}
+
+/* 行动幕：工具卡进入视口依次入场（延迟阶梯，表达“展开”） */
+html.js .action-card {
+  opacity: 0;
+  transform: translateY(20px);
+  transition:
+    opacity 0.6s ease,
+    transform 0.6s ease;
+}
+
+html.js .action-card.in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.action-card:nth-child(2) {
+  transition-delay: 0.12s;
+}
+
+.action-card:nth-child(3) {
+  transition-delay: 0.24s;
+}
+
