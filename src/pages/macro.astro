@@ -69,34 +69,28 @@ const versions = [
     <div class="section-head">
       <div class="section-kicker">V1 Strategy</div>
       <h2 class="section-title">V1 常规版（定案策略）</h2>
+      <p class="section-sub">
+        Shibor 信号 × 中证500：流动性宽松时持有，收紧时空仓。固定 5bp 阈值，walk-forward 样本外验证。
+      </p>
     </div>
-    <div class="master-grid">
-      {
-        versions.map((v) => (
-          <div class="master-card">
-            <div class="master-name">{v.name}</div>
-            <div class="master-school">{v.type}</div>
-            <div class="master-desc" style="margin-bottom: 16px;">{v.desc}</div>
-            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:14px;">
-              {
-                v.stats.map((s) => (
-                  <div style="text-align:center; background:var(--surface-alt); border-radius:8px; padding:10px 6px;">
-                    <div style="font-size:13px; font-weight:700; color:var(--navy-800);">{s.value}</div>
-                    <div style="font-size:11px; color:var(--text-3); margin-top:2px;">{s.label}</div>
-                  </div>
-                ))
-              }
-            </div>
-            <div style="font-size:13px; color:var(--text-2); background:var(--gold-100); border-radius:8px; padding:10px 12px; margin-bottom:8px;">
-              ✅ {v.highlight}
-            </div>
-            <div style="font-size:12.5px; color:#7a2e2e; background:var(--red-bg); border-radius:8px; padding:10px 12px;">
-              ⚠️ {v.risk}
-            </div>
+    {
+      versions.map((v) => (
+        <div>
+          <div class="metric-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: var(--sp-4);">
+            {
+              v.stats.map((s) => (
+                <div class="metric-card">
+                  <div class="label">{s.label}</div>
+                  <div class="value">{s.value}</div>
+                </div>
+              ))
+            }
           </div>
-        ))
-      }
-    </div>
+          <div class="callout">✅ {v.highlight}</div>
+          <div class="callout warn">⚠️ {v.risk}</div>
+        </div>
+      ))
+    }
   </section>
 
   <!-- 逐年表现 -->
