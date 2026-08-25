@@ -1,0 +1,75 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+<Layout
+  title="服务"
+  description="松果投资服务 — 内容服务（公众号/知乎/雪球/百家号）+ 免费工具 + 订阅。"
+>
+  <section class="hero" style="padding: 56px 48px;">
+    <div class="hero-inner">
+      <span class="eyebrow">Services · 服务</span>
+      <h1>
+        内容与工具，<br /><span class="gold">服务你的投资</span>
+      </h1>
+      <p class="hero-lead">
+        体系免费公开，工具免费调用——配套的内容服务帮你持续跟踪：
+        每日资讯、每周行业雷达、策略月报，全部在公众号「松果商业笔记」同步。
+      </p>
+    </div>
+  </section>
+
+  <!-- 内容服务 -->
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">Content Services</div>
+      <h2 class="section-title">内容服务</h2>
+      <p class="section-sub">网站是体系，内容是把体系讲给你听——关注「松果商业笔记」，体系观点持续更新。</p>
+    </div>
+    <div class="link-cards" style="grid-template-columns: repeat(3, 1fr);">
+      <div class="link-card" style="cursor: default;">
+        <h3><span class="gold">每日资讯解读</span></h3>
+        <p>宏观/行业/个股信号当日解读，帮你在信息洪流里抓住关键变化。</p>
+      </div>
+      <div class="link-card" style="cursor: default;">
+        <h3><span class="gold">每周行业雷达</span></h3>
+        <p>7 天政策催化 + 科技突破 + 行业景气度周报，与策略体系同源。</p>
+      </div>
+      <div class="link-card" style="cursor: default;">
+        <h3><span class="gold">策略月报</span></h3>
+        <p>三类资产/组合当月表现复盘 + 下月操作要点，回测测试数据同步公开。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 免费工具 -->
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">Free Tools</div>
+      <h2 class="section-title">工具免费调用</h2>
+      <p class="section-sub">策略配套工具统一在「工具」页免费使用——个股体检、估值、复利已上线，ETF 配置/基金打分/宏观信号开发中。</p>
+    </div>
+    <div style="display:flex; gap:12px; flex-wrap:wrap;">
+      <a href="/songguo-invest/tools/" class="btn btn-gold">进入工具 →</a>
+      <a href="/songguo-invest/tools/stockcheck/" class="btn btn-ghost" style="background: var(--navy-800); color: #fff;">试试个股体检</a>
+    </div>
+  </section>
+
+  <!-- 订阅 -->
+  <section class="card" style="text-align:center; padding: 48px; background: linear-gradient(160deg, var(--navy-900), var(--navy-700)); color:#fff; border: 1px solid rgba(200,162,75,0.2);">
+    <div class="section-kicker" style="color: var(--gold-300);">Follow Us</div>
+    <h2 class="section-title" style="color:#fff; border:none; padding:0; margin:12px 0;">订阅「松果商业笔记」</h2>
+    <p class="section-sub" style="color: rgba(255,255,255,0.8); margin: 0 auto 28px; max-width: 520px;">
+      每日资讯解读、行业研究报告、策略月报——第一时间送达。
+      公众号/知乎/雪球/百家号同步更新。
+    </p>
+    <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+      <a href="/songguo-invest/about/" class="btn btn-gold">了解更多 →</a>
+      <span class="btn btn-ghost" style="pointer-events: none;">公众号：松果商业笔记</span>
+    </div>
+  </section>
+
+  <div class="callout">
+    <b>合规声明</b>：本站所有内容与工具输出均为数据分析与研究方法论展示，不构成投资建议。
+    投资有风险，入市需谨慎。
+  </div>
+</Layout>

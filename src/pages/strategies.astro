@@ -11,7 +11,7 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
 ---
 <Layout
   title="策略体系"
-  description="松果投资策略体系 — Standard 三类资产 / Pro 最优组合 / Max 杠杆版，统一窗口 2016.03-2026.07 真实回测，全部回撤数据可下钻查询。"
+  description="松果投资策略体系 — Standard 三类资产 / Pro 最优组合 / Max 杠杆版，统一窗口 2016.03-2026.07 真实回测，全部回撤数据可测试查询。"
 >
   <!-- Hero -->
   <section class="hero" style="padding: 56px 48px;">
@@ -23,7 +23,7 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
       <p class="hero-lead">
         <b>S · Standard</b> 三类资产打底，<b>P · Pro</b> 用数据找出最优组合，
         <b>M · Max</b> 给进攻腿加杠杆、防守腿用期权对冲。
-        全部回测统一窗口 <b>{vStd.window.start}–{vStd.window.end}（{vStd.window.months} 个月）</b>，每个时点的回撤都能下钻查到。
+        全部回测统一窗口 <b>{vStd.window.start}–{vStd.window.end}（{vStd.window.months} 个月）</b>，每个时点的回撤都能测试查到。
       </p>
     </div>
   </section>
@@ -383,9 +383,9 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
     </div>
   </section>
 
-  <!-- 下钻入口 -->
+  <!-- 回测测试入口 -->
   <section class="card" style="background: linear-gradient(160deg, var(--navy-900), var(--navy-700)); color: #fff; border: 1px solid rgba(200,162,75,0.2);">
-    <div class="section-kicker" style="color: var(--gold-300);">DRILL DOWN · 回撤下钻</div>
+    <div class="section-kicker" style="color: var(--gold-300);">回测测试</div>
     <h2 class="section-title" style="color: #fff; border: none; padding: 0; margin: 12px 0;">每一个时点的回撤，都能查到</h2>
     <p class="section-sub" style="color: rgba(255,255,255,0.8); margin: 0 0 24px; max-width: 640px;">
       四大策略 + Pro 推荐组合的 <b>{vStd.window.months} 个月度明细</b>：每月收益、累计净值、滚动回撤全公开。
