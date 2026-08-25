@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# 松果投资体系网站 · 一键构建部署（GitHub Pages gh-pages 分支）
+# 用法：在 main 分支执行 bash scripts/deploy.sh
+# 流程：build → dist 暂存 → 切 gh-pages 清旧产物 → 拷新 → push → 回 main
+set -e
+cd "$(dirname "$0")/.."
+
+BRANCH=$(git branch --show-current)
+if [ "$BRANCH" != "main" ]; then
+  echo "❌ 必须在 main 分支执行（当前: $BRANCH）"; exit 1
+fi
+
+echo "① 构建..."
+npm run build
+
+TMP="$LOCALAPPDATA/Temp/sg_dist_deploy"
+mkdir -p "$TMP" && rm -rf "$TMP"/* && cp -r dist/* "$TMP"/
+echo "② dist 暂存完成: $(ls "$TMP" | wc -l) 项"
+
+echo "③ 更新 gh-pages 分支..."
+git checkout -q gh-pages
+rm -rf index.html _astro about archive backtest favicon.svg macro methodology philosophy portfolio ranking tools dist .nojekyll
+cp -r "$TMP"/* . && touch .nojekyll
+git add -A
+git commit -q -m "deploy: $(date +%Y%m%d-%H%M) 构建产物"
+git push origin gh-pages 2>&1 | tail -1
+git checkout -q main
+echo "✅ 部署完成: https://pineconexf.github.io/songguo-invest/"
