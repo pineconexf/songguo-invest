@@ -1,0 +1,48 @@
+{
+ "version": "Standard",
+ "window": {
+  "start": "201603",
+  "end": "202607",
+  "months": 125
+ },
+ "caliber": "几何年化/最大回撤/Calmar；指数策略为 shibor 5bp×中证500 严格滞后含0.05%切换成本；V31 含成本；ETF/基金为实际组合净值序列；基金 2025-03 缺月几何插值",
+ "strategies": {
+  "index": {
+   "label": "指数策略(中证500择时)",
+   "annual": 6.714,
+   "mdd": -23.855,
+   "calmar": 0.281,
+   "sharpe": 0.453,
+   "cum": 1.968,
+   "vol": 17.444
+  },
+  "etf": {
+   "label": "ETF投资策略(四拼图)",
+   "annual": 10.408,
+   "mdd": -6.151,
+   "calmar": 1.692,
+   "sharpe": 1.505,
+   "cum": 2.805,
+   "vol": 6.758
+  },
+  "fund": {
+   "label": "基金投资策略(场外组合)",
+   "annual": 9.649,
+   "mdd": -5.038,
+   "calmar": 1.915,
+   "sharpe": 1.688,
+   "cum": 2.611,
+   "vol": 5.57
+  },
+  "stock": {
+   "label": "股票投资策略(V31)",
+   "annual": 20.524,
+   "mdd": -17.757,
+   "calmar": 1.156,
+   "sharpe": 0.999,
+   "cum": 6.991,
+   "vol": 20.954
+  }
+ },
+ "note": "Standard=四策略独立使用，四选一。ETF 与基金相关性 0.95（同构资产，二选一）。"
+}

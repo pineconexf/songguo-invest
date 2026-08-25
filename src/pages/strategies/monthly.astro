@@ -1,0 +1,191 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import mRet from '../../data/monthly_returns.json';
+import yBreak from '../../data/yearly_breakdown.json';
+import vStd from '../../data/version_standard.json';
+
+const seriesKeys = [
+  { key: 'index', label: '宏观择时', color: '#d9a441' },
+  { key: 'etf', label: 'ETF 壳', color: '#4A7C59' },
+  { key: 'fund', label: '基金壳', color: '#8B5E3C' },
+  { key: 'stock', label: '股票 V31', color: '#a03a28' },
+  { key: 'combo_calmar_opt', label: 'Pro 推荐组合', color: '#c87f2e' },
+];
+
+// 由月度收益计算净值与滚动回撤
+const calc = (key) => {
+  let nav = 1, peak = 1;
+  return mRet.map((m) => {
+    const ret = m[key];
+    if (ret == null) return { ym: m.ym, ret: null, nav: null, dd: null };
+    nav *= 1 + ret / 100;
+    peak = Math.max(peak, nav);
+    return { ym: m.ym, ret: ret, nav: nav, dd: (nav / peak - 1) * 100 };
+  });
+};
+const seriesData = Object.fromEntries(seriesKeys.map((k) => [k.key, calc(k.key)]));
+const stats = Object.fromEntries(
+  seriesKeys.map((k) => {
+    const rows = seriesData[k.key].filter((r) => r.nav != null);
+    const navs = rows.map((r) => r.nav);
+    const peak = Math.max(...navs);
+    const mdd = (Math.min(...navs) / peak - 1) * 100;
+    return [k.key, { mdd }];
+  })
+);
+---
+<Layout
+  title="月度明细"
+  description="松果策略月度明细 — 四大策略 + Pro 推荐组合的每月收益、累计净值、滚动回撤全公开，任意时点可查。"
+>
+  <section class="hero" style="padding: 56px 48px;">
+    <div class="hero-inner">
+      <span class="eyebrow">Drill Down · 回撤下钻</span>
+      <h1>
+        每一个时点的回撤<br /><span class="gold">都能查到</span>
+      </h1>
+      <p class="hero-lead">
+        统一窗口 <b>{vStd.window.start}–{vStd.window.end}（{vStd.window.months} 个月）</b>。
+        四大策略 + Pro 推荐组合的每月收益、累计净值、滚动回撤全部公开——
+        想查 2018 年 3 月怎么跌的、哪个组合最抗跌，逐月翻。
+      </p>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">Monthly Series</div>
+      <h2 class="section-title">月度明细表</h2>
+      <p class="section-sub">切换策略/组合查看；「回撤」为滚动回撤（从历史高点回落幅度），最深月份红色标注。数值为百分数。</p>
+    </div>
+    <div class="drill-tabs" id="drill-tabs">
+      {
+        seriesKeys.map((k) => (
+          <button class="drill-tab" data-key={k.key} data-active={k.key === 'combo_calmar_opt'} style={`--tab-c: ${k.color};`}>
+            {k.label}
+          </button>
+        ))
+      }
+    </div>
+    <div class="table-scroll">
+      <table class="data-table" id="drill-table">
+        <thead>
+          <tr><th>月份</th><th>月度收益</th><th>累计净值</th><th>回撤</th><th>状态</th></tr>
+        </thead>
+        <tbody id="drill-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">Yearly</div>
+      <h2 class="section-title">年度分解（2016-2026）</h2>
+      <p class="section-sub">每年收益：策略 vs 推荐组合，看哪年防守、哪年进攻。</p>
+    </div>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr><th>年份</th><th>Pro 推荐</th><th>Calmar 最优</th><th>宏观择时</th><th>ETF 壳</th><th>基金壳</th><th>股票 V31</th></tr>
+        </thead>
+        <tbody>
+          {
+            yBreak.map((y) => (
+              <tr>
+                <td><b>{y.year}</b></td>
+                {['combo_reco', 'combo_calmar_opt', 'index', 'etf', 'fund', 'stock'].map((k) => (
+                  <td class={y[k] != null && y[k] > 0 ? 'up' : 'down'}>{y[k] != null ? `${y[k] > 0 ? '+' : ''}${Number(y[k]).toFixed(1)}%` : '—'}</td>
+                ))}
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">How to Read</div>
+      <h2 class="section-title">下钻到操作层</h2>
+      <p class="section-sub">回撤只是结果，当时做了什么才重要——每类策略的「操作明细」链接：</p>
+    </div>
+    <div class="link-cards" style="grid-template-columns: repeat(3, 1fr);">
+      <a href="/songguo-invest/archive/monthly/" class="link-card">
+        <h3>股票 · 月度选股档案</h3>
+        <p>每月选了哪几只股票、投前投后数据、宏观信号——V31 全部可追溯。</p>
+      </a>
+      <a href="/songguo-invest/strategies/etf/" class="link-card">
+        <h3>ETF · 拼图构成</h3>
+        <p>四拼图各标的（511010/159934/510880/513500）的权重、年化、回撤。</p>
+      </a>
+      <a href="/songguo-invest/strategies/fund/" class="link-card">
+        <h3>基金 · 选基明细</h3>
+        <p>四拼图各基金（217022/002351/000216/050025）的指标与持有纪律。</p>
+      </a>
+    </div>
+  </section>
+
+  <div class="callout">
+    <b>口径声明</b>：月度收益为百分数（如 2.55 = 2.55%）；净值从收益滚算（起点 1.0）；回撤为从历史峰值回落百分比。
+    数据窗口 {vStd.window.start}–{vStd.window.end}，几何年化、月度再平衡、含成本。历史表现不代表未来收益。
+  </div>
+
+  <script define:vars={{ mRaw: mRet }}>
+    const seriesKeys = [
+      { key: 'index', label: '宏观择时' },
+      { key: 'etf', label: 'ETF 壳' },
+      { key: 'fund', label: '基金壳' },
+      { key: 'stock', label: '股票 V31' },
+      { key: 'combo_calmar_opt', label: 'Pro 推荐组合' },
+    ];
+    const raw = mRaw;
+    const tabs = document.querySelectorAll('.drill-tab');
+    const body = document.getElementById('drill-body');
+    const state = { key: 'combo_calmar_opt' };
+    function render() {
+      let nav = 1, peak = 1;
+      const rows = raw.map((m) => {
+        const ret = m[state.key];
+        if (ret == null) return { ym: m.ym, ret: null, nav: null, dd: null };
+        nav *= 1 + ret / 100; peak = Math.max(peak, nav);
+        return { ym: m.ym, ret, nav, dd: (nav / peak - 1) * 100 };
+      });
+      let worst = 0;
+      rows.forEach((r) => { if (r.dd != null && r.dd < worst) worst = r.dd; });
+      const label = seriesKeys.find((k) => k.key === state.key).label;
+      body.innerHTML = rows.map((r) => {
+        if (r.nav == null) return `<tr><td>${r.ym}</td><td colspan="4" style="color:#999;">数据缺失</td></tr>`;
+        const isWorst = r.dd != null && r.dd <= worst + 0.001;
+        return `<tr${isWorst ? ' style="background: rgba(160,58,40,0.06);"' : ''}>
+          <td><b>${r.ym}</b></td>
+          <td class="${r.ret >= 0 ? 'up' : 'down'}">${r.ret >= 0 ? '+' : ''}${r.ret.toFixed(2)}%</td>
+          <td>${r.nav.toFixed(3)}</td>
+          <td class="down">${r.dd.toFixed(2)}%</td>
+          <td style="font-size:12px; color:#999;">${isWorst ? '最深回撤' : ''}</td>
+        </tr>`;
+      }).join('');
+      tabs.forEach((t) => {
+        t.dataset.active = String(t.dataset.key === state.key);
+      });
+    }
+    tabs.forEach((t) => t.addEventListener('click', () => { state.key = t.dataset.key; render(); }));
+    render();
+  </script>
+
+  <style is:global>
+    .drill-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+    .drill-tab {
+      border: 1px solid var(--border); background: var(--surface); border-radius: 8px;
+      padding: 8px 16px; font-size: 13.5px; font-weight: 600; color: var(--navy-700);
+      cursor: pointer; transition: all 0.15s;
+    }
+    .drill-tab:hover { border-color: var(--gold-500); }
+    .drill-tab[data-active="true"] {
+      background: var(--navy-800); color: #fff; border-color: var(--navy-800);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--tab-c, var(--gold-500)) 40%, transparent);
+    }
+    .table-scroll { overflow-x: auto; }
+    .table-scroll .data-table td { white-space: nowrap; }
+  </style>
+</Layout>

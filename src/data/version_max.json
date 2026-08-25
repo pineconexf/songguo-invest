@@ -1,0 +1,138 @@
+{
+ "version": "Max",
+ "finding": "对低波动组合整体加融资杠杆，Calmar 不升反降（融资成本8.35%吃掉低收益组合优势）。正确路径=只给进攻腿加杠杆+防守腿用期权对冲（宏观V2，见 双版本组合管理定稿_20260817.md）：V32 50%+宏观V2 50% = 40.24%/-30.8%/Calmar 1.31（48月短样本）",
+ "leverage_map": [
+  {
+   "combo": "fund+stock 60/40",
+   "level": "1.0x",
+   "annual": 14.39,
+   "mdd": -9.44,
+   "calmar": 1.525,
+   "sharpe": 1.4
+  },
+  {
+   "combo": "fund+stock 60/40",
+   "level": "1.5x",
+   "annual": 16.93,
+   "mdd": -15.74,
+   "calmar": 1.076,
+   "sharpe": 1.12
+  },
+  {
+   "combo": "fund+stock 60/40",
+   "level": "2x",
+   "annual": 19.24,
+   "mdd": -21.82,
+   "calmar": 0.881,
+   "sharpe": 0.98
+  },
+  {
+   "combo": "fund+stock 50/50",
+   "level": "1.0x",
+   "annual": 15.5,
+   "mdd": -10.79,
+   "calmar": 1.436,
+   "sharpe": 1.3
+  },
+  {
+   "combo": "fund+stock 50/50",
+   "level": "1.5x",
+   "annual": 18.48,
+   "mdd": -17.77,
+   "calmar": 1.04,
+   "sharpe": 1.06
+  },
+  {
+   "combo": "fund+stock 50/50",
+   "level": "2x",
+   "annual": 21.13,
+   "mdd": -24.39,
+   "calmar": 0.867,
+   "sharpe": 0.94
+  },
+  {
+   "combo": "etf+stock 70/30",
+   "level": "1.0x",
+   "annual": 13.82,
+   "mdd": -9.43,
+   "calmar": 1.465,
+   "sharpe": 1.52
+  },
+  {
+   "combo": "etf+stock 70/30",
+   "level": "1.5x",
+   "annual": 16.14,
+   "mdd": -15.55,
+   "calmar": 1.038,
+   "sharpe": 1.2
+  },
+  {
+   "combo": "etf+stock 70/30",
+   "level": "2x",
+   "annual": 18.28,
+   "mdd": -21.44,
+   "calmar": 0.852,
+   "sharpe": 1.04
+  },
+  {
+   "combo": "等权四策略",
+   "level": "1.0x",
+   "annual": 12.39,
+   "mdd": -8.17,
+   "calmar": 1.517,
+   "sharpe": 1.41
+  },
+  {
+   "combo": "等权四策略",
+   "level": "1.5x",
+   "annual": 13.98,
+   "mdd": -13.72,
+   "calmar": 1.018,
+   "sharpe": 1.08
+  },
+  {
+   "combo": "等权四策略",
+   "level": "2x",
+   "annual": 15.38,
+   "mdd": -19.09,
+   "calmar": 0.806,
+   "sharpe": 0.92
+  },
+  {
+   "combo": "全组合Calmar最优",
+   "level": "1.0x",
+   "annual": 10.79,
+   "mdd": -5.21,
+   "calmar": 2.069,
+   "sharpe": 1.69
+  },
+  {
+   "combo": "全组合Calmar最优",
+   "level": "1.5x",
+   "annual": 11.7,
+   "mdd": -9.79,
+   "calmar": 1.195,
+   "sharpe": 1.24
+  },
+  {
+   "combo": "全组合Calmar最优",
+   "level": "2x",
+   "annual": 12.51,
+   "mdd": -14.26,
+   "calmar": 0.877,
+   "sharpe": 1.02
+  }
+ ],
+ "paths": [
+  {
+   "name": "路径A-融资杠杆",
+   "note": "对 PRO 组合整体1.5x/2.0x，Calmar 下降，仅适合对高收益配比(≥16%年化档)使用",
+   "data_ref": "max_leverage.csv"
+  },
+  {
+   "name": "路径B-期权宏观腿",
+   "note": "V32(融资选股)+宏观V2(shibor收紧买认沽)，40.24%/-30.8%/1.31，需期权账户+48月短样本谨慎",
+   "data_ref": "宏观回验/双版本组合管理定稿_20260817.md"
+  }
+ ]
+}

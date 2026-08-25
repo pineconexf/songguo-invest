@@ -1,0 +1,172 @@
+{
+ "version": "PRO",
+ "correlation": {
+  "index": {
+   "index": 1.0,
+   "etf": 0.2,
+   "fund": 0.241,
+   "stock": 0.06
+  },
+  "etf": {
+   "index": 0.2,
+   "etf": 1.0,
+   "fund": 0.947,
+   "stock": 0.273
+  },
+  "fund": {
+   "index": 0.241,
+   "etf": 0.947,
+   "fund": 1.0,
+   "stock": 0.331
+  },
+  "stock": {
+   "index": 0.06,
+   "etf": 0.273,
+   "fund": 0.331,
+   "stock": 1.0
+  }
+ },
+ "key_findings": [
+  "ETF与基金相关性0.95——同构资产（债+金+红利/QDII的场内/场外版），组合时二选一，同时持有=稀释",
+  "stock×index 相关性仅0.06（最有分散价值的一对）；stock×fund 0.33 弱相关",
+  "两两组合甜点=fund+stock：60/40~70/30，年化13-14%、回撤-8~-9%（纯股票-17.8%）",
+  "全组合比两两多的只是 index 10% 保险腿：回撤-8%→-5%，年化13%→11%",
+  "全组合有效前沿：index 恒10%、fund 为底座(40-70%)、stock 为收益调节阀(10-60%)、etf 被 fund 替代",
+  "网格最优是稳健平台非尖峰（相邻权重 Calmar 平滑过渡）"
+ ],
+ "grid": {
+  "step": 0.1,
+  "pairs": 54,
+  "triples": 144,
+  "full": 84
+ },
+ "best_pair": {
+  "fund+stock_70/30": {
+   "annual": 13.25,
+   "mdd": -8.16,
+   "calmar": 1.62
+  }
+ },
+ "recommended": {
+  "weights": {
+   "基金投资策略(场外组合)": 0.6,
+   "股票投资策略(V31)": 0.4
+  },
+  "metrics": {
+   "annual": 14.393,
+   "mdd": -9.44,
+   "calmar": 1.525,
+   "sharpe": 1.402,
+   "cum": 4.058,
+   "vol": 9.999
+  },
+  "rationale": "fund 底座(Calmar 1.915 单策略最优) + stock 引擎(年化20.5%)，0.33弱相关，回撤砍半年化保持13-14%"
+ },
+ "frontier": [
+  {
+   "target": "Calmar最优",
+   "weights": {
+    "index": 0.1,
+    "etf": 0.1,
+    "fund": 0.7,
+    "stock": 0.1
+   },
+   "annual": 10.79,
+   "mdd": -5.21,
+   "calmar": 2.069,
+   "sharpe": 1.69
+  },
+  {
+   "target": ">=8%",
+   "weights": {
+    "index": 0.1,
+    "etf": 0.1,
+    "fund": 0.7,
+    "stock": 0.1
+   },
+   "annual": 10.79,
+   "mdd": -5.21,
+   "calmar": 2.069,
+   "sharpe": 1.69
+  },
+  {
+   "target": ">=10%",
+   "weights": {
+    "index": 0.1,
+    "etf": 0.1,
+    "fund": 0.7,
+    "stock": 0.1
+   },
+   "annual": 10.79,
+   "mdd": -5.21,
+   "calmar": 2.069,
+   "sharpe": 1.69
+  },
+  {
+   "target": ">=12%",
+   "weights": {
+    "index": 0.1,
+    "etf": 0.2,
+    "fund": 0.5,
+    "stock": 0.2
+   },
+   "annual": 12.07,
+   "mdd": -6.84,
+   "calmar": 1.764,
+   "sharpe": 1.62
+  },
+  {
+   "target": ">=13%",
+   "weights": {
+    "index": 0.1,
+    "etf": 0.1,
+    "fund": 0.5,
+    "stock": 0.3
+   },
+   "annual": 13.16,
+   "mdd": -8.12,
+   "calmar": 1.62,
+   "sharpe": 1.5
+  },
+  {
+   "target": ">=14%",
+   "weights": {
+    "index": 0.1,
+    "etf": 0.1,
+    "fund": 0.4,
+    "stock": 0.4
+   },
+   "annual": 14.3,
+   "mdd": -9.58,
+   "calmar": 1.493,
+   "sharpe": 1.39
+  },
+  {
+   "target": ">=15%",
+   "weights": {
+    "index": 0.1,
+    "etf": 0.1,
+    "fund": 0.3,
+    "stock": 0.5
+   },
+   "annual": 15.41,
+   "mdd": -11.05,
+   "calmar": 1.394,
+   "sharpe": 1.29
+  },
+  {
+   "target": ">=16%",
+   "weights": {
+    "index": 0.1,
+    "etf": 0.1,
+    "fund": 0.2,
+    "stock": 0.6
+   },
+   "annual": 16.48,
+   "mdd": -12.52,
+   "calmar": 1.317,
+   "sharpe": 1.2
+  }
+ ],
+ "note": "PRO=策略间组合。定稿推荐 fund+stock 60/40，激进可上调 stock 至50-60%，求稳加 index 10%。"
+}
