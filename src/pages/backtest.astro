@@ -54,17 +54,17 @@ const ddOption = {
     trigger: 'axis',
     valueFormatter: (v: number | null) => (v == null ? '-' : `${(v as number).toFixed(2)}%`),
   },
-  legend: { data: ['V31 基金版 回撤'], top: 0, textStyle: { color: '#555' } },
+  legend: { data: ['V31 基金版 回测'], top: 0, textStyle: { color: '#555' } },
   grid: { left: 56, right: 20, top: 42, bottom: 52 },
   xAxis: { type: 'category', data: navMonths, boundaryGap: false, axisLabel: { interval: 23, color: '#8a7a66' } },
-  yAxis: { type: 'value', name: '回撤（%）', nameTextStyle: { color: '#8a7a66' }, axisLabel: { color: '#8a7a66', formatter: '{value}%' }, splitLine: { lineStyle: { color: '#f0e8d9' } } },
+  yAxis: { type: 'value', name: '回测（%）', nameTextStyle: { color: '#8a7a66' }, axisLabel: { color: '#8a7a66', formatter: '{value}%' }, splitLine: { lineStyle: { color: '#f0e8d9' } } },
   dataZoom: [
     { type: 'inside', start: 0, end: 100 },
     { type: 'slider', height: 16, bottom: 8, start: 0, end: 100 },
   ],
   series: [
     {
-      name: 'V31 基金版 回撤',
+      name: 'V31 基金版 回测',
       type: 'line',
       data: strategy.drawdown.v31.map((v: number) => Number((v * 100).toFixed(2))),
       smooth: true,
@@ -143,7 +143,7 @@ const rows = recent.months
             <td class="pos">+{(v31.cumulative - hs300.cumulative).toFixed(1)}pp</td>
           </tr>
           <tr>
-            <td>Calmar（年化/回撤）</td>
+            <td>Calmar（年化/回测）</td>
             <td>{v31.calmar.toFixed(2)}</td>
             <td>{hs300.calmar.toFixed(2)}</td>
             <td>-</td>
@@ -181,7 +181,7 @@ const rows = recent.months
       <h2 class="section-title">回撤全景</h2>
     </div>
     <p class="section-sub">
-      每次净值从高点回落的过程。红线为最大回撤 -22.66% 的标记线。14 年中最大的回撤发生在 2015-2016 股灾段，
+      每次净值从高点回落的过程。红线为最大回撤 -22.66% 的标记线。14 年中最大的回测发生在 2015-2016 股灾段，
       空仓保险躲过了 2015 年 8-9 月连续暴跌（那两个月单月跌幅分别约 -14% 和 -12%）。
     </p>
     <Chart option={ddOption} height="380px" />

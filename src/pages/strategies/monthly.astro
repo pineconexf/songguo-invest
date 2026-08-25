@@ -42,7 +42,7 @@ const stats = Object.fromEntries(
     <div class="hero-inner">
       <span class="eyebrow">回测测试</span>
       <h1>
-        每一个时点的回撤<br /><span class="gold">都能查到</span>
+        每一个时点的回测<br /><span class="gold">都能查到</span>
       </h1>
       <p class="hero-lead">
         统一窗口 <b>{vStd.window.start}–{vStd.window.end}（{vStd.window.months} 个月）</b>。
@@ -56,7 +56,7 @@ const stats = Object.fromEntries(
     <div class="section-head">
       <div class="section-kicker">Monthly Series</div>
       <h2 class="section-title">月度明细表</h2>
-      <p class="section-sub">切换策略/组合查看；「回撤」为滚动回撤（从历史高点回落幅度），最深月份红色标注。数值为百分数。</p>
+      <p class="section-sub">切换策略/组合查看；「回测」为滚动回撤（从历史高点回落幅度），最深月份红色标注。数值为百分数。</p>
     </div>
     <div class="drill-tabs" id="drill-tabs">
       {
@@ -70,7 +70,7 @@ const stats = Object.fromEntries(
     <div class="table-scroll">
       <table class="data-table" id="drill-table">
         <thead>
-          <tr><th>月份</th><th>月度收益</th><th>累计净值</th><th>回撤</th><th>状态</th></tr>
+          <tr><th>月份</th><th>月度收益</th><th>累计净值</th><th>回测</th><th>状态</th></tr>
         </thead>
         <tbody id="drill-body"></tbody>
       </table>
@@ -117,7 +117,7 @@ const stats = Object.fromEntries(
       </a>
       <a href="/songguo-invest/strategies/etf/" class="link-card">
         <h3>ETF · 拼图构成</h3>
-        <p>四拼图各标的（511010/159934/510880/513500）的权重、年化、回撤。</p>
+        <p>四拼图各标的（511010/159934/510880/513500）的权重、年化、回测。</p>
       </a>
       <a href="/songguo-invest/strategies/fund/" class="link-card">
         <h3>基金 · 选基明细</h3>
