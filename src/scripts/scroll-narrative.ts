@@ -18,6 +18,7 @@ function inViewport(el: Element, ratio = 0.6): boolean {
 }
 
 // 数字递增（只跑一次，慢速，表达"真实计算"而非炫技）
+// HTML 里写最终值（无 JS 也显示真实数字），动画前先重置为 0 起点
 function runCountUp(el: HTMLElement) {
   const target = parseFloat(el.dataset.count || '0');
   const suffix = el.dataset.suffix || '';
@@ -25,6 +26,7 @@ function runCountUp(el: HTMLElement) {
   const prefix = el.dataset.prefix || '';
   const start = performance.now();
   const dur = COUNT_ANIM;
+  el.textContent = `${prefix}0${decimals > 0 ? '.' + '0'.repeat(decimals) : ''}${suffix}`;
   function tick(now: number) {
     const p = Math.min((now - start) / dur, 1);
     const eased = 1 - Math.pow(1 - p, 3); // easeOutCubic
