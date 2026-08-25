@@ -1,189 +1,214 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import Chart from '../components/Chart.astro';
-import strategy from '../data/strategy.json';
+import vStd from '../data/version_standard.json';
+import vPro from '../data/version_pro.json';
+import mRet from '../data/monthly_returns.json';
 
-const v31 = strategy.meta.v31;
-const hs300 = strategy.meta.hs300;
-const GOLD = '#d9a441';
-const GRAY = '#a39684';
+const s = vStd.strategies;
+const vProMetric = vPro.recommended.metrics;
+const fmt = (v: number | null, digits = 2) => (v == null ? '—' : `${v > 0 ? '+' : ''}${v.toFixed(digits)}%`);
 
-const navMonths = strategy.nav.months.map((ym: string) => `${ym.slice(0, 4)}-${ym.slice(4)}`);
-
+// 四策略净值序列（统一窗口 2016.03 起）
+const navMonths = mRet.map((m) => `${m.ym.slice(0, 4)}-${m.ym.slice(4)}`);
+const buildNav = (key: string) => {
+  let nav = 1;
+  return mRet.map((m) => {
+    if (m[key] == null) return null;
+    nav *= 1 + m[key] / 100;
+    return +nav.toFixed(4);
+  });
+};
 const navOption = {
-  tooltip: {
-    trigger: 'axis',
-    valueFormatter: (v: number | null) => (v == null ? '-' : `${(v as number).toFixed(2)} 倍`),
-  },
-  legend: { data: ['V31 基金版', '沪深300'], top: 0, textStyle: { color: '#555' } },
+  tooltip: { trigger: 'axis', valueFormatter: (v: number | null) => (v == null ? '-' : `${v.toFixed(2)} 倍`) },
+  legend: { data: ['宏观择时', 'ETF 壳', '基金壳', '股票 V31'], top: 0, textStyle: { color: '#555' } },
   grid: { left: 56, right: 20, top: 42, bottom: 52 },
-  xAxis: {
-    type: 'category',
-    data: navMonths,
-    boundaryGap: false,
-    axisLabel: { interval: 23, color: '#8a7a66' },
-  },
-  yAxis: {
-    type: 'value',
-    name: '净值（倍数）',
-    nameTextStyle: { color: '#8a7a66' },
-    scale: true,
-    axisLabel: { color: '#8a7a66' },
-    splitLine: { lineStyle: { color: '#f0e8d9' } },
-  },
+  xAxis: { type: 'category', data: navMonths, boundaryGap: false, axisLabel: { interval: 23, color: '#8a7a66' } },
+  yAxis: { type: 'value', name: '净值（倍数）', nameTextStyle: { color: '#8a7a66' }, scale: true, axisLabel: { color: '#8a7a66' }, splitLine: { lineStyle: { color: '#f0e8d9' } } },
   dataZoom: [
     { type: 'inside', start: 0, end: 100 },
     { type: 'slider', height: 16, bottom: 8, start: 0, end: 100 },
   ],
   series: [
-    {
-      name: 'V31 基金版',
-      type: 'line',
-      data: strategy.nav.v31,
-      smooth: true,
-      symbol: 'none',
-      lineStyle: { width: 2.5, color: GOLD },
-      areaStyle: { opacity: 0.08, color: GOLD },
-    },
-    {
-      name: '沪深300',
-      type: 'line',
-      data: strategy.nav.hs300,
-      smooth: true,
-      symbol: 'none',
-      lineStyle: { width: 1.5, color: GRAY, type: 'dashed' },
-    },
+    { name: '宏观择时', type: 'line', data: buildNav('index'), smooth: true, symbol: 'none', lineStyle: { width: 1.5, color: '#d9a441' } },
+    { name: 'ETF 壳', type: 'line', data: buildNav('etf'), smooth: true, symbol: 'none', lineStyle: { width: 1.5, color: '#4A7C59' } },
+    { name: '基金壳', type: 'line', data: buildNav('fund'), smooth: true, symbol: 'none', lineStyle: { width: 1.5, color: '#8B5E3C' } },
+    { name: '股票 V31', type: 'line', data: buildNav('stock'), smooth: true, symbol: 'none', lineStyle: { width: 2.5, color: '#a03a28' } },
   ],
 };
 ---
 <!--
-  V4 首页 · 浏览路径设计（2026-08-25）
-  理念来源：《别让AI直接做网站：先让它设计浏览路径》（AI之炼金术士）
-  滚动剧本：每屏只解决一个信任问题
-    第1幕 钩子     → 你是谁？凭什么让我停下？        （痛点 + 中心承诺 + 真实数字锚点）
-    第2幕 证据     → 数字是真的吗？                  （数据墙 + 172个月脚印，真实资产证据位）
-    第3幕 方法     → 怎么做到的？                    （四层体系，可解释非黑箱）
-    第4幕 反对意见 → 是不是拟合出来的？              （审计记录逐步点亮，公开自己的黑历史）
-    第5幕 行动     → 然后呢？我能带走什么？          （免费工具 + 公众号引流 + 合规）
-  动效纪律：去掉动画有信息损失才保留；叙事动画宁慢勿快。
-  真实资产在证据位，全站数据为真实回测，不引入任何生成图。
+  V5 首页 · 一个体系三个版本（2026-08-25）
+  用户逻辑：先选版本（我适合哪个）→ 再看证据 → 再懂方法 → 放心行动
+  第1幕 钩子     → 散户为什么亏？（痛点 + 一个体系三个版本的承诺）
+  第2幕 版本     → 我该用哪个版本？（S/P/M 三卡，像手机选型号）
+  第3幕 证据     → 数字是真的吗？（三类资产数据墙 + 125 个月脚印）
+  第4幕 方法     → 怎么做到的？（三类资产分工，可解释非黑箱）
+  第5幕 审计     → 是不是拟合出来的？（公开黑历史）
+  第6幕 行动     → 我能带走什么？（免费工具 + 公众号）
+  数据：统一窗口 2016.03-2026.07（125 个月），几何年化，全部真实回测
 -->
 <Layout
   title="首页"
-  description="松果投资体系 — 14年真实回测验证的A股投资体系。年化+24.30%，同期沪深300仅+3.97%。全部数据含成本口径、经审计、可复现。"
+  description="松果投资体系 — 一个体系三个版本：Standard 三类资产 / Pro 最优组合 / Max 杠杆版。统一窗口 125 个月真实回测，回测测试数据全公开。"
 >
 
-  <!-- ============ 第1幕 · 钩子：你是谁，凭什么让我停下 ============ -->
+  <!-- ============ 第1幕 · 钩子 ============ -->
   <section class="hero" id="hook">
     <div class="hero-inner">
-      <span class="eyebrow reveal">14 年 · 172 个月 · A股真实回测</span>
+      <span class="eyebrow reveal">一个体系 · 三个版本 · 125 个月真实回测</span>
       <h1 class="reveal">
-        散户总亏钱，<br /><span class="gold">不是不努力，是没有体系</span>
+        散户总亏钱，<br /><span class="gold">不是没有机会，是没有体系</span>
       </h1>
       <p class="hero-lead reveal">
-        我们把专业机构的投资逻辑——宏观择时、行业筛选、个股定价、组合风控——
-        做成了普通人能照做的四层体系，然后用 <b>14 年真实回测</b>验证给你看。
+        我们把专业机构的投资逻辑，做成了 <b>Standard / Pro / Max</b> 三个版本——
+        从稳健的防守组合，到进击的个股选股，再到杠杆与期权。
+        全部用 <b>125 个月真实回测</b>验证给你看。
       </p>
       <p class="slogan reveal">让普通投资者也能像机构那样享受体系化的稳健投资</p>
-      <div class="trust-sigil reveal">
-        <span class="sigil-num" data-count="22.6" data-decimals="1" data-suffix="倍">22.6倍</span>
-        <span class="sigil-label">14 年累计收益，含成本口径，全部可复现</span>
-      </div>
       <div class="hero-actions reveal">
-        <a href="#evidence" class="btn btn-gold">看证据 ↓</a>
+        <a href="#versions" class="btn btn-gold">选你的版本 ↓</a>
         <a href="/songguo-invest/philosophy/" class="btn btn-ghost">先了解理念</a>
       </div>
     </div>
   </section>
 
-  <!-- ============ 第2幕 · 证据：数字是真的吗 ============ -->
+  <!-- ============ 第2幕 · 版本选择：我该用哪个 ============ -->
+  <section class="card" id="versions">
+    <div class="section-head">
+      <div class="section-kicker">Versions · 像手机一样选版本</div>
+      <h2 class="section-title">三个版本，从稳健到进取</h2>
+      <p class="section-sub">
+        同一个体系，三个档位。先选适合你的版本，再往下看它的真实数据。
+      </p>
+    </div>
+    <div class="link-cards" style="grid-template-columns: repeat(3, 1fr);">
+      <a href="/songguo-invest/strategies/#standard" class="link-card">
+        <div class="master-school" style="color: var(--green, #4A7C59);">S · Standard · 稳健</div>
+        <h3>Standard 版</h3>
+        <p>三类资产：防守组合（ETF/基金二选一）+ 进攻选股 + 宏观择时。按月调仓，适合大多数投资者。</p>
+        <div class="metric-grid" style="grid-template-columns: repeat(2, 1fr); margin: 14px 0 0; gap: 8px;">
+          <div class="metric-card" style="padding: 10px 8px;"><div class="label">防守年化</div><div class="value" style="font-size: 17px;">{fmt(s.fund.annual)}</div></div>
+          <div class="metric-card" style="padding: 10px 8px;"><div class="label">防守回撤</div><div class="value" style="font-size: 17px; color: #a03a28;">{fmt(s.fund.mdd)}</div></div>
+        </div>
+        <div class="master-desc" style="font-size: 13px; margin-top: 10px;">看看三类资产 →</div>
+      </a>
+      <a href="/songguo-invest/strategies/#pro" class="link-card">
+        <div class="master-school" style="color: #c87f2e;">P · Pro · 增强</div>
+        <h3>Pro 版</h3>
+        <p>用网格扫描 222 个组合选出的最优配比：防守打底 + 进攻引擎，回撤砍半、收益保持。</p>
+        <div class="metric-grid" style="grid-template-columns: repeat(2, 1fr); margin: 14px 0 0; gap: 8px;">
+          <div class="metric-card" style="padding: 10px 8px;"><div class="label">组合年化</div><div class="value" style="font-size: 17px;">{fmt(vProMetric?.annual ?? 14.39)}</div></div>
+          <div class="metric-card" style="padding: 10px 8px;"><div class="label">组合回撤</div><div class="value" style="font-size: 17px; color: #a03a28;">{fmt(vProMetric?.mdd ?? -9.44)}</div></div>
+        </div>
+        <div class="master-desc" style="font-size: 13px; margin-top: 10px;">看推荐组合 →</div>
+      </a>
+      <a href="/songguo-invest/strategies/#max" class="link-card">
+        <div class="master-school" style="color: #a03a28;">M · Max · 进取</div>
+        <h3>Max 版</h3>
+        <p>进攻腿加杠杆 + 防守腿期权对冲。只适合风险承受力极强的投资者。</p>
+        <div class="metric-grid" style="grid-template-columns: repeat(2, 1fr); margin: 14px 0 0; gap: 8px;">
+          <div class="metric-card" style="padding: 10px 8px;"><div class="label">V32 进攻腿</div><div class="value" style="font-size: 17px;">+40.24%</div></div>
+          <div class="metric-card" style="padding: 10px 8px;"><div class="label">组合回撤</div><div class="value" style="font-size: 17px; color: #a03a28;">-30.8%</div></div>
+        </div>
+        <div class="master-desc" style="font-size: 13px; margin-top: 10px;">看杠杆映射 →</div>
+      </a>
+    </div>
+  </section>
+
+  <!-- ============ 第3幕 · 证据：数字是真的吗 ============ -->
   <section class="card" id="evidence">
     <div class="section-head">
       <div class="section-kicker">Evidence · 真实证据</div>
-      <h2 class="section-title">14 年，172 个月，每一笔都算过成本</h2>
+      <h2 class="section-title">三类资产，125 个月，统一口径</h2>
       <p class="section-sub">
-        这些不是宣传数字，是逐月回测、含佣金与印花税摩擦后的结果。
-        每个数字都可以在我们的数据档案里逐月查到。
+        以下数字统一窗口 {vStd.window.start}–{vStd.window.end}（{vStd.window.months} 个月），几何年化、月度再平衡、含成本。
+        每个数字都可以在回测测试页逐月查到。
       </p>
     </div>
     <div class="metric-grid">
       <div class="metric-card reveal">
-        <div class="label">14 年年化收益率</div>
-        <div class="value gold" data-count="24.30" data-prefix="+" data-suffix="%" data-decimals="2">+24.30%</div>
-        <div class="sub">同期沪深300：+3.97%</div>
+        <div class="label">防守 · ETF 壳</div>
+        <div class="value gold">{fmt(s.etf.annual)}</div>
+        <div class="sub">最大回撤 {fmt(s.etf.mdd)} · 夏普 {s.etf.sharpe.toFixed(2)}</div>
       </div>
       <div class="metric-card reveal">
-        <div class="label">最大回撤</div>
-        <div class="value red" data-count="-22.66" data-suffix="%" data-decimals="2">-22.66%</div>
-        <div class="sub">沪深300 同期 -40.56%</div>
+        <div class="label">防守 · 基金壳</div>
+        <div class="value gold">{fmt(s.fund.annual)}</div>
+        <div class="sub">最大回撤 {fmt(s.fund.mdd)} · 夏普 {s.fund.sharpe.toFixed(2)}</div>
       </div>
       <div class="metric-card reveal">
-        <div class="label">风险调整收益（Calmar）</div>
-        <div class="value green" data-count="1.07" data-decimals="2">1.07</div>
-        <div class="sub">年化 ÷ 最大回撤</div>
+        <div class="label">进攻 · 股票 V31</div>
+        <div class="value gold">{fmt(s.stock.annual)}</div>
+        <div class="sub">最大回撤 {fmt(s.stock.mdd)} · 夏普 {s.stock.sharpe.toFixed(2)}</div>
       </div>
       <div class="metric-card reveal">
-        <div class="label">14 年累计收益</div>
-        <div class="value gold" data-count="2159.6" data-prefix="+" data-suffix="%" data-decimals="1">+2159.6%</div>
-        <div class="sub">约 22.6 倍（含成本口径）</div>
+        <div class="label">择时 · 宏观信号</div>
+        <div class="value gold">{fmt(s.index.annual)}</div>
+        <div class="sub">最大回撤 {fmt(s.index.mdd)} · 夏普 {s.index.sharpe.toFixed(2)}</div>
       </div>
+    </div>
+    <div class="callout" style="margin-top: 20px;">
+      <b>双口径说明</b>：本站另有各策略详情页的官方口径（不同起点窗口，如个股 2012 起 14 年 +24.30%）。
+      统一窗口用于横向对比，官方口径用于策略详情，两个都真实，使用看标注。
     </div>
   </section>
 
+  <!-- 净值脚印 -->
   <section class="card reveal">
     <div class="section-head">
       <div class="section-kicker">Track Record · 脚印</div>
-      <h2 class="section-title">这不是一个数字，是 172 个月的脚印</h2>
+      <h2 class="section-title">这不是几个数字，是 125 个月的脚印</h2>
       <p class="section-sub">
-        起点 1.00，金色为策略净值，灰色虚线为同期沪深300。
-        每一格都是真实的一个月——含股灾、含熔断、含 2018 年阴跌。
+        起点 1.00，四条线代表四类资产/策略的净值。每一格都是真实的一个月——含 2018 阴跌、含 2022 熊市、含 2024 小微盘股灾。
         数据为历史回测，不构成投资建议。
       </p>
     </div>
     <Chart option={navOption} height="440px" />
-    <div style="margin-top: var(--sp-3); text-align: center;">
-      <a href="/songguo-invest/ranking/" class="btn btn-ghost">查看 172 个月逐月明细 →</a>
+    <div style="margin-top: var(--sp-3); text-align: center; display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+      <a href="/songguo-invest/strategies/monthly/" class="btn btn-gold">查看 125 个月回测测试 →</a>
+      <a href="/songguo-invest/strategies/" class="btn btn-ghost">全部策略与版本</a>
     </div>
   </section>
 
-  <!-- ============ 第3幕 · 方法：怎么做到的 ============ -->
+  <!-- ============ 第4幕 · 方法：怎么做到的 ============ -->
   <section class="card reveal">
     <div class="section-head">
       <div class="section-kicker">Method · 可解释的方法</div>
-      <h2 class="section-title">不是黑箱。每一步都讲得清。</h2>
+      <h2 class="section-title">不是黑箱。三类资产各司其职。</h2>
       <p class="section-sub">
-        松果投资体系不是单一策略，而是从宏观到个股的完整决策链——每一层独立可验证，层间协同形成闭环。
+        松果体系不是单一押注，而是三类资产的分工协作——每类独立可验证，组合起来形成闭环。
       </p>
     </div>
     <div class="layer-stack">
-      <a href="/songguo-invest/macro/" class="layer">
+      <a href="/songguo-invest/strategies/etf/" class="layer">
         <span class="layer-index">01</span>
-        <span class="layer-name">宏观层</span>
-        <span class="layer-desc">宏观时钟六轴评分，判断大势方向，决定仓位进攻或防守</span>
-        <span class="layer-tag">V1 常规版</span>
-      </a>
-      <a href="/songguo-invest/methodology/" class="layer">
-        <span class="layer-index">02</span>
-        <span class="layer-name">行业层</span>
-        <span class="layer-desc">行业因子筛选，识别景气赛道，避开衰退行业</span>
-        <span class="layer-tag">行业轮动</span>
+        <span class="layer-name">防守组合</span>
+        <span class="layer-desc">债 + 金 + 红利/QDII 低相关拼图，压舱石。ETF/基金两个壳二选一，回撤 5-6%。</span>
+        <span class="layer-tag">回撤优先</span>
       </a>
       <a href="/songguo-invest/backtest/" class="layer">
-        <span class="layer-index">03</span>
-        <span class="layer-name">个股层</span>
-        <span class="layer-desc">11 步筛选好公司 + 双因子找便宜 + 空仓保险躲股灾</span>
-        <span class="layer-tag">V31 基金版</span>
+        <span class="layer-index">02</span>
+        <span class="layer-name">进攻选股</span>
+        <span class="layer-desc">量化价值选股：质量门槛 + 低估值 + 中小盘，收益引擎，需要组合纪律。</span>
+        <span class="layer-tag">V31</span>
       </a>
-      <a href="/songguo-invest/portfolio/" class="layer">
-        <span class="layer-index">04</span>
-        <span class="layer-name">组合层</span>
-        <span class="layer-desc">双版本组合：宏观×个股融合，进攻防守节奏错开</span>
-        <span class="layer-tag">单策略</span>
+      <a href="/songguo-invest/macro/" class="layer">
+        <span class="layer-index">03</span>
+        <span class="layer-name">宏观择时</span>
+        <span class="layer-desc">Shibor 流动性信号 × 中证500，宽松持有、收紧空仓，指数保险。</span>
+        <span class="layer-tag">V1 常规版</span>
+      </a>
+      <a href="/songguo-invest/strategies/" class="layer">
+        <span class="layer-index">S→M</span>
+        <span class="layer-name">三版本演进</span>
+        <span class="layer-desc">Standard 三类资产 → Pro 数据选最优组合 → Max 进攻加杠杆、防守用期权对冲。</span>
+        <span class="layer-tag">S / P / M</span>
       </a>
     </div>
   </section>
 
-  <!-- ============ 第4幕 · 反对意见：是不是拟合出来的 ============ -->
+  <!-- ============ 第5幕 · 审计：公开自己的黑历史 ============ -->
   <section class="card">
     <div class="section-head">
       <div class="section-kicker">Audit · 我们公开自己的黑历史</div>
@@ -205,7 +230,7 @@ const navOption = {
         <div class="num">2</div>
         <div class="body">
           <h3>无未来函数</h3>
-          <p>信号判定严格滞后一个月对齐。2026 年 8 月独立审计曾发现旧版本含前视偏差（年化虚高至 40%+），已全体系重算——本站数据是<b>自曝问题后修正</b>的口径。</p>
+          <p>信号判定严格滞后对齐。2026 年 8 月独立审计曾发现旧版本含前视偏差（年化虚高至 40%+），已全体系重算——本站数据是<b>自曝问题后修正</b>的口径。</p>
         </div>
       </div>
       <div class="step steps-step">
@@ -219,7 +244,7 @@ const navOption = {
         <div class="num">4</div>
         <div class="body">
           <h3>保守方向原则</h3>
-          <p>所有口径分歧（月份断档、空仓月归属等）一律按保守方向处理，<b>宁可低估收益，不虚增</b>。</p>
+          <p>所有口径分歧一律按保守方向处理，<b>宁可低估收益，不虚增</b>。</p>
         </div>
       </div>
     </div>
@@ -228,27 +253,27 @@ const navOption = {
     </div>
   </section>
 
-  <!-- ============ 第5幕 · 行动：你能带走什么 ============ -->
+  <!-- ============ 第6幕 · 行动：你能带走什么 ============ -->
   <section class="card">
     <div class="section-head">
       <div class="section-kicker">Action · 你能带走什么</div>
       <h2 class="section-title">体系是公开的。工具是免费的。</h2>
       <p class="section-sub">
-        我们不收订阅费、不卖课程。你带走三样东西：判断大势的工具、验证策略的数据、以及一套不用拍脑袋的方法。
+        我们不收订阅费、不卖课程。你带走三样东西：选版本的方法、验证策略的数据、以及一套不用拍脑袋的投资体系。
       </p>
     </div>
     <div class="link-cards">
-      <a href="/songguo-invest/macro/" class="link-card action-card">
-        <h3><span class="gold">宏观时钟</span> · 现在该攻还是守</h3>
-        <p>六轴宏观评分，告诉你当前市场的进攻/防守信号——先看方向，再谈个股。</p>
+      <a href="/songguo-invest/strategies/" class="link-card action-card">
+        <h3><span class="gold">策略体系</span> · 三个版本任你选</h3>
+        <p>Standard 稳健 / Pro 增强 / Max 进取——每版都有完整方法论与回测数据。</p>
       </a>
-      <a href="/songguo-invest/backtest/" class="link-card action-card">
-        <h3><span class="gold">策略数据</span> · 172 个月逐月可查</h3>
-        <p>净值、年度收益、回测、审计记录，全部公开可复现。不玩幸存者偏差。</p>
+      <a href="/songguo-invest/strategies/monthly/" class="link-card action-card">
+        <h3><span class="gold">回测测试</span> · 125 个月逐月可查</h3>
+        <p>月度收益、累计净值、滚动回撤全公开，每个时点都能下钻核实。</p>
       </a>
-      <a href="/songguo-invest/archive/" class="link-card action-card">
-        <h3><span class="gold">历史档案</span> · 809 周信号 + 124 月选股</h3>
-        <p>每一次宏观判断、每一月选股记录都在这里，投前投后对比看得见。</p>
+      <a href="/songguo-invest/tools/" class="link-card action-card">
+        <h3><span class="gold">免费工具</span> · 配套策略使用</h3>
+        <p>个股体检、估值计算、复利计算已上线，ETF 配置/基金打分开发中。</p>
       </a>
     </div>
     <div class="callout" style="margin-top: var(--sp-5);">
