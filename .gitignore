@@ -21,3 +21,6 @@ screenshots/*.png
 
 # V4 验收临时 profile
 screenshots/v4/_profile*
+backend/.env
+backend/venv/
+backend/__pycache__/

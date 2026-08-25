@@ -1,0 +1,206 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+<Layout
+  title="个股体检"
+  description="松果个股体检 — 输入股票代码，按松果 V30 体系五维评分（ROE/盈利持续性/估值/市值/成长）+ AI 综合报告。免费工具，不构成投资建议。"
+>
+  <section class="hero" style="padding: 56px 48px;">
+    <div class="hero-inner">
+      <span class="eyebrow">Free Tool · 免费工具</span>
+      <h1>
+        这只股票，按松果体系<br /><span class="gold">能打多少分？</span>
+      </h1>
+      <p class="hero-lead">
+        不预测涨跌。输入股票代码，系统按 <b>松果 V30 体系</b> 五维评分
+        （质量/盈利/估值/市值/成长），并给出 AI 综合报告——你带走的是
+        <b>可复现的评分依据</b>，不是一句"看好"。
+      </p>
+    </div>
+  </section>
+
+  <section class="card" style="max-width: 760px; margin: 0 auto;">
+    <div class="section-head">
+      <div class="section-kicker">Stock Check · 五维体检</div>
+      <h2 class="section-title">输入股票代码</h2>
+      <p class="section-sub">支持 A 股 6 位代码（如 600729）。查询含实时行情与近 3 年财务数据，约 20 秒出报告。</p>
+    </div>
+
+    <div style="display:flex; gap: var(--sp-3); align-items: stretch;">
+      <label class="valuator-field" style="flex:1;">
+        <span>股票代码</span>
+        <input id="sc-code" type="text" maxlength="6" placeholder="如 600729" style="letter-spacing: 2px;" />
+      </label>
+      <button id="sc-run" class="btn btn-gold" style="align-self:flex-end; white-space:nowrap;">开始体检 →</button>
+    </div>
+
+    <!-- 加载态 -->
+    <div id="sc-loading" style="display:none; margin-top: var(--sp-5); text-align:center; padding: var(--sp-5) 0;">
+      <div style="font-size:15px; color: var(--navy-700); font-weight:600;">正在体检中…</div>
+      <div style="font-size:13px; color: var(--navy-600); margin-top:6px;">
+        拉取财务数据 → 五维评分 → AI 综合报告（约 20 秒，请稍候）
+      </div>
+      <div style="margin: 14px auto 0; width: 40px; height: 40px; border: 3px solid rgba(217,164,65,0.25); border-top-color: var(--gold-500); border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+    </div>
+
+    <!-- 结果区 -->
+    <div id="sc-result" style="display:none; margin-top: var(--sp-5); border-top: 1px solid rgba(139,94,60,0.15); padding-top: var(--sp-4);">
+      <!-- 头部：股票信息 + 总分徽章 -->
+      <div style="display:flex; align-items:center; gap: var(--sp-4); flex-wrap: wrap;">
+        <div style="text-align:center;">
+          <div id="sc-badge" class="badge-gold" style="font-size:40px; font-weight:800;">--</div>
+          <div id="sc-grade" style="font-size:13px; font-weight:700; color: var(--navy-700); margin-top:2px;">--</div>
+        </div>
+        <div style="flex:1; min-width: 200px;">
+          <div id="sc-name" style="font-size:20px; font-weight:800; color: var(--navy-900);">--</div>
+          <div id="sc-quote" style="font-size:13px; color: var(--navy-600); margin-top:4px;">--</div>
+        </div>
+      </div>
+
+      <!-- 五维评分条 -->
+      <div id="sc-scores" style="margin-top: var(--sp-4); display:grid; gap: var(--sp-2);"></div>
+
+      <!-- AI 报告 -->
+      <div id="sc-report" style="margin-top: var(--sp-4);"></div>
+
+      <!-- 引流：组合查询 -->
+      <div class="callout" style="margin-top: var(--sp-4); background: linear-gradient(135deg, rgba(217,164,65,0.10), rgba(74,124,89,0.08));">
+        <b>想查一整套？</b> 单只股票只是单点。把你的<b>持仓组合</b>发过来，系统从宏观、行业、个股、组合耦合四个维度给你做综合评价——<b>组合查询即将上线</b>，先关注公众号「松果商业笔记」不错过。
+      </div>
+
+      <div class="callout" style="margin-top: var(--sp-3);">
+        <b>数据说明</b>：本工具按松果 V30 体系公开口径计算（ROE 质量门槛、盈利持续性、估值、市值、成长五维），行情与财务数据来自公开数据源，AI 报告由模型生成。
+        <b>结果仅作体系研究参考，不构成投资建议</b>，不代表任何证券的买卖推荐。投资有风险，入市需谨慎。
+      </div>
+    </div>
+
+    <!-- 错误区 -->
+    <div id="sc-error" style="display:none; margin-top: var(--sp-4); padding: var(--sp-3); border-radius: 10px; background: rgba(190,60,40,0.08); color: #a03a28; font-size: 14px;"></div>
+  </section>
+
+  <div class="callout" style="max-width: 760px; margin: var(--sp-4) auto 0;">
+    <b>评分口径</b>：质量（ROE 近 3 年 >3%，V27.2 收紧信号）· 盈利持续性（连续盈利）· 估值（PE 分档）·
+    市值（≤300 亿机构定价真空带）· 成长（净利同比）。完整体系见 <a href="/songguo-invest/methodology/">四层体系架构</a>。
+  </div>
+
+  <style is:global>
+    /* is:global：评分条/徽章由 JS 动态生成，scoped 选择器匹配不到动态 DOM */
+    .badge-gold {
+      width: 88px; height: 88px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, var(--gold-500), var(--gold-400));
+      color: #fff; box-shadow: 0 4px 14px rgba(217,164,65,0.3);
+      margin: 0 auto;
+    }
+    .sc-bar {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 13px;
+    }
+    .sc-bar .name { width: 96px; color: var(--navy-700); font-weight: 600; flex-shrink: 0; }
+    .sc-bar .track { flex: 1; height: 10px; background: rgba(139,94,60,0.12); border-radius: 5px; overflow: hidden; }
+    .sc-bar .fill { height: 100%; border-radius: 5px; background: linear-gradient(90deg, var(--gold-500), var(--gold-400)); transition: width 0.8s ease; }
+    .sc-bar .fill.low { background: linear-gradient(90deg, #c05a3a, #d97b4a); }
+    .sc-bar .val { width: 42px; text-align: right; font-weight: 700; color: var(--navy-900); flex-shrink: 0; }
+    .sc-bar .detail { width: 180px; font-size: 12px; color: var(--navy-600); flex-shrink: 0; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+
+  <script>
+    // API 地址（本地优先模式）：localhost/127.0.0.1 → 本地后端；其他 → 线上中转（后置）
+    const API_BASE =
+      location.hostname === '127.0.0.1' || location.hostname === 'localhost'
+        ? 'http://127.0.0.1:8080'
+        : 'http://45.194.22.118:8080';
+
+    function setV(name: string, v: string) {
+      const el = document.getElementById(name) as HTMLElement;
+      if (el) el.textContent = v;
+    }
+    function show(id: string, on = true) {
+      (document.getElementById(id) as HTMLElement).style.display = on ? 'block' : 'none';
+    }
+
+    async function run() {
+      const code = ((document.getElementById('sc-code') as HTMLInputElement).value || '').trim();
+      if (!/^\d{6}$/.test(code)) { alert('请输入 6 位股票代码，如 600729'); return; }
+      show('sc-loading'); show('sc-result', false); show('sc-error', false);
+      try {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 45000);
+        const res = await fetch(API_BASE + '/api/check', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code }),
+          signal: ctrl.signal,
+        });
+        clearTimeout(timer);
+        if (!res.ok) throw new Error('查询失败 HTTP ' + res.status);
+        const d = await res.json();
+        render(d);
+      } catch (e: any) {
+        show('sc-loading', false);
+        const msg = e?.name === 'AbortError' ? '查询超时（45 秒），请重试' : (e?.message || '网络错误，请稍后重试');
+        const err = document.getElementById('sc-error') as HTMLElement;
+        err.textContent = '⚠️ ' + msg;
+        show('sc-error');
+      }
+    }
+
+    function render(d: any) {
+      // 头部
+      setV('sc-name', `${d.name}（${d.code}）`);
+      setV('sc-badge', String(d.scores?.total ?? '--'));
+      setV('sc-grade', `评级 ${d.scores?.grade ?? d.grade ?? '--'}`);
+      const q = d.quote || {};
+      setV('sc-quote', `现价 ¥${q.price ?? '--'} ｜ PE(TTM) ${q.pe ?? '--'} ｜ PB ${q.pb ?? '--'} ｜ 总市值 ${q.mv ?? '--'} 亿`);
+
+      // 五维
+      const labels: Record<string, string> = { roe: '质量 ROE', profit: '盈利持续', pe: '估值 PE', mv: '市值', growth: '成长' };
+      const bars = (Object.entries(labels) as [string, string][])
+        .map(([k, label]) => {
+          const s = d.scores?.[k];
+          if (!s) return '';
+          const pct = Math.round((s.score / s.max) * 100);
+          return `<div class="sc-bar">
+            <span class="name">${label}</span>
+            <span class="track"><span class="fill ${pct <= 20 ? 'low' : ''}" style="width:${pct}%"></span></span>
+            <span class="val">${s.score}/${s.max}</span>
+            <span class="detail">${s.detail ?? ''}</span>
+          </div>`;
+        }).join('');
+      (document.getElementById('sc-scores') as HTMLElement).innerHTML = bars;
+
+      // AI 报告
+      const r = d.report || {};
+      const strengths = (r.strengths || []).map((x: string) => `<li>${x}</li>`).join('');
+      const risks = (r.risks || []).map((x: string) => `<li>${x}</li>`).join('');
+      (document.getElementById('sc-report') as HTMLElement).innerHTML = `
+        <div style="font-size:14px; color: var(--navy-800); line-height:1.8; background: rgba(139,94,60,0.05); border-radius:10px; padding: var(--sp-3);">
+          <div style="font-weight:800; color: var(--navy-900); margin-bottom:4px;">AI 体检结论</div>
+          <p style="margin:0 0 8px;">${r.summary ?? ''}</p>
+          <p style="margin:0 0 8px; font-size:13px; color: var(--navy-700);">${r.style_analysis ?? ''}</p>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top:8px;">
+            <div>
+              <div style="font-size:12px; font-weight:700; color: var(--green-700, #4A7C59);">优势</div>
+              <ul style="margin:4px 0 0; padding-left:16px; font-size:12px; color: var(--navy-700); line-height:1.7;">${strengths}</ul>
+            </div>
+            <div>
+              <div style="font-size:12px; font-weight:700; color: #a03a28;">风险</div>
+              <ul style="margin:4px 0 0; padding-left:16px; font-size:12px; color: var(--navy-700); line-height:1.7;">${risks}</ul>
+            </div>
+          </div>
+          <p style="margin:10px 0 0; font-size:13px; font-weight:600; color: var(--navy-900);">${r.verdict ?? ''}</p>
+          <p style="margin:6px 0 0; font-size:13px; color: var(--gold-600); font-weight:600;">${r.action_hint ?? ''}</p>
+        </div>`;
+
+      show('sc-loading', false);
+      show('sc-result');
+      window.scrollTo({ top: (document.getElementById('sc-result') as HTMLElement).offsetTop - 80, behavior: 'smooth' });
+    }
+
+    document.getElementById('sc-run')?.addEventListener('click', run);
+    (document.getElementById('sc-code') as HTMLInputElement)?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') run();
+    });
+  </script>
+</Layout>
