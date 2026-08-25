@@ -3,7 +3,7 @@ import Layout from '../layouts/Layout.astro';
 ---
 <Layout
   title="策略体系"
-  description="松果投资策略体系 — Standard 四策略、Pro 策略组合、Max 杠杆版，三级版本像手机一样从基础到进阶。"
+  description="松果投资策略体系 — Standard 三类资产（防守组合/进攻选股/宏观择时）、Pro 组合、Max 杠杆，三级版本从稳健到进取。"
 >
   <!-- Hero -->
   <section class="hero" style="padding: 56px 48px;">
@@ -13,8 +13,9 @@ import Layout from '../layouts/Layout.astro';
         一个体系<br /><span class="gold">三个版本</span>
       </h1>
       <p class="hero-lead">
-        松果策略像手机一样分三档：<b>S · Standard</b> 四套基础策略，<b>P · Pro</b> 策略互相组合，
-        <b>M · Max</b> 组合加杠杆。同一套体系，从稳健到进取，按你的风险承受力选版本。
+        松果策略像手机一样分三档：<b>S · Standard</b> 三类资产（防守组合、进攻选股、宏观择时），
+        <b>P · Pro</b> 三类资产互相组合，<b>M · Max</b> 组合加杠杆。
+        同一套体系，从稳健到进取，按你的风险承受力选版本。
       </p>
     </div>
   </section>
@@ -26,14 +27,14 @@ import Layout from '../layouts/Layout.astro';
         <div class="version-chip-tag">S</div>
         <div>
           <div class="version-chip-name">Standard 版</div>
-          <div class="version-chip-desc">四套基础策略 · 稳健</div>
+          <div class="version-chip-desc">三类资产 · 稳健</div>
         </div>
       </a>
       <a href="#pro" class="version-chip">
         <div class="version-chip-tag">P</div>
         <div>
           <div class="version-chip-name">Pro 版</div>
-          <div class="version-chip-desc">策略互相组合 · 增强</div>
+          <div class="version-chip-desc">资产互相组合 · 增强</div>
         </div>
       </a>
       <a href="#max" class="version-chip">
@@ -49,123 +50,152 @@ import Layout from '../layouts/Layout.astro';
   <!-- ========== S · Standard ========== -->
   <section class="card" id="standard">
     <div class="section-head">
-      <div class="section-kicker">S · Standard · 四套基础策略</div>
+      <div class="section-kicker">S · Standard · 三类资产</div>
       <h2 class="section-title">Standard 版</h2>
       <p class="section-sub">
-        体系的最底层：四个维度的独立策略，每套都有完整方法论、真实回撤数据、操作方法、配套免费工具。
-        回测口径全部含成本（2011-2026 A 股全周期）。
+        体系的底层：<b>三类资产</b>——防守组合（ETF/基金是同一组合的场内场外两个壳，二选一即可）、进攻选股、宏观择时。
+        每类都有完整方法论、真实回撤数据、操作方法、配套免费工具。回测口径全部含成本（2011-2026 A 股全周期）。
       </p>
     </div>
-    <div class="link-cards" style="grid-template-columns: repeat(2, 1fr);">
-      <a href="/songguo-invest/macro/" class="link-card">
-        <div class="master-school" style="color: var(--gold-600);">Strategy 01 · 指数投资</div>
-        <h3>指数投资策略</h3>
-        <p>纯宏观择时：Shibor 流动性信号 × 中证500。宽松时持有、收紧时空仓，固定 5bp 阈值，walk-forward 样本外验证。</p>
-        <div class="metric-grid" style="grid-template-columns: repeat(3, 1fr); margin: 14px 0 0; gap: 8px;">
-          <div class="metric-card" style="padding: 10px 8px;"><div class="label">样本外年化</div><div class="value" style="font-size:18px;">+10.04%</div></div>
-          <div class="metric-card" style="padding: 10px 8px;"><div class="label">最大回撤</div><div class="value" style="font-size:18px;">-27.8%</div></div>
-          <div class="metric-card" style="padding: 10px 8px;"><div class="label">持仓占比</div><div class="value" style="font-size:18px;">31%</div></div>
-        </div>
-        <div class="master-desc" style="font-size: 13px; margin-top: 10px;">🔧 使用工具：宏观信号查询 →</div>
-      </a>
 
-      <a href="/songguo-invest/backtest/" class="link-card">
-        <div class="master-school" style="color: var(--gold-600);">Strategy 02 · 股票投资</div>
-        <h3>股票投资策略</h3>
-        <p>量化价值选股（V31）：ROE 质量门槛 + 低估值 + 中小盘，月度调仓，14 年（2012-2026）全周期回测，含组合管理要求。</p>
-        <div class="metric-grid" style="grid-template-columns: repeat(3, 1fr); margin: 14px 0 0; gap: 8px;">
-          <div class="metric-card" style="padding: 10px 8px;"><div class="label">年化收益</div><div class="value" style="font-size:18px;">+24.30%</div></div>
-          <div class="metric-card" style="padding: 10px 8px;"><div class="label">最大回撤</div><div class="value" style="font-size:18px;">-22.66%</div></div>
-          <div class="metric-card" style="padding: 10px 8px;"><div class="label">月度胜率</div><div class="value" style="font-size:18px;">60.5%</div></div>
-        </div>
-        <div class="master-desc" style="font-size: 13px; margin-top: 10px;">🔧 使用工具：个股体检 · 估值计算器 · 复利计算器 →</div>
-      </a>
-
-      <a href="/songguo-invest/strategies/etf/" class="link-card">
-        <div class="master-school" style="color: var(--gold-600);">Strategy 03 · ETF 投资</div>
-        <h3>ETF 投资策略</h3>
-        <p>纯 ETF 四拼图低相关组合：债券25% + 黄金30% + 红利10% + QDII35%，2014 起 12.7 年回测，覆盖三次股灾。</p>
-        <div class="metric-grid" style="grid-template-columns: repeat(3, 1fr); margin: 14px 0 0; gap: 8px;">
-          <div class="metric-card" style="padding: 10px 8px;"><div class="label">年化收益</div><div class="value" style="font-size:18px;">+10.10%</div></div>
-          <div class="metric-card" style="padding: 10px 8px;"><div class="label">最大回撤</div><div class="value" style="font-size:18px;">-6.15%</div></div>
-          <div class="metric-card" style="padding: 10px 8px;"><div class="label">覆盖股灾</div><div class="value" style="font-size:16px;">2015/18/22</div></div>
-        </div>
-        <div class="master-desc" style="font-size: 13px; margin-top: 10px;">🔧 使用工具：ETF 组合配置（开发中）→</div>
-      </a>
-
-      <a href="/songguo-invest/strategies/fund/" class="link-card">
-        <div class="master-school" style="color: var(--gold-600);">Strategy 04 · 基金投资</div>
-        <h3>基金投资策略</h3>
-        <p>纯公募场外选基：债券10% + 固收+ 40% + 黄金20% + QDII30%，不盯盘，2016 起 10.5 年回测，回撤最小。</p>
-        <div class="metric-grid" style="grid-template-columns: repeat(3, 1fr); margin: 14px 0 0; gap: 8px;">
-          <div class="metric-card" style="padding: 10px 8px;"><div class="label">年化收益</div><div class="value" style="font-size:18px;">+9.84%</div></div>
-          <div class="metric-card" style="padding: 10px 8px;"><div class="label">最大回撤</div><div class="value" style="font-size:18px;">-5.13%</div></div>
-          <div class="metric-card" style="padding: 10px 8px;"><div class="label">夏普比率</div><div class="value" style="font-size:18px;">1.40</div></div>
-        </div>
-        <div class="master-desc" style="font-size: 13px; margin-top: 10px;">🔧 使用工具：基金打分卡（开发中）→</div>
-      </a>
+    <!-- 资产 01 · 防守组合 -->
+    <div class="asset-block">
+      <div class="asset-head">
+        <span class="asset-tag" style="background: var(--green-bg); color: var(--green);">Asset 01 · 防守</span>
+        <h3 class="asset-title">防守组合</h3>
+        <p class="asset-desc">
+          本质是「债券 + 黄金 + 红利/QDII」的低相关组合，ETF 壳（场内）与基金壳（场外）成分几乎一样——
+          <b>二选一即可，同时持有纯属稀释</b>。壳不同，收益回撤几乎一致，区别只在操作方式。
+        </p>
+      </div>
+      <div class="link-cards" style="grid-template-columns: repeat(2, 1fr);">
+        <a href="/songguo-invest/strategies/etf/" class="link-card">
+          <div class="master-school" style="color: var(--gold-600);">壳 A · 场内 ETF</div>
+          <h3>ETF 壳</h3>
+          <p>四拼图（债25%+金30%+红利10%+QDII35%）场内落地，T+0 进出、成本低，覆盖 2015/2018/2022 三次股灾。</p>
+          <div class="metric-grid" style="grid-template-columns: repeat(3, 1fr); margin: 14px 0 0; gap: 8px;">
+            <div class="metric-card" style="padding: 10px 8px;"><div class="label">年化</div><div class="value" style="font-size:18px;">+10.10%</div></div>
+            <div class="metric-card" style="padding: 10px 8px;"><div class="label">回撤</div><div class="value" style="font-size:18px; color:#a03a28;">-6.15%</div></div>
+            <div class="metric-card" style="padding: 10px 8px;"><div class="label">适合</div><div class="value" style="font-size:15px;">能看盘</div></div>
+          </div>
+          <div class="master-desc" style="font-size: 13px; margin-top: 10px;">🔧 ETF 组合配置（开发中）→</div>
+        </a>
+        <a href="/songguo-invest/strategies/fund/" class="link-card">
+          <div class="master-school" style="color: var(--gold-600);">壳 B · 场外基金</div>
+          <h3>基金壳</h3>
+          <p>同样拼图（债10%+固收+40%+金20%+QDII30%）场外落地，固收+ 是灵魂，不盯盘、省心，2016 起 10.5 年回测。</p>
+          <div class="metric-grid" style="grid-template-columns: repeat(3, 1fr); margin: 14px 0 0; gap: 8px;">
+            <div class="metric-card" style="padding: 10px 8px;"><div class="label">年化</div><div class="value" style="font-size:18px;">+9.84%</div></div>
+            <div class="metric-card" style="padding: 10px 8px;"><div class="label">回撤</div><div class="value" style="font-size:18px; color:#a03a28;">-5.13%</div></div>
+            <div class="metric-card" style="padding: 10px 8px;"><div class="label">适合</div><div class="value" style="font-size:15px;">不盯盘</div></div>
+          </div>
+          <div class="master-desc" style="font-size: 13px; margin-top: 10px;">🔧 基金打分卡（开发中）→</div>
+        </a>
+      </div>
     </div>
 
+    <!-- 资产 02 · 进攻选股 -->
+    <div class="asset-block">
+      <div class="asset-head">
+        <span class="asset-tag" style="background: var(--red-bg); color: #a03a28;">Asset 02 · 进攻</span>
+        <h3 class="asset-title">进攻选股</h3>
+        <p class="asset-desc">
+          量化价值选股（V31）：ROE 质量门槛 + 低估值 + 中小盘，月度调仓，14 年全周期回测。
+          三类资产里收益最高，回撤也最大——进攻的角色，需要组合管理纪律。
+        </p>
+      </div>
+      <div class="link-cards" style="grid-template-columns: repeat(1, 1fr);">
+        <a href="/songguo-invest/backtest/" class="link-card">
+          <div class="master-school" style="color: var(--gold-600);">Asset 02 · 进攻</div>
+          <h3>股票投资策略</h3>
+          <p>量化价值选股：ROE 质量门槛 + 低估值 + 中小盘，月度调仓，14 年（2012-2026）全周期回测，含组合管理要求。</p>
+          <div class="metric-grid" style="grid-template-columns: repeat(3, 1fr); margin: 14px 0 0; gap: 8px;">
+            <div class="metric-card" style="padding: 10px 8px;"><div class="label">年化收益</div><div class="value" style="font-size:18px;">+24.30%</div></div>
+            <div class="metric-card" style="padding: 10px 8px;"><div class="label">最大回撤</div><div class="value" style="font-size:18px; color:#a03a28;">-22.66%</div></div>
+            <div class="metric-card" style="padding: 10px 8px;"><div class="label">月度胜率</div><div class="value" style="font-size:18px;">60.5%</div></div>
+          </div>
+          <div class="master-desc" style="font-size: 13px; margin-top: 10px;">🔧 个股体检 · 估值计算器 · 复利计算器 →</div>
+        </a>
+      </div>
+    </div>
+
+    <!-- 资产 03 · 宏观择时 -->
+    <div class="asset-block">
+      <div class="asset-head">
+        <span class="asset-tag" style="background: var(--gold-100); color: var(--gold-600);">Asset 03 · 择时</span>
+        <h3 class="asset-title">宏观择时</h3>
+        <p class="asset-desc">
+          Shibor 流动性信号 × 中证500：宽松时持有、收紧时空仓，固定 5bp 阈值，walk-forward 样本外验证。
+          是三类资产里的「保险」——31% 的时间在场贡献全部收益，其余时间空仓躲跌。
+        </p>
+      </div>
+      <div class="link-cards" style="grid-template-columns: repeat(1, 1fr);">
+        <a href="/songguo-invest/macro/" class="link-card">
+          <div class="master-school" style="color: var(--gold-600);">Asset 03 · 择时</div>
+          <h3>指数投资策略</h3>
+          <p>纯宏观择时：Shibor 流动性信号 × 中证500。宽松时持有、收紧时空仓，固定 5bp 阈值，walk-forward 样本外验证。</p>
+          <div class="metric-grid" style="grid-template-columns: repeat(3, 1fr); margin: 14px 0 0; gap: 8px;">
+            <div class="metric-card" style="padding: 10px 8px;"><div class="label">样本外年化</div><div class="value" style="font-size:18px;">+10.04%</div></div>
+            <div class="metric-card" style="padding: 10px 8px;"><div class="label">最大回撤</div><div class="value" style="font-size:18px; color:#a03a28;">-27.8%</div></div>
+            <div class="metric-card" style="padding: 10px 8px;"><div class="label">持仓占比</div><div class="value" style="font-size:18px;">31%</div></div>
+          </div>
+          <div class="master-desc" style="font-size: 13px; margin-top: 10px;">🔧 宏观信号查询 →</div>
+        </a>
+      </div>
+    </div>
+
+    <!-- 三类资产对比 -->
     <table class="data-table" style="margin-top: 28px;">
       <thead>
         <tr>
-          <th>策略</th>
+          <th>资产</th>
+          <th>角色</th>
           <th>本质</th>
           <th>回测窗口</th>
           <th>年化</th>
           <th>最大回撤</th>
-          <th>配套工具</th>
         </tr>
       </thead>
       <tbody>
         <tr>
-          <td><b>① 指数投资</b></td>
-          <td>Shibor 信号 × 中证500</td>
-          <td>样本外 10.5 年</td>
-          <td class="up">+10.04%</td>
-          <td class="down">-27.8%</td>
-          <td>宏观信号查询</td>
+          <td><b>① 防守组合</b></td>
+          <td>压舱石</td>
+          <td>债+金+红利/QDII（ETF 壳 / 基金壳二选一）</td>
+          <td>12.7 年 / 10.5 年</td>
+          <td class="up">+10.10% / +9.84%</td>
+          <td class="down">-6.15% / -5.13%</td>
         </tr>
         <tr>
-          <td><b>② 股票投资</b></td>
+          <td><b>② 进攻选股</b></td>
+          <td>收益引擎</td>
           <td>量化价值选股（V31）</td>
           <td>14 年（2012-2026）</td>
           <td class="up">+24.30%</td>
           <td class="down">-22.66%</td>
-          <td>个股体检 · 估值 · 复利</td>
         </tr>
         <tr>
-          <td><b>③ ETF 投资</b></td>
-          <td>四拼图低相关（债/金/红利/QDII）</td>
-          <td>12.7 年（2014-2026）</td>
-          <td class="up">+10.10%</td>
-          <td class="down">-6.15%</td>
-          <td>ETF 组合配置</td>
-        </tr>
-        <tr>
-          <td><b>④ 基金投资</b></td>
-          <td>含固收+ 的场外选基</td>
-          <td>10.5 年（2016-2026）</td>
-          <td class="up">+9.84%</td>
-          <td class="down">-5.13%</td>
-          <td>基金打分卡</td>
+          <td><b>③ 宏观择时</b></td>
+          <td>指数保险</td>
+          <td>Shibor 信号 × 中证500</td>
+          <td>样本外 10.5 年</td>
+          <td class="up">+10.04%</td>
+          <td class="down">-27.8%</td>
         </tr>
       </tbody>
     </table>
     <div class="callout" style="margin-top: 20px;">
-      <b>怎么选</b>：想主动要收益 → ①指数 / ②股票；想省心要稳 → ③ETF / ④基金。
-      <b>组合使用</b>：主动仓（指数+股票）打进攻，生活仓（ETF+基金）做压舱石。
-      <b>升级路径</b>：想要更强 → 上 P 版（策略组合）→ 更能扛波动 → 上 M 版（加杠杆）。
+      <b>怎么配</b>：防守打底（选一个壳）+ 进攻增厚（选股）+ 择时保护（指数保险）。
+      <b>升级路径</b>：想要更强 → 上 P 版（三类资产组合）→ 更能扛波动 → 上 M 版（加杠杆）。
     </div>
   </section>
 
   <!-- ========== P · Pro ========== -->
   <section class="card" id="pro">
     <div class="section-head">
-      <div class="section-kicker">P · Pro · 策略组合</div>
+      <div class="section-kicker">P · Pro · 资产组合</div>
       <h2 class="section-title">Pro 版</h2>
       <p class="section-sub">
-        Standard 四套策略互相组合：指数×ETF、股票×基金、进攻×防守……用组合分散再降回撤、再提收益。
+        三类资产互相组合：防守×进攻、防守×择时、进攻×择时、三资产全配……用组合分散再降回撤、再提收益。
         <b>正在回测中</b>——从全部组合方案里选出投资回报数据最好的 4 个组合，回测完成后公布。
       </p>
     </div>
@@ -204,8 +234,8 @@ import Layout from '../layouts/Layout.astro';
       </div>
     </div>
     <div class="callout" style="margin-top: 20px;">
-      <b>组合逻辑预告</b>：从四套策略中选 2-4 套做组合，候选方向包括「指数+ETF 稳健增强」「股票+基金 攻守兼备」
-      「指数+股票 主动进取」「ETF+基金 纯生活仓」等——最终以回测数据为准，不预设结论。
+      <b>组合逻辑预告</b>：从三类资产中选 2-3 类做组合，候选方向包括「防守+进攻 攻守兼备」「防守+择时 稳健保险」
+      「进攻+择时 主动进取」「防守+进攻+择时 全家桶」等——最终以回测数据为准，不预设结论。
     </div>
   </section>
 
@@ -221,7 +251,7 @@ import Layout from '../layouts/Layout.astro';
     </div>
     <div class="metric-grid" style="grid-template-columns: repeat(4, 1fr);">
       <div class="metric-card">
-        <div class="label">现行参考 · 股票策略 1.5x 杠杆</div>
+        <div class="label">现行参考 · 进攻选股 1.5x 杠杆</div>
         <div class="value" style="font-size: 22px;">+34.71%</div>
         <div class="sub">年化收益（V32 杠杆版）</div>
       </div>
@@ -243,7 +273,7 @@ import Layout from '../layouts/Layout.astro';
     </div>
     <div class="callout" style="margin-top: 8px;">
       <b>杠杆逻辑</b>：收益提升约 1.4 倍（24.30% → 34.71%），回撤也同步放大（-22.66% → -33.65%）——杠杆不是白送的收益，是拿回撤换的。
-      更高杠杆倍数、ETF/基金组合的杠杆化，回测跑选中。
+      更高杠杆倍数、防守组合/择时策略的杠杆化，回测跑选中。
     </div>
     <div class="callout warn" style="margin-top: 8px;">
       <b>风险提示</b>：Max 版仅适合风险承受力强的投资者。杠杆放大亏损，极端行情下可能击穿本金，实盘需严格仓位管理。
@@ -274,5 +304,14 @@ import Layout from '../layouts/Layout.astro';
     .version-chip-name { font-size: 15px; font-weight: 700; color: var(--navy-800); }
     .version-chip-desc { font-size: 12px; color: var(--text-3); margin-top: 2px; }
     section[id] { scroll-margin-top: 80px; }
+    .asset-block { margin-bottom: 32px; }
+    .asset-block:last-of-type { margin-bottom: 8px; }
+    .asset-head { margin-bottom: 14px; }
+    .asset-tag {
+      display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: 0.4px;
+      border-radius: 6px; padding: 4px 10px; margin-bottom: 8px;
+    }
+    .asset-title { font-size: 20px; font-weight: 700; color: var(--navy-800); margin: 0 0 6px; }
+    .asset-desc { font-size: 13.5px; color: var(--text-2); line-height: 1.7; margin: 0; }
   </style>
 </Layout>

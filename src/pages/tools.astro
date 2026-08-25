@@ -2,57 +2,56 @@
 import Layout from '../layouts/Layout.astro';
 
 const groups = [
-  { key: 'index', label: '指数投资策略', desc: 'Shibor 宏观信号 × 中证500 择时' },
-  { key: 'stock', label: '股票投资策略', desc: '量化价值选股（V31）配套' },
-  { key: 'etf', label: 'ETF 投资策略', desc: '四拼图低相关组合配套' },
-  { key: 'fund', label: '基金投资策略', desc: '场外选基组合配套' },
+  { key: 'defense', label: '防守组合', desc: 'ETF 壳 / 基金壳 二选一配套（债+金+红利/QDII）' },
+  { key: 'offense', label: '进攻选股', desc: '量化价值选股（V31）配套' },
+  { key: 'timing', label: '宏观择时', desc: 'Shibor 信号 × 中证500 择时配套' },
   { key: 'all', label: '全策略通用', desc: '资讯与研究支持' },
 ];
 
 const tools = [
   {
-    type: '查询计算类', strategy: 'index',
+    type: '查询计算类', strategy: 'timing',
     name: '宏观信号查询',
     desc: '查询当前 Shibor 流动性信号：宽松（进攻）还是收紧（防守），及本周信号与历史对照。',
     status: 'soon', statusLabel: '开发中', cta: '敬请期待',
   },
   {
-    type: '查询计算类', strategy: 'stock',
+    type: '查询计算类', strategy: 'offense',
     name: '个股体检',
     desc: '输入股票代码，按松果 V30 体系五维评分（质量/盈利/估值/市值/成长）+ AI 综合报告。实时数据，20 秒出结果。',
     status: 'live', statusLabel: '已上线', cta: '免费使用',
     href: '/songguo-invest/tools/stockcheck/',
   },
   {
-    type: '查询计算类', strategy: 'stock',
+    type: '查询计算类', strategy: 'offense',
     name: '估值计算器',
     desc: '输入 PE/PB/ROE/股息率，按松果体系口径给出质量-估值-股息三维画像与贵贱档位。纯前端，30 秒出结果。',
     status: 'live', statusLabel: '已上线', cta: '免费使用',
     href: '/songguo-invest/tools/valuator/',
   },
   {
-    type: '查询计算类', strategy: 'stock',
+    type: '查询计算类', strategy: 'offense',
     name: '复利计算器',
     desc: '年化收益 × 年限，算一笔账：你的长期复利目标需要怎样的年化，或某个年化十年后变多少。',
     status: 'live', statusLabel: '已上线', cta: '免费使用',
     href: '/songguo-invest/tools/compound/',
   },
   {
-    type: '查询计算类', strategy: 'stock',
+    type: '查询计算类', strategy: 'offense',
     name: '回测验证工具',
     desc: '策略历史回测验证：把你的选股思路放回 14 年数据里检验。',
     status: 'soon', statusLabel: '开发中', cta: '敬请期待',
   },
   {
-    type: '查询计算类', strategy: 'etf',
+    type: '查询计算类', strategy: 'defense',
     name: 'ETF 组合配置',
-    desc: '四拼图权重配置器：债券/黄金/红利/QDII 组合配比，一键算回撤与年化。',
+    desc: '四拼图权重配置器：债券/黄金/红利/QDII 组合配比，一键算回撤与年化（ETF 壳）。',
     status: 'soon', statusLabel: '开发中', cta: '敬请期待',
   },
   {
-    type: '查询计算类', strategy: 'fund',
+    type: '查询计算类', strategy: 'defense',
     name: '基金打分卡',
-    desc: '五维打分（夏普/回撤/管理人/规模/费率）帮你在 33 只候选里选出每块拼图的 Top 基金。',
+    desc: '五维打分（夏普/回撤/管理人/规模/费率）帮你在候选里选出每块拼图的 Top 基金（基金壳）。',
     status: 'soon', statusLabel: '开发中', cta: '敬请期待',
   },
   {
