@@ -1,0 +1,146 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Chart from '../../components/Chart.astro';
+import lifeFund from '../../data/life_fund.json';
+
+const navOption = {
+  grid: { left: 50, right: 16, top: 20, bottom: 40 },
+  tooltip: { trigger: 'axis' },
+  xAxis: {
+    type: 'category',
+    data: lifeFund.labels,
+    axisLabel: { fontSize: 10, interval: 14, color: '#8b5e3c' },
+    axisLine: { lineStyle: { color: 'rgba(139,94,60,0.25)' } },
+  },
+  yAxis: {
+    type: 'value',
+    name: '净值',
+    nameTextStyle: { fontSize: 10, color: '#8b5e3c' },
+    scale: true,
+    splitLine: { lineStyle: { color: 'rgba(139,94,60,0.10)' } },
+    axisLabel: { fontSize: 10, color: '#8b5e3c' },
+  },
+  series: [
+    {
+      name: '全公募组合净值',
+      type: 'line',
+      data: lifeFund.nav,
+      showSymbol: false,
+      lineStyle: { width: 2, color: '#d9a441' },
+      areaStyle: { color: 'rgba(217,164,65,0.12)' },
+    },
+  ],
+};
+---
+<Layout
+  title="纯公募基金"
+  description="松果纯公募基金策略 — 债券+固收++黄金+QDII 场外选基组合，2016 起 10.5 年回测，年化 9.84%，最大回撤 -5.13%。"
+>
+  <!-- Hero -->
+  <section class="hero" style="padding: 56px 48px;">
+    <div class="hero-inner">
+      <span class="eyebrow">Strategy 04 · 生活投资</span>
+      <h1>
+        纯公募基金<br /><span class="gold">不盯盘 · 固收+ 是灵魂</span>
+      </h1>
+      <p class="hero-lead">
+        债券 10% + 固收+ 40% + 黄金 20% + QDII 30%——纯场外选基，
+        固收+ 主动管理是组合灵魂。2016 年起 10.5 年回测，回撤 -5.13%，
+        最省心的「生活账户」版本。
+      </p>
+    </div>
+  </section>
+
+  <!-- 概念定义 -->
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">Concept</div>
+      <h2 class="section-title">什么是「场外拼图」</h2>
+      <p class="section-sub">
+        与纯 ETF 版同一套组合拼图方法论，但全部用场外公募基金落地：
+        不想盯盘、愿意让渡部分费用换稳定。固收+（易方达裕祥回报）年化 6.6%、
+        MDD -5.7%，填补了 ETF 版没有的「主动增强」角色。
+      </p>
+    </div>
+    <div class="metric-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 0;">
+      <div class="metric-card">
+        <div class="label">角色 01 · 压舱石</div>
+        <div class="value" style="font-size: 20px;">债券</div>
+        <div class="sub">招商产业债A · 年化 3.8% · MDD -1.1%</div>
+      </div>
+      <div class="metric-card">
+        <div class="label">角色 02 · 组合灵魂</div>
+        <div class="value" style="font-size: 20px;">固收+</div>
+        <div class="sub">易方达裕祥回报 · 年化 6.6% · MDD -5.7%</div>
+      </div>
+      <div class="metric-card">
+        <div class="label">角色 03 · 分散王</div>
+        <div class="value" style="font-size: 20px;">黄金</div>
+        <div class="sub">华安黄金联接A · 年化 12.6%</div>
+      </div>
+      <div class="metric-card">
+        <div class="label">角色 04 · 另一条路</div>
+        <div class="value" style="font-size: 20px;">QDII</div>
+        <div class="sub">博时标普500联接A · 年化 14.0%</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 回测数据 -->
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">Backtest · 2016-2026</div>
+      <h2 class="section-title">回测数据（含成本口径）</h2>
+      <p class="section-sub">主口径 2016-02 起 10.5 年，全程真实净值回测。</p>
+    </div>
+    <div class="metric-grid" style="grid-template-columns: repeat(4, 1fr);">
+      <div class="metric-card">
+        <div class="label">年化收益</div>
+        <div class="value">+9.84%</div>
+      </div>
+      <div class="metric-card">
+        <div class="label">最大回撤</div>
+        <div class="value" style="color: #a03a28;">-5.13%</div>
+      </div>
+      <div class="metric-card">
+        <div class="label">夏普比率</div>
+        <div class="value">1.40</div>
+      </div>
+      <div class="metric-card">
+        <div class="label">卡玛比率</div>
+        <div class="value">1.92</div>
+      </div>
+    </div>
+    <Chart option={navOption} height="300px" />
+    <div class="callout" style="margin-top: 8px;">
+      <b>压力测试</b>：2018 熊市 +1.9%、2022 熊市 -2.4%，最差连续 3 月 -3.4%（2020-01~03）。
+    </div>
+  </section>
+
+  <!-- 操作纪律 -->
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">Operation</div>
+      <h2 class="section-title">操作方法</h2>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr><th>项目</th><th>规则</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>入场工具</td><td>场外公募（217022 / 002351 / 000216 / 050025），支付宝/天天基金均可</td></tr>
+        <tr><td>持有纪律</td><td>固收+/混基持有 ≥30 天，避免短期赎回费（0.1-0.15% 申购+赎回阶梯会侵蚀收益）</td></tr>
+        <tr><td>调仓频率</td><td>季度审视 + 半年再平衡，偏离目标 ±10% 才调</td></tr>
+        <tr><td>适用人群</td><td>不想盯盘、愿意让渡部分费用换稳定的投资者</td></tr>
+      </tbody>
+    </table>
+    <div class="callout warn" style="margin-top: 20px;">
+      <b>数据边界（诚实标注）</b>：含成本保守口径 9.84% 略低于 10% 底线——公募申赎费持续侵蚀，落地需持有期管理。
+      基金历史净值无法覆盖经理离职/风格漂移，用「任职≥3年+策略透明」硬过滤对冲。2019-2026 黄金窗口红利需打折看待（落 7-9% 更现实）。
+    </div>
+  </section>
+
+  <script>
+    import '../../scripts/charts.ts';
+  </script>
+</Layout>

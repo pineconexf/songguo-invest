@@ -1,65 +1,77 @@
 ---
 import Layout from '../layouts/Layout.astro';
 
+const groups = [
+  { key: 'index', label: '指数投资策略', desc: 'Shibor 宏观信号 × 中证500 择时' },
+  { key: 'stock', label: '股票投资策略', desc: '量化价值选股（V31）配套' },
+  { key: 'etf', label: 'ETF 投资策略', desc: '四拼图低相关组合配套' },
+  { key: 'fund', label: '基金投资策略', desc: '场外选基组合配套' },
+  { key: 'all', label: '全策略通用', desc: '资讯与研究支持' },
+];
+
 const tools = [
   {
-    type: '查询计算类',
-    name: '估值计算器',
-    desc: '输入 PE/PB/ROE/股息率，按松果体系口径给出质量-估值-股息三维画像与贵贱档位。纯前端，30 秒出结果。',
-    status: 'live',
-    statusLabel: '已上线',
-    cta: '免费使用',
-    href: '/songguo-invest/tools/valuator/',
+    type: '查询计算类', strategy: 'index',
+    name: '宏观信号查询',
+    desc: '查询当前 Shibor 流动性信号：宽松（进攻）还是收紧（防守），及本周信号与历史对照。',
+    status: 'soon', statusLabel: '开发中', cta: '敬请期待',
   },
   {
-    type: '查询计算类',
-    name: '复利计算器',
-    desc: '年化收益 × 年限，算一笔账：你的长期复利目标需要怎样的年化，或某个年化十年后变多少。',
-    status: 'live',
-    statusLabel: '已上线',
-    cta: '免费使用',
-    href: '/songguo-invest/tools/compound/',
-  },
-  {
-    type: '资讯讯息类',
-    name: '每日资讯解读',
-    desc: '每日宏观/行业/个股资讯深度解读，帮你在信息洪流中抓住关键信号。',
-    status: 'soon',
-    statusLabel: '开发中',
-    cta: '敬请期待',
-  },
-  {
-    type: '行业研究类',
-    name: '行业研究报告',
-    desc: '行业研究报告自动生成：景气度、竞争格局、估值水位、政策催化一页看懂。',
-    status: 'soon',
-    statusLabel: '开发中',
-    cta: '敬请期待',
-  },
-  {
-    type: '查询计算类',
+    type: '查询计算类', strategy: 'stock',
     name: '个股体检',
     desc: '输入股票代码，按松果 V30 体系五维评分（质量/盈利/估值/市值/成长）+ AI 综合报告。实时数据，20 秒出结果。',
-    status: 'live',
-    statusLabel: '已上线',
-    cta: '免费使用',
+    status: 'live', statusLabel: '已上线', cta: '免费使用',
     href: '/songguo-invest/tools/stockcheck/',
   },
   {
-    type: '查询计算类',
-    name: '回测验证工具',
-    desc: '策略历史回测验证：把你的选股思路放回 14 年数据里检验。',
-    status: 'soon',
-    statusLabel: '开发中',
-    cta: '敬请期待',
+    type: '查询计算类', strategy: 'stock',
+    name: '估值计算器',
+    desc: '输入 PE/PB/ROE/股息率，按松果体系口径给出质量-估值-股息三维画像与贵贱档位。纯前端，30 秒出结果。',
+    status: 'live', statusLabel: '已上线', cta: '免费使用',
+    href: '/songguo-invest/tools/valuator/',
   },
   {
-    type: '行业研究类',
+    type: '查询计算类', strategy: 'stock',
+    name: '复利计算器',
+    desc: '年化收益 × 年限，算一笔账：你的长期复利目标需要怎样的年化，或某个年化十年后变多少。',
+    status: 'live', statusLabel: '已上线', cta: '免费使用',
+    href: '/songguo-invest/tools/compound/',
+  },
+  {
+    type: '查询计算类', strategy: 'stock',
+    name: '回测验证工具',
+    desc: '策略历史回测验证：把你的选股思路放回 14 年数据里检验。',
+    status: 'soon', statusLabel: '开发中', cta: '敬请期待',
+  },
+  {
+    type: '查询计算类', strategy: 'etf',
+    name: 'ETF 组合配置',
+    desc: '四拼图权重配置器：债券/黄金/红利/QDII 组合配比，一键算回撤与年化。',
+    status: 'soon', statusLabel: '开发中', cta: '敬请期待',
+  },
+  {
+    type: '查询计算类', strategy: 'fund',
+    name: '基金打分卡',
+    desc: '五维打分（夏普/回撤/管理人/规模/费率）帮你在 33 只候选里选出每块拼图的 Top 基金。',
+    status: 'soon', statusLabel: '开发中', cta: '敬请期待',
+  },
+  {
+    type: '资讯讯息类', strategy: 'all',
+    name: '每日资讯解读',
+    desc: '每日宏观/行业/个股资讯深度解读，帮你在信息洪流中抓住关键信号。',
+    status: 'soon', statusLabel: '开发中', cta: '敬请期待',
+  },
+  {
+    type: '行业研究类', strategy: 'all',
+    name: '行业研究报告',
+    desc: '行业研究报告自动生成：景气度、竞争格局、估值水位、政策催化一页看懂。',
+    status: 'soon', statusLabel: '开发中', cta: '敬请期待',
+  },
+  {
+    type: '行业研究类', strategy: 'all',
     name: '行业对比工具',
     desc: '跨行业横向对比：估值、增速、资金流，找出相对低估的赛道。',
-    status: 'soon',
-    statusLabel: '开发中',
-    cta: '敬请期待',
+    status: 'soon', statusLabel: '开发中', cta: '敬请期待',
   },
 ];
 ---
@@ -90,25 +102,40 @@ const tools = [
         从查询计算到行业研究，覆盖投资决策的每一步。核心工具免费开放，深度功能陆续上线。
       </p>
     </div>
-    <div class="tool-grid">
-      {
-        tools.map((t) => (
-          <div class="tool-card">
-            <span class="tool-type">{t.type}</span>
-            <h3>{t.name}</h3>
-            <p>{t.desc}</p>
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px;">
-              <span class:list={['tool-status', t.status]}>{t.statusLabel}</span>
-              {t.href ? (
-                <a href={t.href} style="font-size:13px; font-weight:600; color:var(--gold-600); text-decoration:none;">{t.cta} →</a>
-              ) : (
-                <span style="font-size:13px; font-weight:600; color:var(--navy-500);">{t.cta}</span>
-              )}
+    <div class="section-sub">
+      工具按四大策略归类：每个策略的配套工具统一在此免费调用，核心工具免费开放，深度功能陆续上线。
+    </div>
+    {
+      groups.map((g) => {
+        const gTools = tools.filter((t) => t.strategy === g.key);
+        if (gTools.length === 0) return null;
+        return (
+          <div style="margin-bottom: 28px;">
+            <h3 style="font-size: 17px; font-weight: 700; color: var(--navy-800); margin: 0 0 2px;">{g.label}</h3>
+            <div style="font-size: 12.5px; color: var(--text-3); margin-bottom: 12px;">{g.desc}</div>
+            <div class="tool-grid" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));">
+              {
+                gTools.map((t) => (
+                  <div class="tool-card">
+                    <span class="tool-type">{t.type}</span>
+                    <h3>{t.name}</h3>
+                    <p>{t.desc}</p>
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px;">
+                      <span class:list={['tool-status', t.status]}>{t.statusLabel}</span>
+                      {t.href ? (
+                        <a href={t.href} style="font-size:13px; font-weight:600; color:var(--gold-600); text-decoration:none;">{t.cta} →</a>
+                      ) : (
+                        <span style="font-size:13px; font-weight:600; color:var(--navy-500);">{t.cta}</span>
+                      )}
+                    </div>
+                  </div>
+                ))
+              }
             </div>
           </div>
-        ))
-      }
-    </div>
+        );
+      })
+    }
   </section>
 
   <!-- 公众号引流 -->

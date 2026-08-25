@@ -1,0 +1,150 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+<Layout
+  title="策略体系"
+  description="松果投资策略族谱 — 四大策略：指数投资、ETF投资、基金投资、股票投资。每个策略都有方法论、回撤数据与配套工具。"
+>
+  <!-- Hero -->
+  <section class="hero" style="padding: 56px 48px;">
+    <div class="hero-inner">
+      <span class="eyebrow">Strategies · 策略族谱</span>
+      <h1>
+        一个体系<br /><span class="gold">四个维度</span>
+      </h1>
+      <p class="hero-lead">
+        松果投资体系是一套<b>总逻辑、总体系、总理念</b>，落到四个维度的策略：
+        指数、ETF、基金、股票。每套策略都有完整的方法论、真实的回撤数据、
+        可照做的操作方法，以及<b>配套的免费工具</b>——个人可用，机构亦可参考。
+      </p>
+    </div>
+  </section>
+
+  <!-- 四策略卡片 -->
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">Strategy Map</div>
+      <h2 class="section-title">四大策略一览</h2>
+      <p class="section-sub">回测口径全部含成本（2011-2026 A 股全周期），点击进入查看完整定义、方法论与操作方法。</p>
+    </div>
+    <div class="link-cards" style="grid-template-columns: repeat(2, 1fr);">
+      <a href="/songguo-invest/macro/" class="link-card">
+        <div class="master-school" style="color: var(--gold-600);">Strategy 01 · 指数投资</div>
+        <h3>指数投资策略</h3>
+        <p>纯宏观择时：Shibor 流动性信号 × 中证500。宽松时持有、收紧时空仓，固定 5bp 阈值，walk-forward 样本外验证。</p>
+        <div class="metric-grid" style="grid-template-columns: repeat(3, 1fr); margin: 14px 0 0; gap: 8px;">
+          <div class="metric-card" style="padding: 10px 8px;"><div class="label">样本外年化</div><div class="value" style="font-size:18px;">+10.04%</div></div>
+          <div class="metric-card" style="padding: 10px 8px;"><div class="label">最大回撤</div><div class="value" style="font-size:18px;">-27.8%</div></div>
+          <div class="metric-card" style="padding: 10px 8px;"><div class="label">持仓占比</div><div class="value" style="font-size:18px;">31%</div></div>
+        </div>
+        <div class="master-desc" style="font-size: 13px; margin-top: 10px;">🔧 使用工具：宏观信号查询 →</div>
+      </a>
+
+      <a href="/songguo-invest/backtest/" class="link-card">
+        <div class="master-school" style="color: var(--gold-600);">Strategy 02 · 股票投资</div>
+        <h3>股票投资策略</h3>
+        <p>量化价值选股（V31）：ROE 质量门槛 + 低估值 + 中小盘，月度调仓，14 年（2012-2026）全周期回测，含组合管理要求。</p>
+        <div class="metric-grid" style="grid-template-columns: repeat(3, 1fr); margin: 14px 0 0; gap: 8px;">
+          <div class="metric-card" style="padding: 10px 8px;"><div class="label">年化收益</div><div class="value" style="font-size:18px;">+24.30%</div></div>
+          <div class="metric-card" style="padding: 10px 8px;"><div class="label">最大回撤</div><div class="value" style="font-size:18px;">-22.66%</div></div>
+          <div class="metric-card" style="padding: 10px 8px;"><div class="label">月度胜率</div><div class="value" style="font-size:18px;">60.5%</div></div>
+        </div>
+        <div class="master-desc" style="font-size: 13px; margin-top: 10px;">🔧 使用工具：个股体检 · 估值计算器 · 复利计算器 →</div>
+      </a>
+
+      <a href="/songguo-invest/strategies/etf/" class="link-card">
+        <div class="master-school" style="color: var(--gold-600);">Strategy 03 · ETF 投资</div>
+        <h3>ETF 投资策略</h3>
+        <p>纯 ETF 四拼图低相关组合：债券25% + 黄金30% + 红利10% + QDII35%，2014 起 12.7 年回测，覆盖三次股灾。</p>
+        <div class="metric-grid" style="grid-template-columns: repeat(3, 1fr); margin: 14px 0 0; gap: 8px;">
+          <div class="metric-card" style="padding: 10px 8px;"><div class="label">年化收益</div><div class="value" style="font-size:18px;">+10.10%</div></div>
+          <div class="metric-card" style="padding: 10px 8px;"><div class="label">最大回撤</div><div class="value" style="font-size:18px;">-6.15%</div></div>
+          <div class="metric-card" style="padding: 10px 8px;"><div class="label">覆盖股灾</div><div class="value" style="font-size:16px;">2015/18/22</div></div>
+        </div>
+        <div class="master-desc" style="font-size: 13px; margin-top: 10px;">🔧 使用工具：ETF 组合配置（开发中）→</div>
+      </a>
+
+      <a href="/songguo-invest/strategies/fund/" class="link-card">
+        <div class="master-school" style="color: var(--gold-600);">Strategy 04 · 基金投资</div>
+        <h3>基金投资策略</h3>
+        <p>纯公募场外选基：债券10% + 固收+ 40% + 黄金20% + QDII30%，不盯盘，2016 起 10.5 年回测，回撤最小。</p>
+        <div class="metric-grid" style="grid-template-columns: repeat(3, 1fr); margin: 14px 0 0; gap: 8px;">
+          <div class="metric-card" style="padding: 10px 8px;"><div class="label">年化收益</div><div class="value" style="font-size:18px;">+9.84%</div></div>
+          <div class="metric-card" style="padding: 10px 8px;"><div class="label">最大回撤</div><div class="value" style="font-size:18px;">-5.13%</div></div>
+          <div class="metric-card" style="padding: 10px 8px;"><div class="label">夏普比率</div><div class="value" style="font-size:18px;">1.40</div></div>
+        </div>
+        <div class="master-desc" style="font-size: 13px; margin-top: 10px;">🔧 使用工具：基金打分卡（开发中）→</div>
+      </a>
+    </div>
+  </section>
+
+  <!-- 四策略对比总表 -->
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">Compare</div>
+      <h2 class="section-title">四大策略对比</h2>
+      <p class="section-sub">回测口径：2012-2026 A 股全周期，含成本。历史表现不代表未来收益。</p>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>策略</th>
+          <th>本质</th>
+          <th>回测窗口</th>
+          <th>年化</th>
+          <th>最大回撤</th>
+          <th>配套工具</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><b>① 指数投资</b></td>
+          <td>Shibor 信号 × 中证500</td>
+          <td>样本外 10.5 年</td>
+          <td class="up">+10.04%</td>
+          <td class="down">-27.8%</td>
+          <td>宏观信号查询</td>
+        </tr>
+        <tr>
+          <td><b>② 股票投资</b></td>
+          <td>量化价值选股（V31）</td>
+          <td>14 年（2012-2026）</td>
+          <td class="up">+24.30%</td>
+          <td class="down">-22.66%</td>
+          <td>个股体检 · 估值 · 复利</td>
+        </tr>
+        <tr>
+          <td><b>③ ETF 投资</b></td>
+          <td>四拼图低相关（债/金/红利/QDII）</td>
+          <td>12.7 年（2014-2026）</td>
+          <td class="up">+10.10%</td>
+          <td class="down">-6.15%</td>
+          <td>ETF 组合配置</td>
+        </tr>
+        <tr>
+          <td><b>④ 基金投资</b></td>
+          <td>含固收+ 的场外选基</td>
+          <td>10.5 年（2016-2026）</td>
+          <td class="up">+9.84%</td>
+          <td class="down">-5.13%</td>
+          <td>基金打分卡</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="callout" style="margin-top: 20px;">
+      <b>怎么选</b>：想主动要收益 → ①指数投资 / ②股票投资；想省心要稳 → ③ETF 投资 / ④基金投资。
+      <b>组合使用</b>：主动仓（指数+股票）打进攻，生活仓（ETF+基金）做压舱石，两套并行、互不干扰。
+      <b>工具免费</b>：四个策略的配套工具统一在「工具服务」免费调用。
+    </div>
+  </section>
+
+  <style is:global>
+    .link-card .master-school { font-size: 12px; font-weight: 700; letter-spacing: 0.4px; margin-bottom: 6px; }
+    .link-card .metric-card { border: none; box-shadow: none; background: var(--surface-alt); }
+    .link-card .metric-card::before { display: none; }
+    .link-card .metric-card .value { font-size: 18px; }
+    .link-card:hover .metric-card { transform: none; }
+    .data-table td.up { color: var(--green, #4A7C59); font-weight: 700; }
+    .data-table td.down { color: #a03a28; font-weight: 700; }
+  </style>
+</Layout>
