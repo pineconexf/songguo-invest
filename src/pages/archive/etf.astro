@@ -1,0 +1,98 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import lifeEtf from '../../data/life_etf.json';
+import vStd from '../../data/version_standard.json';
+
+const etf = vStd.strategies.etf;
+// 由净值算月度收益与回撤
+let prev = null, peak = 0;
+const rows = lifeEtf.labels.map((ym, i) => {
+  const nav = lifeEtf.nav[i];
+  const ret = prev == null ? null : (nav / prev - 1) * 100;
+  peak = Math.max(peak, nav);
+  const dd = (nav / peak - 1) * 100;
+  prev = nav;
+  return { ym, nav, ret, dd };
+});
+let worst = 0;
+rows.forEach((r) => { if (r.dd < worst) worst = r.dd; });
+const pieces = [
+  { name: '债券', code: '511010', weight: '25%', role: '压舱石' },
+  { name: '黄金', code: '159934', weight: '30%', role: '分散器（与所有资产≈0相关）' },
+  { name: '红利', code: '510880', weight: '10%', role: '股息现金流' },
+  { name: 'QDII', code: '513500', weight: '35%', role: '另一条路（美股）' },
+];
+---
+<Layout
+  title="ETF 壳档案"
+  description="防守组合 ETF 壳档案 — 2014-01 起 152 个月月度净值/收益/回撤全量，四拼图标的可查。"
+>
+  <section class="hero" style="padding: 48px 40px;">
+    <div class="hero-inner">
+      <span class="eyebrow">Archive · 防守组合 · 壳 A</span>
+      <h1>
+        ETF 壳档案<br /><span class="gold">2014 年起 152 个月</span>
+      </h1>
+      <p class="hero-lead">
+        四拼图（债 25% + 金 30% + 红利 10% + QDII 35%）场内落地，T+0 进出、成本低。
+        与基金壳是同一组合的两个壳，二选一即可。
+      </p>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">Pieces · 拼图构成</div>
+      <h2 class="section-title">四拼图标的</h2>
+    </div>
+    <table class="data-table">
+      <thead><tr><th>拼图</th><th>ETF 代码</th><th>权重</th><th>角色</th></tr></thead>
+      <tbody>
+        {pieces.map((p) => (
+          <tr><td><b>{p.name}</b></td><td>{p.code}</td><td>{p.weight}</td><td>{p.role}</td></tr>
+        ))}
+      </tbody>
+    </table>
+    <div class="metric-grid" style="grid-template-columns: repeat(3, 1fr); margin-top: 20px;">
+      <div class="metric-card"><div class="label">年化收益（2014-01 起）</div><div class="value gold">+10.10%</div></div>
+      <div class="metric-card"><div class="label">最大回测</div><div class="value" style="color:#a03a28;">{worst.toFixed(2)}%</div></div>
+      <div class="metric-card"><div class="label">累计净值</div><div class="value">{lifeEtf.nav[lifeEtf.nav.length - 1].toFixed(3)}</div></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">Monthly</div>
+      <h2 class="section-title">月度明细（{rows.length} 个月）</h2>
+      <p class="section-sub">净值从 1.0 起；收益为月度变化；回测为从历史高点回落幅度，最深月份高亮。数值为百分数。</p>
+    </div>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead><tr><th>月份</th><th>累计净值</th><th>月度收益</th><th>回测</th><th>状态</th></tr></thead>
+        <tbody>
+          {
+            rows.map((r) => (
+              <tr style={r.dd <= worst + 0.001 ? 'background: rgba(160,58,40,0.06);' : ''}>
+                <td><b>{r.ym}</b></td>
+                <td>{r.nav.toFixed(3)}</td>
+                <td class={r.ret != null && r.ret >= 0 ? 'up' : 'down'}>{r.ret == null ? '—' : `${r.ret >= 0 ? '+' : ''}${r.ret.toFixed(2)}%`}</td>
+                <td class="down">{r.dd.toFixed(2)}%</td>
+                <td style="font-size:12px; color:#999;">{r.dd <= worst + 0.001 ? '最深回测' : ''}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="callout">
+    <b>口径说明</b>：本档案为生活投资策略全 ETF 版（2014-01 起），年化 10.10%、回测 -6.15%（含成本）。
+    与统一窗口口径（2016-03 起，见策略页）并存，两个都真实。数据来自真实回测，不构成投资建议。
+  </div>
+
+  <style is:global>
+    .table-scroll { overflow-x: auto; }
+    .table-scroll .data-table td { white-space: nowrap; }
+  </style>
+</Layout>

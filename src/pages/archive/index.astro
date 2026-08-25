@@ -3,29 +3,71 @@ import Layout from '../../layouts/Layout.astro';
 import strategy from '../../data/strategy.json';
 import macro from '../../data/macro_signal.json';
 import history from '../../data/history_records.json';
+import mRet from '../../data/monthly_returns.json';
+import lifeEtf from '../../data/life_etf.json';
+import lifeFund from '../../data/life_fund.json';
 
 const cards = [
   {
-    href: '/songguo-invest/archive/macro/',
-    title: '宏观信号档案',
-    desc: 'Shibor 周度信号全量追溯',
-    stat: `${macro.stats.total_weeks} 周`,
-    sub: '2011 ~ 2026 · 宽松/收紧逐周可查',
-    tag: '全量可追溯',
+    href: '/songguo-invest/archive/etf/',
+    group: '防守组合',
+    groupKey: 'defense',
+    title: 'ETF 壳档案',
+    desc: '四拼图（债/金/红利/QDII）场内组合，2014-01 起',
+    stat: `${lifeEtf.labels.length} 个月`,
+    sub: '年化 10.10% · 回测 -6.15% · 标的 511010/159934/510880/513500',
+    tag: '场内 · T+0',
+    search: 'etf 防守 组合 拼图 场内 债券 黄金 红利 qdii 511010 159934 510880 513500',
+  },
+  {
+    href: '/songguo-invest/archive/fund/',
+    group: '防守组合',
+    groupKey: 'defense',
+    title: '基金壳档案',
+    desc: '同拼图场外落地，固收+ 是灵魂，2016-02 起',
+    stat: `${lifeFund.labels.length} 个月`,
+    sub: '年化 9.84% · 回测 -5.13% · 基金 217022/002351/000216/050025',
+    tag: '场外 · 不盯盘',
+    search: '基金 防守 组合 拼图 场外 固收 债券 黄金 红利 qdii 217022 002351 000216 050025',
   },
   {
     href: '/songguo-invest/archive/monthly/',
+    group: '进攻选股',
+    groupKey: 'offense',
     title: '月度选股档案',
     desc: '每月选股名单 + 权重 + 投前投后',
     stat: `${history.count} 月`,
     sub: 'Top4 + FCF加权 · 全量个股可查',
     tag: '个股可追溯',
+    search: '选股 个股 股票 v31 月度 名单 top4 fcf 组合管理',
+  },
+  {
+    href: '/songguo-invest/archive/macro/',
+    group: '宏观择时',
+    groupKey: 'timing',
+    title: '宏观信号档案',
+    desc: 'Shibor 周度信号全量追溯',
+    stat: `${macro.stats.total_weeks} 周`,
+    sub: '2011 ~ 2026 · 宽松/收紧逐周可查',
+    tag: '全量可追溯',
+    search: '宏观 择时 信号 shibor 宽松 收紧 周度 流动性 中证500',
+  },
+  {
+    href: '/songguo-invest/archive/pro/',
+    group: 'Pro 版',
+    groupKey: 'pro',
+    title: 'Pro 组合档案',
+    desc: 'Calmar 最优组合逐月收益/净值/回测',
+    stat: `${mRet.length} 个月`,
+    sub: '推荐组合 基金60%+股票40% · 年度分解',
+    tag: '组合可追溯',
+    search: 'pro 组合 最优 calmar 网格 基金 股票 配比 年度',
   },
 ];
 ---
 <Layout
   title="历史档案"
-  description="松果历史档案 — 宏观信号809周、月度选股172月，全部数据可追溯。"
+  description="松果历史档案 — 按体系全覆盖：防守组合（ETF/基金）、进攻选股、宏观择时、Pro 组合，全部数据可搜索、可追溯。"
 >
   <!-- Hero -->
   <section class="hero" style="padding: 48px 40px;">
@@ -35,29 +77,55 @@ const cards = [
         每一期<span class="gold">操作前后</span>的逻辑<br />全部可查
       </h1>
       <p class="hero-lead">
-        宏观周度信号、月度选股名单——两层档案，逐期记录选股逻辑与结果，
-        让「当时怎么想的」和「后来怎么样了」对得上号。
+        按新体系全覆盖：防守组合（ETF/基金两壳）、进攻选股、宏观择时、Pro 组合——
+        每一层档案都逐期记录逻辑与结果，让「当时怎么想的」和「后来怎么样了」对得上号。
       </p>
     </div>
   </section>
 
-  <!-- 档案卡片 -->
-  <section class="master-grid" style="grid-template-columns: repeat(3, 1fr);">
-    {
-      cards.map((c) => (
-        <a href={c.href} class="master-card" style="text-decoration:none; display:flex; flex-direction:column; gap:10px;">
-          <div style="display:flex; align-items:center; justify-content:space-between;">
-            <div class="master-name" style="margin:0;">{c.title}</div>
-            <span style="font-size:11px; padding:2px 10px; border-radius:999px; background:var(--gold-100); color:var(--gold-600); font-weight:600;">{c.tag}</span>
-          </div>
-          <div class="master-desc">{c.desc}</div>
-          <div style="font-size:28px; font-weight:700; color:var(--navy-800);">{c.stat}</div>
-          <div style="font-size:12.5px; color:var(--text-3);">{c.sub}</div>
-          <div style="margin-top:auto; color:var(--gold-600); font-size:14px; font-weight:600;">进入档案 →</div>
-        </a>
-      ))
-    }
+  <!-- 搜索 -->
+  <section class="card" style="padding: 20px 24px;">
+    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+      <input
+        id="archive-search"
+        type="text"
+        placeholder="搜索档案：如 ETF、2018、组合、Shibor…"
+        style="flex:1; min-width:260px; padding:12px 16px; border:1px solid var(--border); border-radius:10px; font-size:14px; background:var(--surface); color:var(--navy-800); outline:none;"
+      />
+      <span style="font-size:13px; color:var(--text-3);" id="archive-count"></span>
+    </div>
   </section>
+
+  <!-- 档案卡片（按体系分组） -->
+  {
+    ['defense', 'offense', 'timing', 'pro'].map((gk) => {
+      const groupCards = cards.filter((c) => c.groupKey === gk);
+      const groupLabel = { defense: 'Standard · 防守组合', offense: 'Standard · 进攻选股', timing: 'Standard · 宏观择时', pro: 'Pro 版 · 最优组合' }[gk];
+      return (
+        <section class="card archive-group" data-group={gk} style="margin-top: 20px;">
+          <div class="section-head" style="padding-bottom: 12px; border-bottom: 1px solid var(--border); margin-bottom: 18px;">
+            <div class="section-kicker">{groupLabel}</div>
+          </div>
+          <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 14px;">
+            {
+              groupCards.map((c) => (
+                <a href={c.href} class="archive-card" data-search={c.search} data-title={c.title} style="text-decoration:none; display:flex; flex-direction:column; gap:10px; padding:20px; border:1px solid var(--border); border-radius:14px; background:var(--surface); transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;">
+                  <div style="display:flex; align-items:center; justify-content:space-between;">
+                    <div style="font-size:15px; font-weight:700; color:var(--navy-800);">{c.title}</div>
+                    <span style="font-size:11px; padding:2px 10px; border-radius:999px; background:var(--gold-100); color:var(--gold-600); font-weight:600;">{c.tag}</span>
+                  </div>
+                  <div style="font-size:13px; color:var(--text-2); line-height:1.6;">{c.desc}</div>
+                  <div style="font-size:26px; font-weight:700; color:var(--navy-800);">{c.stat}</div>
+                  <div style="font-size:12.5px; color:var(--text-3); line-height:1.6;">{c.sub}</div>
+                  <div style="margin-top:auto; color:var(--gold-600); font-size:14px; font-weight:600;">进入档案 →</div>
+                </a>
+              ))
+            }
+          </div>
+        </section>
+      );
+    })
+  }
 
   <!-- 数据总量 -->
   <section class="card" style="margin-top: 24px;">
@@ -72,19 +140,29 @@ const cards = [
         <div class="sub">{macro.stats.loose_pct}% 宽松周</div>
       </div>
       <div class="metric-card">
-        <div class="label">策略回测月数</div>
-        <div class="value">{strategy.meta.window.months}</div>
-        <div class="sub">2012.04 ~ 2026.07</div>
-      </div>
-      <div class="metric-card">
         <div class="label">个股选股档案月</div>
         <div class="value green">{history.count}</div>
         <div class="sub">Top4 + FCF加权</div>
       </div>
       <div class="metric-card">
-        <div class="label">含权重个股记录</div>
-        <div class="value">{(history.months ?? []).reduce((s, m) => s + (m.picks?.length ?? 0), 0)}</div>
-        <div class="sub">不等权（FCF排名加权）</div>
+        <div class="label">ETF 壳月度明细</div>
+        <div class="value">{lifeEtf.labels.length}</div>
+        <div class="sub">2014-01 起 · 含净值/收益/回测</div>
+      </div>
+      <div class="metric-card">
+        <div class="label">基金壳月度明细</div>
+        <div class="value">{lifeFund.labels.length}</div>
+        <div class="sub">2016-02 起 · 含净值/收益/回测</div>
+      </div>
+      <div class="metric-card">
+        <div class="label">Pro 组合月度明细</div>
+        <div class="value">{mRet.length}</div>
+        <div class="sub">2016-03 起 · 含年度分解</div>
+      </div>
+      <div class="metric-card">
+        <div class="label">回测测试（统一窗口）</div>
+        <div class="value">{mRet.length} 月</div>
+        <div class="sub">四策略 + 组合，任意时点可查</div>
       </div>
     </div>
   </section>
@@ -96,17 +174,17 @@ const cards = [
       <h2 class="section-title">相关页面</h2>
     </div>
     <div class="link-cards" style="grid-template-columns: repeat(2, 1fr);">
-      <a href="/songguo-invest/archive/monthly/" class="link-card">
-        <h3><span class="gold">月度档案</span> · 逐月收益全量</h3>
-        <p>172 个月收益柱状图 + 逐月明细，V31 基金版 vs 沪深300，可缩放可查。</p>
+      <a href="/songguo-invest/strategies/" class="link-card">
+        <h3><span class="gold">策略体系</span> · S/P/M 三版本</h3>
+        <p>Standard 三类资产 / Pro 最优组合 / Max 杠杆版——档案对应的体系总览。</p>
       </a>
-      <a href="/songguo-invest/archive/macro/" class="link-card">
-        <h3><span class="gold">宏观档案</span> · 809 周信号记录</h3>
-        <p>宏观 V1 六轴评分逐期信号全记录，回看每一期"该攻还是守"的判断。</p>
+      <a href="/songguo-invest/strategies/monthly/" class="link-card">
+        <h3><span class="gold">回测测试</span> · 125 个月统一窗口</h3>
+        <p>四策略 + Pro 组合月度收益/净值/回测，全部策略一个页面横向对比。</p>
       </a>
       <a href="/songguo-invest/portfolio/" class="link-card">
         <h3><span class="gold">组合管理</span> · 宏观×个股融合</h3>
-        <p>宏观 V1 管仓位、个股 V31 管选股，无杠杆组合管理。</p>
+        <p>宏观管仓位、个股管选股，无杠杆组合管理。</p>
       </a>
       <a href="/songguo-invest/ranking/" class="link-card">
         <h3><span class="gold">月度榜单</span> · 逐月表现</h3>
@@ -116,6 +194,34 @@ const cards = [
   </section>
 
   <div class="callout">
-    <b>档案机制</b>：宏观信号与月度选股档案由数据管线自动生成（回算历史全量），数据与定稿口径一致（宏观 V1 + 个股 V31），含成本，可复现。本档案不涉及任何杠杆版本与实盘数据。
+    <b>档案机制</b>：全部档案由数据管线自动生成（回算历史全量），数据与定稿口径一致（宏观 V1 + 个股 V31 + 生活投资双壳 + Pro 组合），含成本，可复现。本档案不涉及任何杠杆版本与实盘数据。
   </div>
+
+  <script>
+    const input = document.getElementById('archive-search');
+    const count = document.getElementById('archive-count');
+    const cards = Array.from(document.querySelectorAll('.archive-card'));
+    const groups = Array.from(document.querySelectorAll('.archive-group'));
+    function filter() {
+      const q = input.value.trim().toLowerCase();
+      let shown = 0;
+      cards.forEach((card) => {
+        const hay = `${card.dataset.search || ''} ${card.dataset.title || ''}`.toLowerCase();
+        const ok = !q || hay.includes(q);
+        card.style.display = ok ? '' : 'none';
+        if (ok) shown++;
+      });
+      groups.forEach((g) => {
+        const visible = Array.from(g.querySelectorAll('.archive-card')).some((c) => c.style.display !== 'none');
+        g.style.display = visible ? '' : 'none';
+      });
+      count.textContent = q ? `匹配 ${shown} / ${cards.length} 个档案` : `${cards.length} 个档案`;
+    }
+    input.addEventListener('input', filter);
+    count.textContent = `${cards.length} 个档案`;
+  </script>
+
+  <style is:global>
+    .archive-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); border-color: var(--gold-500); }
+  </style>
 </Layout>

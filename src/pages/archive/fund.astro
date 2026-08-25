@@ -1,0 +1,96 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import lifeFund from '../../data/life_fund.json';
+
+// 由净值算月度收益与回撤
+let prev = null, peak = 0;
+const rows = lifeFund.labels.map((ym, i) => {
+  const nav = lifeFund.nav[i];
+  const ret = prev == null ? null : (nav / prev - 1) * 100;
+  peak = Math.max(peak, nav);
+  const dd = (nav / peak - 1) * 100;
+  prev = nav;
+  return { ym, nav, ret, dd };
+});
+let worst = 0;
+rows.forEach((r) => { if (r.dd < worst) worst = r.dd; });
+const pieces = [
+  { name: '债券', code: '217022', weight: '10%', role: '压舱石' },
+  { name: '固收+', code: '002351', weight: '40%', role: '组合灵魂（主动管理）' },
+  { name: '黄金', code: '000216', weight: '20%', role: '分散器' },
+  { name: 'QDII', code: '050025', weight: '30%', role: '另一条路（美股）' },
+];
+---
+<Layout
+  title="基金壳档案"
+  description="防守组合基金壳档案 — 2016-02 起 126 个月月度净值/收益/回测全量，选基明细可查。"
+>
+  <section class="hero" style="padding: 48px 40px;">
+    <div class="hero-inner">
+      <span class="eyebrow">Archive · 防守组合 · 壳 B</span>
+      <h1>
+        基金壳档案<br /><span class="gold">2016 年起 126 个月</span>
+      </h1>
+      <p class="hero-lead">
+        同样拼图（债 10% + 固收+ 40% + 金 20% + QDII 30%）场外落地，固收+ 主动管理是灵魂，
+        不盯盘、省心。与 ETF 壳二选一即可。
+      </p>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">Pieces · 拼图构成</div>
+      <h2 class="section-title">四拼图选基</h2>
+    </div>
+    <table class="data-table">
+      <thead><tr><th>拼图</th><th>基金代码</th><th>权重</th><th>角色</th></tr></thead>
+      <tbody>
+        {pieces.map((p) => (
+          <tr><td><b>{p.name}</b></td><td>{p.code}</td><td>{p.weight}</td><td>{p.role}</td></tr>
+        ))}
+      </tbody>
+    </table>
+    <div class="metric-grid" style="grid-template-columns: repeat(3, 1fr); margin-top: 20px;">
+      <div class="metric-card"><div class="label">年化收益（2016-02 起）</div><div class="value gold">+9.84%</div></div>
+      <div class="metric-card"><div class="label">最大回测</div><div class="value" style="color:#a03a28;">{worst.toFixed(2)}%</div></div>
+      <div class="metric-card"><div class="label">累计净值</div><div class="value">{lifeFund.nav[lifeFund.nav.length - 1].toFixed(3)}</div></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">Monthly</div>
+      <h2 class="section-title">月度明细（{rows.length} 个月）</h2>
+      <p class="section-sub">净值从 1.0 起；收益为月度变化；回测为从历史高点回落幅度，最深月份高亮。数值为百分数。</p>
+    </div>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead><tr><th>月份</th><th>累计净值</th><th>月度收益</th><th>回测</th><th>状态</th></tr></thead>
+        <tbody>
+          {
+            rows.map((r) => (
+              <tr style={r.dd <= worst + 0.001 ? 'background: rgba(160,58,40,0.06);' : ''}>
+                <td><b>{r.ym}</b></td>
+                <td>{r.nav.toFixed(3)}</td>
+                <td class={r.ret != null && r.ret >= 0 ? 'up' : 'down'}>{r.ret == null ? '—' : `${r.ret >= 0 ? '+' : ''}${r.ret.toFixed(2)}%`}</td>
+                <td class="down">{r.dd.toFixed(2)}%</td>
+                <td style="font-size:12px; color:#999;">{r.dd <= worst + 0.001 ? '最深回测' : ''}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="callout">
+    <b>口径说明</b>：本档案为生活投资策略全公募版（2016-02 起），年化 9.84%、回测 -5.13%（含成本）。
+    2025-03 缺月按几何插值补齐。与统一窗口口径并存，数据来自真实回测，不构成投资建议。
+  </div>
+
+  <style is:global>
+    .table-scroll { overflow-x: auto; }
+    .table-scroll .data-table td { white-space: nowrap; }
+  </style>
+</Layout>

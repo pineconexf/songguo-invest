@@ -1,0 +1,113 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import mRet from '../../data/monthly_returns.json';
+import yBreak from '../../data/yearly_breakdown.json';
+import vStd from '../../data/version_standard.json';
+import vPro from '../../data/version_pro.json';
+
+const rec = vPro.recommended;
+// Pro 推荐组合月度明细（combo_calmar_opt = Calmar 最优组合）
+let nav = 1, peak = 0;
+const rows = mRet.map((m) => {
+  const ret = m.combo_calmar_opt;
+  if (ret == null) return { ym: m.ym, ret: null, nav: null, dd: null };
+  nav *= 1 + ret / 100;
+  peak = Math.max(peak, nav);
+  return { ym: m.ym, ret, nav, dd: (nav / peak - 1) * 100 };
+});
+let worst = 0;
+rows.forEach((r) => { if (r.dd != null && r.dd < worst) worst = r.dd; });
+---
+<Layout
+  title="Pro 组合档案"
+  description="Pro 版推荐组合档案 — 2016-03 起 125 个月月度收益/净值/回测全量 + 年度分解。"
+>
+  <section class="hero" style="padding: 48px 40px;">
+    <div class="hero-inner">
+      <span class="eyebrow">Archive · Pro 版 · 最优组合</span>
+      <h1>
+        Pro 组合档案<br /><span class="gold">125 个月逐月可查</span>
+      </h1>
+      <p class="hero-lead">
+        网格扫描 222 个组合选出的 Calmar 最优解：防守（基金壳）打底 + 进攻（V31）引擎。
+        以下为推荐组合 {Object.keys(rec.weights).map((k) => `${k.replace('投资策略', '').replace('(场外组合)', '')} ${(rec.weights[k] * 100).toFixed(0)}%`).join(' + ')} 的逐月表现。
+      </p>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">Metrics</div>
+      <h2 class="section-title">推荐组合核心指标（统一窗口）</h2>
+    </div>
+    <div class="metric-grid" style="grid-template-columns: repeat(4, 1fr);">
+      <div class="metric-card"><div class="label">年化收益</div><div class="value gold">+{rec.metrics.annual.toFixed(2)}%</div></div>
+      <div class="metric-card"><div class="label">最大回测</div><div class="value" style="color:#a03a28;">{rec.metrics.mdd.toFixed(2)}%</div></div>
+      <div class="metric-card"><div class="label">夏普 / Calmar</div><div class="value">{rec.metrics.sharpe.toFixed(2)} / {rec.metrics.calmar.toFixed(2)}</div></div>
+      <div class="metric-card"><div class="label">累计收益</div><div class="value gold">+{rec.metrics.cum.toFixed(1)}%</div></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">Monthly</div>
+      <h2 class="section-title">月度明细（{rows.length} 个月）</h2>
+      <p class="section-sub">收益为百分数；净值从 1.0 起；回测为从历史高点回落幅度，最深月份高亮。</p>
+    </div>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead><tr><th>月份</th><th>月度收益</th><th>累计净值</th><th>回测</th><th>状态</th></tr></thead>
+        <tbody>
+          {
+            rows.map((r) => (
+              <tr style={r.dd != null && r.dd <= worst + 0.001 ? 'background: rgba(160,58,40,0.06);' : ''}>
+                <td><b>{r.ym}</b></td>
+                <td class={r.ret != null && r.ret >= 0 ? 'up' : 'down'}>{r.ret == null ? '—' : `${r.ret >= 0 ? '+' : ''}${r.ret.toFixed(2)}%`}</td>
+                <td>{r.nav == null ? '—' : r.nav.toFixed(3)}</td>
+                <td class="down">{r.dd == null ? '—' : `${r.dd.toFixed(2)}%`}</td>
+                <td style="font-size:12px; color:#999;">{r.dd != null && r.dd <= worst + 0.001 ? '最深回测' : ''}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">Yearly</div>
+      <h2 class="section-title">年度分解（2016-2026）</h2>
+    </div>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead><tr><th>年份</th><th>Pro 推荐组合</th><th>Calmar 最优组合</th></tr></thead>
+        <tbody>
+          {
+            yBreak.map((y) => (
+              <tr>
+                <td><b>{y.year}</b></td>
+                <td class={y.combo_reco != null && y.combo_reco > 0 ? 'up' : 'down'}>{y.combo_reco == null ? '—' : `${y.combo_reco > 0 ? '+' : ''}${Number(y.combo_reco).toFixed(1)}%`}</td>
+                <td class={y.combo_calmar_opt != null && y.combo_calmar_opt > 0 ? 'up' : 'down'}>{y.combo_calmar_opt == null ? '—' : `${y.combo_calmar_opt > 0 ? '+' : ''}${Number(y.combo_calmar_opt).toFixed(1)}%`}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+    <div class="callout" style="margin-top: 20px;">
+      <b>读法</b>：看哪年组合扛住了（如 2018 组合小亏 vs 单策略大亏）、哪年进攻腿发力（如 2020）。
+      组合的意义不在每年都赢，而在把单策略的深坑填平。{vPro.note}
+    </div>
+  </section>
+
+  <div class="callout">
+    <b>口径说明</b>：统一窗口 {vStd.window.start}–{vStd.window.end}（{vStd.window.months} 个月），几何年化、月度再平衡、含成本。
+    推荐组合为历史最优解（含数据窥探风险），实盘预期应打折。数据来自真实回测，不构成投资建议。
+  </div>
+
+  <style is:global>
+    .table-scroll { overflow-x: auto; }
+    .table-scroll .data-table td { white-space: nowrap; }
+  </style>
+</Layout>
