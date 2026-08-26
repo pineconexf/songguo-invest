@@ -6,7 +6,7 @@ interface Props {
   description?: string;
 }
 
-const { title, description = '松果投资体系 — 融合东西方智慧、经14年真实回测验证的A股量化价值投资方法论' } =
+const { title, description = '松果投资实验室 — 融合东西方智慧、经14年真实回测验证的A股量化价值投资方法论' } =
   Astro.props;
 const current = Astro.url.pathname;
 
@@ -26,8 +26,8 @@ const navItems = [
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="icon" type="image/svg+xml" href="/songguo-invest/favicon.svg" />
-    <title>{title} · 松果投资体系</title>
+    <link rel="icon" type="image/png" href="/songguo-invest/favicon.png" />
+    <title>{title} · 松果投资实验室</title>
     <meta name="description" content={description} />
     <meta name="robots" content="index, follow" />
   </head>
@@ -35,8 +35,8 @@ const navItems = [
     <header class="site-header">
       <nav class="nav container">
         <a href="/songguo-invest/" class="brand">
-          <span class="brand-mark">松</span>
-          <span><span class="gold">松果</span>投资体系</span>
+          <img src="/songguo-invest/logo-mascot.png" alt="松果投资实验室" class="brand-logo" width="44" height="44" />
+          <span><span class="gold">松果</span>投资实验室</span>
         </a>
         <div class="nav-links">
           {

@@ -160,6 +160,34 @@ button {
   font-weight: 800;
 }
 
+.brand .brand-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid rgba(200, 162, 75, 0.55);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  object-fit: cover;
+  background: #faf6ef;
+}
+
+.hero-mascot {
+  position: absolute;
+  right: 56px;
+  bottom: 30px;
+  width: 232px;
+  height: 232px;
+  border-radius: 50%;
+  border: 3px solid rgba(200, 162, 75, 0.45);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+  object-fit: cover;
+  z-index: 1;
+  pointer-events: none;
+}
+
+@media (max-width: 960px) {
+  .hero-mascot { display: none; }
+}
+
 .brand .gold {
   color: var(--gold-400);
 }

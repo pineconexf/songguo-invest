@@ -21,7 +21,7 @@ const avgExcess = rows.reduce((s, r) => s + r.ex, 0) / total;
 const recent12 = rows.slice(-12).reverse();
 const fullTable = [...rows].reverse();
 ---
-<Layout title="月度榜单" description="松果投资体系月度榜单 — 策略月度收益 vs 沪深300 逐月对比，方法论展示不构成投资建议">
+<Layout title="月度榜单" description="松果投资实验室月度榜单 — 策略月度收益 vs 沪深300 逐月对比，方法论展示不构成投资建议">
   <section class="hero" style="padding: 56px 48px;">
     <div class="hero-inner">
       <span class="eyebrow">Monthly Ranking · 月度榜单</span>
