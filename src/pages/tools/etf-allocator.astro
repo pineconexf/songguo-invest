@@ -1,42 +1,89 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 
-// ETF 组合配置器（全ETF版 · 四拼图）
-// 权重定稿：债 25% / 金 30% / 红利 10% / QDII 35%（2026-08-21 生活投资策略全ETF版）
-// 参考价：2026-08-25 收盘（新浪财经 hq.sinajs.cn 实测），页面内可修改
-// 组合历史表现：2014-01 ~ 2026-08 共 152 个月，年化 10.1%（含成本保守）/ MDD -6.2% / 夏普 1.2 / 卡玛 1.6
-const pieces = [
-  { code: '511010', name: '国债ETF（国泰）', role: '债券拼图', weight: 25, price: 141.302, note: '国内利率债，组合压舱石，T+0' },
-  { code: '159934', name: '黄金ETF（易方达）', role: '黄金拼图', weight: 30, price: 9.965, note: '对冲货币贬值+地缘风险，与股票低相关' },
-  { code: '510880', name: '红利ETF（华泰柏瑞）', role: '红利拼图', weight: 10, price: 3.409, note: '上证红利，高股息现金流资产' },
-  { code: '513500', name: '标普500ETF（博时）', role: 'QDII拼图', weight: 35, price: 2.695, note: '全球核心权益，与 A 股相关性 0.01~0.20' },
+// ETF 组合配置器 v2 —— 三档配置 + 实时行情
+// 稳健档 = 松果生活策略全ETF版定稿（债25/金30/红利10/QDII35，2014-01起152个月实测 10.10%/-6.15%）
+// 保守/进取档 = 档位设计（非体系定稿），年化=拼图历史年化加权预估（数据源：生活策略定稿 2014-01起）
+// 拼图历史年化（真实回测）：债 3.3% / 金 11.2% / 红利 7.9% / QDII 13.4%
+const PIECE_META = [
+  { code: '511010', name: '国债ETF（国泰）', role: '债券拼图', annual: 3.3, note: '国内利率债，组合压舱石，T+0' },
+  { code: '159934', name: '黄金ETF（易方达）', role: '黄金拼图', annual: 11.2, note: '对冲货币贬值+地缘风险，与股票低相关' },
+  { code: '510880', name: '红利ETF（华泰柏瑞）', role: '红利拼图', annual: 7.9, note: '上证红利，高股息现金流资产' },
+  { code: '513500', name: '标普500ETF（博时）', role: 'QDII拼图', annual: 13.4, note: '全球核心权益，与 A 股相关性 0.01~0.20' },
+];
+// 参考价：2026-08-25 收盘（新浪财经实测），实时价由腾讯行情拉取后覆盖
+const REF_PRICES = [141.302, 9.965, 3.409, 2.695];
+
+// 三档预设
+const TIERS = [
+  {
+    key: 'conservative', label: '保守 · 求稳', tag: '跌不起型', color: '#4A7C59',
+    weights: [45, 25, 15, 15], // 债/金/红利/QDII
+    desc: '债券打底占近半，黄金对冲、红利吃股息——目标是「跌得少、拿得住」。',
+    est: '年化约 7.5%（拼图年化加权）',
+  },
+  {
+    key: 'stable', label: '稳健 · 标准四拼图', tag: '推荐 · 有实测', color: '#8B5E3C',
+    weights: [25, 30, 10, 35],
+    desc: '松果生活策略全ETF版定稿：低相关四拼图，152 个月实测覆盖三次大熊市。',
+    est: '年化 10.1% / 回撤 -6.2%（2014-01 起实测）',
+  },
+  {
+    key: 'aggressive', label: '进取 · 冲弹性', tag: '能扛波动型', color: '#a03a28',
+    weights: [10, 25, 10, 55], // 债/金/红利/QDII
+    desc: 'QDII 全球权益占过半，追求更高弹性——代价是波动明显加大。',
+    est: '年化约 11.6%（拼图年化加权）',
+  },
 ];
 ---
 <Layout
   title="ETF 组合配置"
-  description="松果 ETF 组合配置器 — 四拼图权重（债25%/金30%/红利10%/QDII35%）一键算出各 ETF 应买金额与份额。免费工具，不构成投资建议。"
+  description="松果 ETF 组合配置器 — 三档风险预设（保守/稳健/进取）+ 实时行情，一键算出每只 ETF 应买金额与份额。免费工具，不构成投资建议。"
 >
   <section class="hero" style="padding: 56px 48px;">
     <div class="hero-inner">
       <span class="eyebrow">Free Tool · 防守组合</span>
       <h1>
-        四块拼图，<br /><span class="gold">一键配好你的钱</span>
+        选你的风险档位，<br /><span class="gold">照单买入四拼图</span>
       </h1>
       <p class="hero-lead">
-        债 25% + 金 30% + 红利 10% + QDII 35%——低相关四拼图，
-        2014 年以来年化约 10%、最大回撤 -6.2%，覆盖 2015/2018/2022 三次大熊市。
-        输入拟投资金额，立刻算出每只 ETF 买多少。
+        债券 + 黄金 + 红利 + QDII 低相关四拼图，稳健档 2014 年以来实测年化约 10%、最大回撤 -6.2%，
+        覆盖 2015/2018/2022 三次大熊市。先选你是哪种人，再输入金额——实时价格、份数、零钱一次算清。
       </p>
     </div>
   </section>
 
-  <section class="card" style="max-width: 860px; margin: 0 auto;">
+  <section class="card" style="max-width: 920px; margin: 0 auto;">
+    <!-- 第一步：选档位 -->
     <div class="section-head">
-      <div class="section-kicker">Allocator · 四拼图配置</div>
-      <h2 class="section-title">输入拟投资金额</h2>
-      <p class="section-sub">权重为松果生活策略全ETF版定稿（可微调，总和需 100%）；单价参考 2026-08-25 收盘价，可按你的成交价修改。</p>
+      <div class="section-kicker">Step 1 · 选你的档位</div>
+      <h2 class="section-title">你是哪种投资者？</h2>
+      <p class="section-sub">三档权重可再微调。稳健档为松果定稿（有 152 个月实测）；保守/进取为档位设计，年化为拼图历史年化加权预估（非组合回测）。</p>
+    </div>
+    <div class="link-cards" style="grid-template-columns: repeat(3, 1fr);">
+      {TIERS.map((t, ti) => (
+        <div class="link-card tier-card" data-tier={t.key} data-index={ti} style="cursor:pointer; border-width:2px;">
+          <div class="master-school" style="font-size: 12px; font-weight: 700; letter-spacing: 0.4px; color: {t.color};">{t.tag}</div>
+          <h3>{t.label}</h3>
+          <p style="font-size: 13px; line-height: 1.6;">{t.desc}</p>
+          <div style="display:flex; gap:4px; margin: 10px 0;">
+            {t.weights.map((w, wi) => (
+              <span style="flex:1; height:6px; border-radius:3px; background: {wi === 3 ? '#a03a28' : wi === 1 ? '#d9a441' : wi === 2 ? '#c87f2e' : '#4A7C59'};"></span>
+            ))}
+          </div>
+          <div style="font-size: 12px; color: var(--text-3);">{t.weights.join(' / ')}（债 / 金 / 红利 / QDII）</div>
+          <div class="metric-grid" style="grid-template-columns: repeat(1, 1fr); margin: 10px 0 0; gap: 8px;">
+            <div class="metric-card" style="padding: 10px 8px;"><div class="label">表现画像</div><div class="value" style="font-size: 13px; line-height: 1.5;">{t.est}</div></div>
+          </div>
+        </div>
+      ))}
     </div>
 
+    <!-- 第二步：金额 + 微调 -->
+    <div class="section-head" style="margin-top: 28px;">
+      <div class="section-kicker">Step 2 · 输入金额</div>
+      <h2 class="section-title">你打算投入多少？</h2>
+    </div>
     <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap: var(--sp-4); margin-bottom: var(--sp-4);">
       <label class="valuator-field" style="grid-column: span 2;">
         <span>拟投资金额（元）</span>
@@ -47,79 +94,118 @@ const pieces = [
     <div class="table-wrap" style="margin-bottom: var(--sp-4);">
       <table class="data-table">
         <thead>
-          <tr><th>拼图</th><th>ETF</th><th>权重 %</th><th>参考价（元）</th></tr>
+          <tr><th>拼图</th><th>ETF</th><th>权重 %</th><th>价格（元）</th><th>行情状态</th></tr>
         </thead>
         <tbody>
-          {
-            pieces.map((p, i) => (
-              <tr>
-                <td>{p.role}</td>
-                <td>{p.code} {p.name}</td>
-                <td><input id={`ea-w${i}`} type="number" step="1" min="0" max="100" value={p.weight} style="width:70px; padding:6px 8px; border:1px solid rgba(139,94,60,0.25); border-radius:8px; font-size:14px;" /></td>
-                <td><input id={`ea-p${i}`} type="number" step="0.001" min="0" value={p.price} style="width:90px; padding:6px 8px; border:1px solid rgba(139,94,60,0.25); border-radius:8px; font-size:14px;" /></td>
-              </tr>
-            ))
-          }
+          {PIECE_META.map((p, i) => (
+            <tr>
+              <td>{p.role}</td>
+              <td>{p.code} {p.name}</td>
+              <td><input id={`ea-w${i}`} type="number" step="1" min="0" max="100" value={TIERS[1].weights[i]} style="width:70px; padding:6px 8px; border:1px solid rgba(139,94,60,0.25); border-radius:8px; font-size:14px;" /></td>
+              <td><input id={`ea-p${i}`} type="number" step="0.001" min="0" value={REF_PRICES[i]} style="width:95px; padding:6px 8px; border:1px solid rgba(139,94,60,0.25); border-radius:8px; font-size:14px;" /></td>
+              <td id={`ea-ps${i}`} style="font-size:12px; color: var(--text-3);">参考价 08-25</td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>
 
-    <button id="ea-run" class="btn btn-gold" style="width:100%;">计算配置 →</button>
+    <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom: var(--sp-3);">
+      <button id="ea-run" class="btn btn-gold">计算配置 →</button>
+      <button id="ea-live" class="btn btn-ghost" style="border:1.5px solid var(--border-strong);">📡 读取实时行情</button>
+    </div>
+    <div id="ea-msg" style="font-size: 13px; color: var(--text-3); margin-bottom: var(--sp-2);">权重合计 100% ✓（默认稳健档：债25/金30/红利10/QDII35）</div>
 
-    <div id="ea-result" style="display:none; margin-top: var(--sp-5); border-top: 1px solid rgba(139,94,60,0.15); padding-top: var(--sp-4);">
+    <!-- 结果 -->
+    <div id="ea-result" style="display:none; margin-top: var(--sp-4); border-top: 1px solid rgba(139,94,60,0.15); padding-top: var(--sp-4);">
       <div class="metric-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: var(--sp-4);">
         <div class="metric-card"><div class="label">拟投资金额</div><div id="ea-total" class="value" style="font-size:20px;">--</div></div>
-        <div class="metric-card"><div class="label">四块合计</div><div id="ea-sum" class="value" style="font-size:20px;">--</div></div>
-        <div class="metric-card"><div class="label">权重合计</div><div id="ea-wsum" class="value" style="font-size:20px;">--</div></div>
-        <div class="metric-card"><div class="label">建仓提示</div><div id="ea-hint" class="value" style="font-size:16px;">--</div></div>
+        <div class="metric-card"><div class="label">实买合计（整手）</div><div id="ea-sum" class="value" style="font-size:20px;">--</div></div>
+        <div class="metric-card"><div class="label">剩余零钱</div><div id="ea-rest" class="value" style="font-size:20px;">--</div></div>
+        <div class="metric-card"><div class="label">建仓提示</div><div id="ea-hint" class="value" style="font-size:15px;">--</div></div>
       </div>
       <div class="table-wrap">
         <table class="data-table">
-          <thead><tr><th>拼图</th><th>ETF</th><th>权重</th><th>应买金额</th><th>参考价</th><th>应买份数（100份/手）</th><th>实际金额</th></tr></thead>
+          <thead><tr><th>拼图</th><th>ETF</th><th>权重</th><th>应买金额</th><th>实时价</th><th>应买份数（100份/手）</th><th>实际金额</th></tr></thead>
           <tbody id="ea-rows"></tbody>
         </table>
       </div>
       <div class="callout" style="margin-top: var(--sp-4);">
-        <b>组合历史表现（2014-01 ~ 2026-08，152 个月，含成本保守口径）</b>：年化 <b>10.1%</b> / 最大回撤 <b>-6.2%</b> / 夏普 1.2 / 卡玛 1.6。
-        压力年：2015 +3.4%、2018 +1.2%、2022 -0.5%——三次大熊市全部覆盖且无大亏。回测数据来源：松果生活策略全ETF版定稿（life_etf.json 净值序列）。<b>历史回测不代表未来收益，不构成投资建议。</b>
+        <b>稳健档实测（2014-01 ~ 2026-08，152 个月，含成本保守口径）</b>：年化 <b>10.1%</b> / 最大回撤 <b>-6.2%</b> / 夏普 1.21 / 卡玛 1.64。
+        压力年：2015 +3.4%、2018 +1.2%、2022 -0.5%——三次大熊市全部覆盖且无大亏。
+        保守/进取档年化为拼图历史年化加权（债3.3%/金11.2%/红利7.9%/标普13.4%），因拼图间低相关，组合实际回撤通常显著小于单拼图，仅供参考。
+        <b>历史回测不代表未来收益，不构成投资建议。</b>
       </div>
     </div>
   </section>
 
-  <div class="callout" style="max-width: 860px; margin: var(--sp-4) auto 0;">
+  <div class="callout" style="max-width: 920px; margin: var(--sp-4) auto 0;">
     <b>拼图逻辑</b>：低相关性是组合灵魂——标普500 与 A 股相关性 0.01~0.20，黄金对冲货币风险，债券压舱。
     每加一块拼图先问它跟已有持仓的相关性。完整方法论见 <a href="/songguo-invest/portfolio/">组合管理</a>。
+    <b>买入提示</b>：场内 ETF 按 100 份/手取整，剩余零钱可留作下次再平衡或放货币基金。
   </div>
 
   <script>
-    const PIECES = [
+    const PIECE_META = [
       { code: '511010', name: '国债ETF（国泰）', role: '债券拼图' },
       { code: '159934', name: '黄金ETF（易方达）', role: '黄金拼图' },
       { code: '510880', name: '红利ETF（华泰柏瑞）', role: '红利拼图' },
       { code: '513500', name: '标普500ETF（博时）', role: 'QDII拼图' },
     ];
+    const TIERS = [
+      { key: 'conservative', weights: [45, 25, 15, 15], label: '保守 · 求稳' },
+      { key: 'stable', weights: [25, 30, 10, 35], label: '稳健 · 标准四拼图' },
+      { key: 'aggressive', weights: [10, 25, 10, 55], label: '进取 · 冲弹性' },
+    ];
     const fmt = (v: number) => v >= 10000 ? (v / 10000).toFixed(1) + ' 万' : v.toFixed(0) + ' 元';
     const fmtY = (v: number) => Math.round(v).toLocaleString() + ' 元';
+    const $ = (id: string) => document.getElementById(id) as HTMLInputElement;
+
+    let activeTier = 'stable';
+
+    // 档位切换：填充权重
+    document.querySelectorAll<HTMLElement>('.tier-card').forEach((card) => {
+      card.addEventListener('click', () => {
+        const t = TIERS[parseInt(card.dataset.index || '1', 10)];
+        activeTier = t.key;
+        t.weights.forEach((w, i) => { ($(`ea-w${i}`) as HTMLInputElement).value = String(w); });
+        document.querySelectorAll<HTMLElement>('.tier-card').forEach((c) => {
+          c.style.borderColor = 'var(--border)';
+          c.style.background = 'var(--surface)';
+        });
+        card.style.borderColor = 'var(--gold-500)';
+        card.style.background = 'rgba(217,164,65,0.06)';
+        updateMsg();
+      });
+    });
+    // 默认选中稳健档
+    const stableCard = document.querySelector('.tier-card[data-tier="stable"]') as HTMLElement;
+    if (stableCard) stableCard.click();
+
+    function updateMsg() {
+      const w = [0, 1, 2, 3].map((i) => parseFloat($(`ea-w${i}`).value) || 0);
+      const wsum = w.reduce((a, b) => a + b, 0);
+      const msg = $('ea-msg') as HTMLElement;
+      if (Math.abs(wsum - 100) > 0.01) msg.textContent = `权重合计 ${wsum}% ≠ 100%，请调整`;
+      else msg.textContent = `权重合计 100% ✓（${TIERS.find((t) => t.key === activeTier)?.label || ''}）`;
+    }
+    [0, 1, 2, 3].forEach((i) => ($(`ea-w${i}`) as HTMLInputElement).addEventListener('input', updateMsg));
 
     function run() {
-      const $ = (id: string) => document.getElementById(id) as HTMLInputElement;
       const amount = parseFloat($('ea-amount').value) || 0;
       const w = [0, 1, 2, 3].map((i) => parseFloat($(`ea-w${i}`).value) || 0);
       const price = [0, 1, 2, 3].map((i) => parseFloat($(`ea-p${i}`).value) || 0);
       const wsum = w.reduce((a, b) => a + b, 0);
-
+      const hint = $('ea-hint') as HTMLElement;
       ($('ea-total') as HTMLElement).textContent = fmt(amount);
-      ($('ea-wsum') as HTMLElement).textContent = wsum.toFixed(0) + '%';
-      ($('ea-sum') as HTMLElement).textContent = fmt(amount);
-      const hint = ($('ea-hint') as HTMLElement);
       if (amount <= 0) { hint.textContent = '请输入金额'; hint.style.color = 'var(--red)'; }
-      else if (Math.abs(wsum - 100) > 0.01) { hint.textContent = `权重合计 ${wsum}%≠100%`; hint.style.color = 'var(--red)'; }
+      else if (Math.abs(wsum - 100) > 0.01) { hint.textContent = `权重 ${wsum}%≠100%`; hint.style.color = 'var(--red)'; }
       else { hint.textContent = '权重 100% ✓'; hint.style.color = 'var(--green)'; }
 
       let sumCheck = 0;
-      ($('ea-rows') as HTMLElement).innerHTML = PIECES.map((p, i) => {
+      ($('ea-rows') as HTMLElement).innerHTML = PIECE_META.map((p, i) => {
         const money = amount * w[i] / 100;
-        const lots = Math.floor(money / price[i] / 100); // 场内 1 手 = 100 份
+        const lots = price[i] > 0 ? Math.floor(money / price[i] / 100) : 0;
         const actual = lots * 100 * price[i];
         sumCheck += actual;
         return `<tr>
@@ -132,8 +218,47 @@ const pieces = [
           <td>${fmtY(actual)}</td>
         </tr>`;
       }).join('');
-      ($('ea-sum') as HTMLElement).textContent = fmt(sumCheck) + (Math.abs(sumCheck - amount) > 1 ? `（按 100 份整手取整）` : '');
+      ($('ea-sum') as HTMLElement).textContent = fmt(sumCheck);
+      ($('ea-rest') as HTMLElement).textContent = fmt(Math.max(0, amount - sumCheck));
+      ($('ea-result') as HTMLElement).style.display = 'block';
     }
-    document.getElementById('ea-run')?.addEventListener('click', run);
+    $('ea-run')!.addEventListener('click', run);
+
+    // 实时行情：腾讯 qt.gtimg.cn —— 返回格式 v_sh511010="1~名称~代码~现价~..." 本身就是合法 JS，
+    // 用 <script> 标签加载后读全局变量 window.v_<code> 解析（无需 CORS/JSONP）
+    function loadQuote() {
+      const codes = ['sh511010', 'sz159934', 'sh510880', 'sz513500'];
+      const btn = $('ea-live') as HTMLButtonElement;
+      btn.textContent = '📡 读取中…';
+      btn.disabled = true;
+      const s = document.createElement('script');
+      s.src = `https://qt.gtimg.cn/q=${codes.join(',')}&_t=${Date.now()}`;
+      s.onload = () => {
+        let got = 0;
+        codes.forEach((c, i) => {
+          const raw = (window as any)['v_' + c];
+          if (!raw) return;
+          const parts = raw.split('~');
+          const px = parseFloat(parts[3]);
+          if (!isNaN(px) && px > 0) {
+            ($(`ea-p${i}`) as HTMLInputElement).value = px.toFixed(3);
+            const st = $(`ea-ps${i}`) as HTMLElement;
+            const qtime = (parts[30] || '').replace(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/, '$1-$2-$3 $4:$5');
+            st.textContent = qtime ? `实时 ${qtime}` : '实时行情 ✓';
+            st.style.color = 'var(--green)';
+            got++;
+          }
+        });
+        btn.textContent = got > 0 ? `📡 实时价已更新（${got}/4）` : '📡 未获取到行情，可重试';
+        btn.disabled = false;
+      };
+      s.onerror = () => {
+        btn.textContent = '📡 行情获取失败（网络被墙/超时），使用参考价';
+        btn.disabled = false;
+      };
+      document.body.appendChild(s);
+      setTimeout(() => { if (btn.disabled) { btn.textContent = '📡 行情超时，使用参考价'; btn.disabled = false; } }, 8000);
+    }
+    $('ea-live')!.addEventListener('click', loadQuote);
   </script>
 </Layout>
