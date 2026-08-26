@@ -1,1 +1,1002 @@
-[{"ym": "201603", "index": 0.0, "etf": 2.5508, "fund": 1.325, "stock": 10.5917, "combo_calmar_opt": 2.2417}, {"ym": "201604", "index": 0.0, "etf": 1.0814, "fund": 0.3487, "stock": 0.6047, "combo_calmar_opt": 0.4127}, {"ym": "201605", "index": 0.0, "etf": 0.0988, "fund": 0.5116, "stock": -3.3767, "combo_calmar_opt": 0.0303}, {"ym": "201606", "index": 0.0, "etf": 3.3298, "fund": 2.5545, "stock": -0.5483, "combo_calmar_opt": 2.0663}, {"ym": "201607", "index": 0.0, "etf": 2.4984, "fund": 2.1069, "stock": 8.9056, "combo_calmar_opt": 2.6153}, {"ym": "201608", "index": 0.0, "etf": 0.326, "fund": 0.1742, "stock": 1.544, "combo_calmar_opt": 0.309}, {"ym": "201609", "index": 0.0, "etf": -0.0387, "fund": 0.2106, "stock": 11.5267, "combo_calmar_opt": 1.2962}, {"ym": "201610", "index": 0.0, "etf": -0.4102, "fund": -0.4751, "stock": -4.6693, "combo_calmar_opt": -0.8405}, {"ym": "201611", "index": 0.0, "etf": 0.9094, "fund": 0.9455, "stock": -1.8076, "combo_calmar_opt": 0.572}, {"ym": "201612", "index": 0.0, "etf": -0.1001, "fund": -0.4729, "stock": -2.9495, "combo_calmar_opt": -0.636}, {"ym": "201701", "index": -6.0853, "etf": 1.0023, "fund": 0.7766, "stock": 7.4761, "combo_calmar_opt": 0.7829}, {"ym": "201702", "index": 0.0, "etf": 3.0992, "fund": 1.9764, "stock": 3.4076, "combo_calmar_opt": 2.0342}, {"ym": "201703", "index": -0.2445, "etf": -0.274, "fund": -0.24, "stock": 1.2972, "combo_calmar_opt": -0.0902}, {"ym": "201704", "index": -1.3732, "etf": 0.6162, "fund": 0.8645, "stock": -3.0367, "combo_calmar_opt": 0.2258}, {"ym": "201705", "index": 0.0, "etf": -0.1476, "fund": -0.2562, "stock": -8.3594, "combo_calmar_opt": -1.0301}, {"ym": "201706", "index": 0.0, "etf": -0.4656, "fund": 0.7175, "stock": -1.4833, "combo_calmar_opt": 0.3074}, {"ym": "201707", "index": 1.4521, "etf": 0.9429, "fund": 0.9587, "stock": 4.2819, "combo_calmar_opt": 1.3388}, {"ym": "201708", "index": 0.0, "etf": -0.2795, "fund": -0.1917, "stock": -0.229, "combo_calmar_opt": -0.185}, {"ym": "201709", "index": 1.1934, "etf": 0.9441, "fund": 1.187, "stock": 6.6267, "combo_calmar_opt": 1.7073}, {"ym": "201710", "index": -0.1473, "etf": 0.3726, "fund": 1.13, "stock": -2.4735, "combo_calmar_opt": 0.5662}, {"ym": "201711", "index": 2.3066, "etf": 0.9318, "fund": 0.2644, "stock": -4.4124, "combo_calmar_opt": 0.0677}, {"ym": "201712", "index": 0.0042, "etf": -0.1226, "fund": 0.3233, "stock": 6.0911, "combo_calmar_opt": 0.8236}, {"ym": "201801", "index": 1.6987, "etf": 1.6681, "fund": 0.8056, "stock": -1.32, "combo_calmar_opt": 0.7686}, {"ym": "201802", "index": 0.0, "etf": -2.0882, "fund": -0.9505, "stock": -4.6171, "combo_calmar_opt": -1.3359}, {"ym": "201803", "index": 0.0, "etf": -1.3565, "fund": -0.5435, "stock": 7.6839, "combo_calmar_opt": 0.2523}, {"ym": "201804", "index": 0.0, "etf": 0.4854, "fund": 0.3928, "stock": 0.0, "combo_calmar_opt": 0.3235}, {"ym": "201805", "index": 1.8163, "etf": 1.0246, "fund": 0.8421, "stock": 3.3715, "combo_calmar_opt": 1.2107}, {"ym": "201806", "index": -0.9932, "etf": 0.5216, "fund": 0.3121, "stock": -7.5215, "combo_calmar_opt": -0.5809}, {"ym": "201807", "index": -0.7075, "etf": 2.9331, "fund": 2.4132, "stock": 7.0524, "combo_calmar_opt": 2.617}, {"ym": "201808", "index": -2.6059, "etf": 0.4691, "fund": 0.3941, "stock": -1.5384, "combo_calmar_opt": -0.0917}, {"ym": "201809", "index": 0.0, "etf": 0.5784, "fund": 0.1063, "stock": 4.8535, "combo_calmar_opt": 0.6176}, {"ym": "201810", "index": -9.7227, "etf": -1.3511, "fund": -1.4133, "stock": -10.5959, "combo_calmar_opt": -3.1563}, {"ym": "201811", "index": 0.0, "etf": 0.7375, "fund": 1.8064, "stock": 0.0, "combo_calmar_opt": 1.3382}, {"ym": "201812", "index": 0.0, "etf": -2.252, "fund": -2.1406, "stock": -1.9207, "combo_calmar_opt": -1.9157}, {"ym": "201901", "index": 3.6395, "etf": 2.5321, "fund": 2.9194, "stock": 2.154, "combo_calmar_opt": 2.8761}, {"ym": "201902", "index": 5.8128, "etf": 1.5374, "fund": 3.1356, "stock": 12.4694, "combo_calmar_opt": 4.1769}, {"ym": "201903", "index": 5.6241, "etf": 0.7742, "fund": 1.6455, "stock": 12.3758, "combo_calmar_opt": 3.0293}, {"ym": "201904", "index": 1.4587, "etf": 0.979, "fund": 0.6321, "stock": 10.3961, "combo_calmar_opt": 1.7259}, {"ym": "201905", "index": 1.8772, "etf": -0.6665, "fund": -1.2487, "stock": -8.0978, "combo_calmar_opt": -1.5628}, {"ym": "201906", "index": 1.6871, "etf": 4.9953, "fund": 4.1967, "stock": -1.8975, "combo_calmar_opt": 3.4162}, {"ym": "201907", "index": -4.6448, "etf": 1.1813, "fund": 1.3922, "stock": 6.367, "combo_calmar_opt": 1.2649}, {"ym": "201908", "index": 0.8758, "etf": 3.4643, "fund": 3.429, "stock": -4.3921, "combo_calmar_opt": 2.3951}, {"ym": "201909", "index": 0.0, "etf": -0.222, "fund": 0.5892, "stock": 5.4937, "combo_calmar_opt": 0.9396}, {"ym": "201910", "index": 3.7301, "etf": 0.2348, "fund": 0.607, "stock": 0.7896, "combo_calmar_opt": 0.9003}, {"ym": "201911", "index": -2.2062, "etf": 0.4316, "fund": 0.8488, "stock": -0.2847, "combo_calmar_opt": 0.3882}, {"ym": "201912", "index": 2.2772, "etf": 2.1487, "fund": 2.4903, "stock": 5.9995, "combo_calmar_opt": 2.7857}, {"ym": "202001", "index": 2.1948, "etf": 1.0698, "fund": 1.7171, "stock": 1.8817, "combo_calmar_opt": 1.7166}, {"ym": "202002", "index": 13.8099, "etf": -1.885, "fund": -1.0075, "stock": -6.7813, "combo_calmar_opt": -0.1909}, {"ym": "202003", "index": -6.2326, "etf": -4.2788, "fund": -4.0712, "stock": -4.7275, "combo_calmar_opt": -4.3737}, {"ym": "202004", "index": -1.4466, "etf": 6.4012, "fund": 5.7336, "stock": 1.151, "combo_calmar_opt": 4.624}, {"ym": "202005", "index": -2.6619, "etf": 2.2493, "fund": 1.7278, "stock": 9.1133, "combo_calmar_opt": 2.0795}, {"ym": "202006", "index": 0.0046, "etf": 0.7566, "fund": 1.2412, "stock": 3.0378, "combo_calmar_opt": 1.2487}, {"ym": "202007", "index": 9.2216, "etf": 4.3609, "fund": 3.9295, "stock": 14.6929, "combo_calmar_opt": 5.5782}, {"ym": "202008", "index": -3.8969, "etf": 1.1789, "fund": 1.5521, "stock": 11.5827, "combo_calmar_opt": 1.973}, {"ym": "202009", "index": 0.0, "etf": -3.1016, "fund": -1.7974, "stock": -1.6414, "combo_calmar_opt": -1.7325}, {"ym": "202010", "index": 2.7801, "etf": -1.7444, "fund": -0.8902, "stock": 0.313, "combo_calmar_opt": -0.4883}, {"ym": "202011", "index": 5.7785, "etf": 1.5628, "fund": 1.1307, "stock": -5.1976, "combo_calmar_opt": 1.0058}, {"ym": "202012", "index": 3.7022, "etf": 2.2855, "fund": 2.8385, "stock": -10.0095, "combo_calmar_opt": 1.5848}, {"ym": "202101", "index": -0.572, "etf": -1.4214, "fund": -0.2476, "stock": 11.8324, "combo_calmar_opt": 0.8106}, {"ym": "202102", "index": 4.0733, "etf": 0.0842, "fund": -0.0363, "stock": 9.529, "combo_calmar_opt": 1.3432}, {"ym": "202103", "index": -4.5453, "etf": 1.5135, "fund": 0.9267, "stock": 2.4178, "combo_calmar_opt": 0.5873}, {"ym": "202104", "index": -1.9875, "etf": 2.5512, "fund": 2.4005, "stock": 0.0, "combo_calmar_opt": 1.7367}, {"ym": "202105", "index": -0.3057, "etf": 1.6693, "fund": 1.26, "stock": 1.2117, "combo_calmar_opt": 1.1396}, {"ym": "202106", "index": 0.0, "etf": -0.6303, "fund": -0.0289, "stock": 8.6199, "combo_calmar_opt": 0.7787}, {"ym": "202107", "index": 2.78, "etf": 2.1586, "fund": 1.7079, "stock": -4.8306, "combo_calmar_opt": 1.2063}, {"ym": "202108", "index": 0.961, "etf": 1.7008, "fund": 1.4173, "stock": 2.4962, "combo_calmar_opt": 1.508}, {"ym": "202109", "index": -2.2344, "etf": -2.8677, "fund": -2.5762, "stock": 2.0708, "combo_calmar_opt": -2.1065}, {"ym": "202110", "index": -0.05, "etf": 1.8221, "fund": 2.6213, "stock": -2.3283, "combo_calmar_opt": 1.7793}, {"ym": "202111", "index": -0.5782, "etf": -0.4253, "fund": 0.5726, "stock": 0.0239, "combo_calmar_opt": 0.3029}, {"ym": "202112", "index": 1.0169, "etf": 2.3024, "fund": 1.2224, "stock": 7.6926, "combo_calmar_opt": 1.9569}, {"ym": "202201", "index": -2.3641, "etf": -2.7853, "fund": -2.4981, "stock": -2.6092, "combo_calmar_opt": -2.5245}, {"ym": "202202", "index": 0.1857, "etf": 0.9847, "fund": 0.5034, "stock": 6.268, "combo_calmar_opt": 1.0962}, {"ym": "202203", "index": -2.9282, "etf": 2.3081, "fund": 0.3995, "stock": 6.5239, "combo_calmar_opt": 0.8701}, {"ym": "202204", "index": -15.5741, "etf": -1.2218, "fund": -1.575, "stock": -7.3707, "combo_calmar_opt": -3.5192}, {"ym": "202205", "index": 6.2113, "etf": -0.1232, "fund": 1.0194, "stock": 9.7135, "combo_calmar_opt": 2.2937}, {"ym": "202206", "index": 0.646, "etf": -3.0576, "fund": -1.5559, "stock": -4.261, "combo_calmar_opt": -1.7564}, {"ym": "202207", "index": -3.2256, "etf": 2.7617, "fund": 2.4452, "stock": 5.3479, "combo_calmar_opt": 2.2}, {"ym": "202208", "index": -0.4802, "etf": -0.2167, "fund": -0.8608, "stock": 2.9822, "combo_calmar_opt": -0.374}, {"ym": "202209", "index": 1.804, "etf": -2.2901, "fund": -2.2046, "stock": -6.2416, "combo_calmar_opt": -2.216}, {"ym": "202210", "index": 3.4992, "etf": 2.9787, "fund": 2.335, "stock": 3.1894, "combo_calmar_opt": 2.6012}, {"ym": "202211", "index": 3.3066, "etf": 3.4834, "fund": 2.293, "stock": 10.2812, "combo_calmar_opt": 3.3122}, {"ym": "202212", "index": -1.1195, "etf": -2.9391, "fund": -2.4839, "stock": 2.0269, "combo_calmar_opt": -1.9419}, {"ym": "202301", "index": 1.3117, "etf": 1.6368, "fund": 1.6548, "stock": 5.9425, "combo_calmar_opt": 2.0475}, {"ym": "202302", "index": 2.4639, "etf": -0.0856, "fund": 0.1722, "stock": 8.519, "combo_calmar_opt": 1.2103}, {"ym": "202303", "index": 1.2944, "etf": 2.9315, "fund": 2.0521, "stock": -4.7903, "combo_calmar_opt": 1.3801}, {"ym": "202304", "index": -0.2011, "etf": 1.4583, "fund": 0.8967, "stock": -2.1316, "combo_calmar_opt": 0.5403}, {"ym": "202305", "index": -0.3204, "etf": 1.3746, "fund": 0.6733, "stock": -5.0899, "combo_calmar_opt": 0.0678}, {"ym": "202306", "index": -1.2375, "etf": 2.8785, "fund": 2.7448, "stock": 6.8653, "combo_calmar_opt": 2.772}, {"ym": "202307", "index": 1.5516, "etf": 1.4799, "fund": 1.3175, "stock": 19.6514, "combo_calmar_opt": 3.1905}, {"ym": "202308", "index": -0.0591, "etf": 0.0501, "fund": -0.1028, "stock": -2.7986, "combo_calmar_opt": -0.3527}, {"ym": "202309", "index": -1.0438, "etf": -2.6054, "fund": -2.1043, "stock": 5.5714, "combo_calmar_opt": -1.2808}, {"ym": "202310", "index": -0.2513, "etf": 0.898, "fund": 0.3048, "stock": -1.4668, "combo_calmar_opt": 0.1314}, {"ym": "202311", "index": 0.9665, "etf": 2.605, "fund": 2.1064, "stock": 2.374, "combo_calmar_opt": 2.069}, {"ym": "202312", "index": 0.0041, "etf": 1.8657, "fund": 1.5959, "stock": 0.9119, "combo_calmar_opt": 1.3953}, {"ym": "202401", "index": -4.5668, "etf": 1.1397, "fund": 0.399, "stock": -3.5073, "combo_calmar_opt": -0.4141}, {"ym": "202402", "index": 15.1682, "etf": 2.4204, "fund": 2.5507, "stock": 6.3979, "combo_calmar_opt": 4.1841}, {"ym": "202403", "index": 0.0, "etf": 3.9216, "fund": 2.6197, "stock": 8.6165, "combo_calmar_opt": 3.0876}, {"ym": "202404", "index": -1.9992, "etf": -0.1565, "fund": 0.0908, "stock": 3.7246, "combo_calmar_opt": 0.2205}, {"ym": "202405", "index": -0.522, "etf": 2.4963, "fund": 1.8532, "stock": 3.551, "combo_calmar_opt": 1.8498}, {"ym": "202406", "index": -1.1725, "etf": 1.1191, "fund": 0.4783, "stock": -5.9231, "combo_calmar_opt": -0.2628}, {"ym": "202407", "index": -4.4859, "etf": 1.047, "fund": 0.7001, "stock": -0.3703, "combo_calmar_opt": 0.1091}, {"ym": "202408", "index": -6.2371, "etf": 0.9889, "fund": 0.5005, "stock": -3.1517, "combo_calmar_opt": -0.4896}, {"ym": "202409", "index": -1.0222, "etf": 2.3524, "fund": 2.2827, "stock": 24.0574, "combo_calmar_opt": 4.1366}, {"ym": "202410", "index": 39.0364, "etf": 1.6847, "fund": 1.1181, "stock": -5.5277, "combo_calmar_opt": 4.302}, {"ym": "202411", "index": 6.672, "etf": 1.7543, "fund": 1.6096, "stock": 7.0368, "combo_calmar_opt": 2.673}, {"ym": "202412", "index": -0.0414, "etf": -0.2579, "fund": -0.2282, "stock": -2.1989, "combo_calmar_opt": -0.4095}, {"ym": "202501", "index": 0.3318, "etf": 1.8393, "fund": 1.3238, "stock": -1.684, "combo_calmar_opt": 0.9754}, {"ym": "202502", "index": -0.0992, "etf": 0.5585, "fund": 0.7249, "stock": 3.9011, "combo_calmar_opt": 0.9435}, {"ym": "202503", "index": 2.0711, "etf": 0.8006, "fund": 0.6208, "stock": 0.9761, "combo_calmar_opt": 0.8193}, {"ym": "202504", "index": 6.3296, "etf": 1.9606, "fund": 0.6208, "stock": -2.55, "combo_calmar_opt": 1.0086}, {"ym": "202505", "index": -0.4396, "etf": 1.7791, "fund": 1.7068, "stock": 3.3317, "combo_calmar_opt": 1.6619}, {"ym": "202506", "index": 1.845, "etf": 1.5963, "fund": 1.4062, "stock": 0.2576, "combo_calmar_opt": 1.3542}, {"ym": "202507", "index": 1.681, "etf": 0.8789, "fund": 1.0111, "stock": 8.3138, "combo_calmar_opt": 1.7951}, {"ym": "202508", "index": 1.9756, "etf": 0.9251, "fund": 1.2829, "stock": 7.302, "combo_calmar_opt": 1.9183}, {"ym": "202509", "index": -1.7611, "etf": 4.5064, "fund": 3.3481, "stock": -0.4043, "combo_calmar_opt": 2.5778}, {"ym": "202510", "index": 2.5973, "etf": 2.8609, "fund": 1.8462, "stock": 4.1933, "combo_calmar_opt": 2.2575}, {"ym": "202511", "index": 0.0391, "etf": 0.8186, "fund": 0.617, "stock": 1.3544, "combo_calmar_opt": 0.6531}, {"ym": "202512", "index": 0.0, "etf": 0.4921, "fund": 0.6628, "stock": 0.3992, "combo_calmar_opt": 0.5531}, {"ym": "202601", "index": 7.7109, "etf": 6.2249, "fund": 4.3287, "stock": 1.3122, "combo_calmar_opt": 4.5549}, {"ym": "202602", "index": 3.3622, "etf": -0.8355, "fund": -0.5876, "stock": -0.0001, "combo_calmar_opt": -0.1586}, {"ym": "202603", "index": -4.5212, "etf": -4.9769, "fund": -3.8636, "stock": -2.0176, "combo_calmar_opt": -3.8561}, {"ym": "202604", "index": 5.1356, "etf": 3.455, "fund": 3.2181, "stock": 1.1994, "combo_calmar_opt": 3.2317}, {"ym": "202605", "index": 0.0, "etf": 0.5438, "fund": 0.0846, "stock": -7.2262, "combo_calmar_opt": -0.609}, {"ym": "202606", "index": 0.0, "etf": -4.2504, "fund": -3.038, "stock": -9.7397, "combo_calmar_opt": -3.5256}, {"ym": "202607", "index": -7.8354, "etf": 0.9333, "fund": 0.7729, "stock": -0.9506, "combo_calmar_opt": -0.2443}]
+[
+ {
+  "ym": "201603",
+  "index": 0.0,
+  "etf": 2.5508,
+  "fund": 1.325,
+  "stock": 9.5277,
+  "combo_calmar_opt": 3.7759
+ },
+ {
+  "ym": "201604",
+  "index": 0.0,
+  "etf": 1.0814,
+  "fund": 0.3487,
+  "stock": 0.5343,
+  "combo_calmar_opt": 0.4428
+ },
+ {
+  "ym": "201605",
+  "index": 0.0,
+  "etf": 0.0988,
+  "fund": 0.5116,
+  "stock": -3.4443,
+  "combo_calmar_opt": -0.7676
+ },
+ {
+  "ym": "201606",
+  "index": 0.0,
+  "etf": 3.3298,
+  "fund": 2.5545,
+  "stock": 0.2782,
+  "combo_calmar_opt": 1.6937
+ },
+ {
+  "ym": "201607",
+  "index": 0.0,
+  "etf": 2.4984,
+  "fund": 2.1069,
+  "stock": 9.8131,
+  "combo_calmar_opt": 4.2472
+ },
+ {
+  "ym": "201608",
+  "index": 0.0,
+  "etf": 0.326,
+  "fund": 0.1742,
+  "stock": -0.2665,
+  "combo_calmar_opt": 0.0398
+ },
+ {
+  "ym": "201609",
+  "index": 0.0,
+  "etf": -0.0387,
+  "fund": 0.2106,
+  "stock": -0.6729,
+  "combo_calmar_opt": -0.1005
+ },
+ {
+  "ym": "201610",
+  "index": 0.0,
+  "etf": -0.4102,
+  "fund": -0.4751,
+  "stock": -5.7911,
+  "combo_calmar_opt": -2.0159
+ },
+ {
+  "ym": "201611",
+  "index": 0.0,
+  "etf": 0.9094,
+  "fund": 0.9455,
+  "stock": -2.5416,
+  "combo_calmar_opt": -0.1988
+ },
+ {
+  "ym": "201612",
+  "index": 0.0,
+  "etf": -0.1001,
+  "fund": -0.4729,
+  "stock": 0.7303,
+  "combo_calmar_opt": -0.0274
+ },
+ {
+  "ym": "201701",
+  "index": -6.0853,
+  "etf": 1.0023,
+  "fund": 0.7766,
+  "stock": 10.0408,
+  "combo_calmar_opt": 2.8922
+ },
+ {
+  "ym": "201702",
+  "index": 0.0,
+  "etf": 3.0992,
+  "fund": 1.9764,
+  "stock": 1.9994,
+  "combo_calmar_opt": 1.898
+ },
+ {
+  "ym": "201703",
+  "index": -0.2445,
+  "etf": -0.274,
+  "fund": -0.24,
+  "stock": 1.8745,
+  "combo_calmar_opt": 0.3905
+ },
+ {
+  "ym": "201704",
+  "index": -1.3732,
+  "etf": 0.6162,
+  "fund": 0.8645,
+  "stock": -1.0893,
+  "combo_calmar_opt": 0.0297
+ },
+ {
+  "ym": "201705",
+  "index": 0.0,
+  "etf": -0.1476,
+  "fund": -0.2562,
+  "stock": -8.4236,
+  "combo_calmar_opt": -2.67
+ },
+ {
+  "ym": "201706",
+  "index": 0.0,
+  "etf": -0.4656,
+  "fund": 0.7175,
+  "stock": -1.499,
+  "combo_calmar_opt": -0.1375
+ },
+ {
+  "ym": "201707",
+  "index": 1.4521,
+  "etf": 0.9429,
+  "fund": 0.9587,
+  "stock": 4.2089,
+  "combo_calmar_opt": 1.9815
+ },
+ {
+  "ym": "201708",
+  "index": 0.0,
+  "etf": -0.2795,
+  "fund": -0.1917,
+  "stock": -0.2988,
+  "combo_calmar_opt": -0.2134
+ },
+ {
+  "ym": "201709",
+  "index": 1.1934,
+  "etf": 0.9441,
+  "fund": 1.187,
+  "stock": 6.552,
+  "combo_calmar_opt": 2.7729
+ },
+ {
+  "ym": "201710",
+  "index": -0.1473,
+  "etf": 0.3726,
+  "fund": 1.13,
+  "stock": -2.5417,
+  "combo_calmar_opt": -0.175
+ },
+ {
+  "ym": "201711",
+  "index": 2.3066,
+  "etf": 0.9318,
+  "fund": 0.2644,
+  "stock": -4.4793,
+  "combo_calmar_opt": -0.8877
+ },
+ {
+  "ym": "201712",
+  "index": 0.0042,
+  "etf": -0.1226,
+  "fund": 0.3233,
+  "stock": 6.0168,
+  "combo_calmar_opt": 1.9548
+ },
+ {
+  "ym": "201801",
+  "index": 1.6987,
+  "etf": 1.6681,
+  "fund": 0.8056,
+  "stock": -1.3891,
+  "combo_calmar_opt": 0.3227
+ },
+ {
+  "ym": "201802",
+  "index": 0.0,
+  "etf": -2.0882,
+  "fund": -0.9505,
+  "stock": -4.6839,
+  "combo_calmar_opt": -2.0893
+ },
+ {
+  "ym": "201803",
+  "index": 0.0,
+  "etf": -1.3565,
+  "fund": -0.5435,
+  "stock": 12.0924,
+  "combo_calmar_opt": 3.2203
+ },
+ {
+  "ym": "201804",
+  "index": 0.0,
+  "etf": 0.4854,
+  "fund": 0.3928,
+  "stock": -3.9143,
+  "combo_calmar_opt": -0.9293
+ },
+ {
+  "ym": "201805",
+  "index": 1.8163,
+  "etf": 1.0246,
+  "fund": 0.8421,
+  "stock": 4.0137,
+  "combo_calmar_opt": 1.9092
+ },
+ {
+  "ym": "201806",
+  "index": -0.9932,
+  "etf": 0.5216,
+  "fund": 0.3121,
+  "stock": -13.3463,
+  "combo_calmar_opt": -3.895
+ },
+ {
+  "ym": "201807",
+  "index": -0.7075,
+  "etf": 2.9331,
+  "fund": 2.4132,
+  "stock": 17.3724,
+  "combo_calmar_opt": 6.6409
+ },
+ {
+  "ym": "201808",
+  "index": -2.6059,
+  "etf": 0.4691,
+  "fund": 0.3941,
+  "stock": -3.7297,
+  "combo_calmar_opt": -1.1356
+ },
+ {
+  "ym": "201809",
+  "index": 0.0,
+  "etf": 0.5784,
+  "fund": 0.1063,
+  "stock": 5.254,
+  "combo_calmar_opt": 1.6872
+ },
+ {
+  "ym": "201810",
+  "index": -9.7227,
+  "etf": -1.3511,
+  "fund": -1.4133,
+  "stock": -10.6585,
+  "combo_calmar_opt": -5.0116
+ },
+ {
+  "ym": "201811",
+  "index": 0.0,
+  "etf": 0.7375,
+  "fund": 1.8064,
+  "stock": 0.5138,
+  "combo_calmar_opt": 1.1311
+ },
+ {
+  "ym": "201812",
+  "index": 0.0,
+  "etf": -2.252,
+  "fund": -2.1406,
+  "stock": -2.8656,
+  "combo_calmar_opt": -2.1552
+ },
+ {
+  "ym": "201901",
+  "index": 3.6395,
+  "etf": 2.5321,
+  "fund": 2.9194,
+  "stock": 3.3492,
+  "combo_calmar_opt": 3.0816
+ },
+ {
+  "ym": "201902",
+  "index": 5.8128,
+  "etf": 1.5374,
+  "fund": 3.1356,
+  "stock": 12.3907,
+  "combo_calmar_opt": 6.02
+ },
+ {
+  "ym": "201903",
+  "index": 5.6241,
+  "etf": 0.7742,
+  "fund": 1.6455,
+  "stock": 12.2971,
+  "combo_calmar_opt": 5.1517
+ },
+ {
+  "ym": "201904",
+  "index": 1.4587,
+  "etf": 0.979,
+  "fund": 0.6321,
+  "stock": 10.3189,
+  "combo_calmar_opt": 3.6555
+ },
+ {
+  "ym": "201905",
+  "index": 1.8772,
+  "etf": -0.6665,
+  "fund": -1.2487,
+  "stock": -9.8312,
+  "combo_calmar_opt": -3.4526
+ },
+ {
+  "ym": "201906",
+  "index": 1.6871,
+  "etf": 4.9953,
+  "fund": 4.1967,
+  "stock": -1.2889,
+  "combo_calmar_opt": 2.3799
+ },
+ {
+  "ym": "201907",
+  "index": -4.6448,
+  "etf": 1.1813,
+  "fund": 1.3922,
+  "stock": 5.1215,
+  "combo_calmar_opt": 1.8862
+ },
+ {
+  "ym": "201908",
+  "index": 0.8758,
+  "etf": 3.4643,
+  "fund": 3.429,
+  "stock": -4.1838,
+  "combo_calmar_opt": 0.8934
+ },
+ {
+  "ym": "201909",
+  "index": 0.0,
+  "etf": -0.222,
+  "fund": 0.5892,
+  "stock": 5.4198,
+  "combo_calmar_opt": 1.8984
+ },
+ {
+  "ym": "201910",
+  "index": 3.7301,
+  "etf": 0.2348,
+  "fund": 0.607,
+  "stock": 1.1388,
+  "combo_calmar_opt": 1.0416
+ },
+ {
+  "ym": "201911",
+  "index": -2.2062,
+  "etf": 0.4316,
+  "fund": 0.8488,
+  "stock": 0.4172,
+  "combo_calmar_opt": 0.3721
+ },
+ {
+  "ym": "201912",
+  "index": 2.2772,
+  "etf": 2.1487,
+  "fund": 2.4903,
+  "stock": 5.7938,
+  "combo_calmar_opt": 3.4259
+ },
+ {
+  "ym": "202001",
+  "index": 2.1948,
+  "etf": 1.0698,
+  "fund": 1.7171,
+  "stock": 1.8104,
+  "combo_calmar_opt": 1.7281
+ },
+ {
+  "ym": "202002",
+  "index": 13.8099,
+  "etf": -1.885,
+  "fund": -1.0075,
+  "stock": -5.3688,
+  "combo_calmar_opt": -0.9219
+ },
+ {
+  "ym": "202003",
+  "index": -6.2326,
+  "etf": -4.2788,
+  "fund": -4.0712,
+  "stock": -7.4212,
+  "combo_calmar_opt": -5.3131
+ },
+ {
+  "ym": "202004",
+  "index": -1.4466,
+  "etf": 6.4012,
+  "fund": 5.7336,
+  "stock": 0.4129,
+  "combo_calmar_opt": 3.4861
+ },
+ {
+  "ym": "202005",
+  "index": -2.6619,
+  "etf": 2.2493,
+  "fund": 1.7278,
+  "stock": 9.037,
+  "combo_calmar_opt": 3.5337
+ },
+ {
+  "ym": "202006",
+  "index": 0.0046,
+  "etf": 0.7566,
+  "fund": 1.2412,
+  "stock": 3.5538,
+  "combo_calmar_opt": 1.7629
+ },
+ {
+  "ym": "202007",
+  "index": 9.2216,
+  "etf": 4.3609,
+  "fund": 3.9295,
+  "stock": 20.255,
+  "combo_calmar_opt": 9.3995
+ },
+ {
+  "ym": "202008",
+  "index": -3.8969,
+  "etf": 1.1789,
+  "fund": 1.5521,
+  "stock": 21.2628,
+  "combo_calmar_opt": 6.8831
+ },
+ {
+  "ym": "202009",
+  "index": 0.0,
+  "etf": -3.1016,
+  "fund": -1.7974,
+  "stock": -2.7831,
+  "combo_calmar_opt": -2.0438
+ },
+ {
+  "ym": "202010",
+  "index": 2.7801,
+  "etf": -1.7444,
+  "fund": -0.8902,
+  "stock": 0.4846,
+  "combo_calmar_opt": -0.1962
+ },
+ {
+  "ym": "202011",
+  "index": 5.7785,
+  "etf": 1.5628,
+  "fund": 1.1307,
+  "stock": -5.264,
+  "combo_calmar_opt": -0.2797
+ },
+ {
+  "ym": "202012",
+  "index": 3.7022,
+  "etf": 2.2855,
+  "fund": 2.8385,
+  "stock": -10.0725,
+  "combo_calmar_opt": -1.0037
+ },
+ {
+  "ym": "202101",
+  "index": -0.572,
+  "etf": -1.4214,
+  "fund": -0.2476,
+  "stock": 11.7541,
+  "combo_calmar_opt": 3.2031
+ },
+ {
+  "ym": "202102",
+  "index": 4.0733,
+  "etf": 0.0842,
+  "fund": -0.0363,
+  "stock": 9.4524,
+  "combo_calmar_opt": 3.2333
+ },
+ {
+  "ym": "202103",
+  "index": -4.5453,
+  "etf": 1.5135,
+  "fund": 0.9267,
+  "stock": 6.0874,
+  "combo_calmar_opt": 1.9864
+ },
+ {
+  "ym": "202104",
+  "index": -1.9875,
+  "etf": 2.5512,
+  "fund": 2.4005,
+  "stock": 1.4609,
+  "combo_calmar_opt": 1.6949
+ },
+ {
+  "ym": "202105",
+  "index": -0.3057,
+  "etf": 1.6693,
+  "fund": 1.26,
+  "stock": 1.1409,
+  "combo_calmar_opt": 1.1086
+ },
+ {
+  "ym": "202106",
+  "index": 0.0,
+  "etf": -0.6303,
+  "fund": -0.0289,
+  "stock": 8.5438,
+  "combo_calmar_opt": 2.4857
+ },
+ {
+  "ym": "202107",
+  "index": 2.78,
+  "etf": 2.1586,
+  "fund": 1.7079,
+  "stock": -2.6751,
+  "combo_calmar_opt": 0.5453
+ },
+ {
+  "ym": "202108",
+  "index": 0.961,
+  "etf": 1.7008,
+  "fund": 1.4173,
+  "stock": 1.2125,
+  "combo_calmar_opt": 1.3386
+ },
+ {
+  "ym": "202109",
+  "index": -2.2344,
+  "etf": -2.8677,
+  "fund": -2.5762,
+  "stock": 1.9993,
+  "combo_calmar_opt": -1.1985
+ },
+ {
+  "ym": "202110",
+  "index": -0.05,
+  "etf": 1.8221,
+  "fund": 2.6213,
+  "stock": -2.3966,
+  "combo_calmar_opt": 0.7689
+ },
+ {
+  "ym": "202111",
+  "index": -0.5782,
+  "etf": -0.4253,
+  "fund": 0.5726,
+  "stock": -0.0461,
+  "combo_calmar_opt": 0.1721
+ },
+ {
+  "ym": "202112",
+  "index": 1.0169,
+  "etf": 2.3024,
+  "fund": 1.2224,
+  "stock": 7.6172,
+  "combo_calmar_opt": 3.2283
+ },
+ {
+  "ym": "202201",
+  "index": -2.3641,
+  "etf": -2.7853,
+  "fund": -2.4981,
+  "stock": -2.6774,
+  "combo_calmar_opt": -2.5672
+ },
+ {
+  "ym": "202202",
+  "index": 0.1857,
+  "etf": 0.9847,
+  "fund": 0.5034,
+  "stock": 6.1936,
+  "combo_calmar_opt": 2.2268
+ },
+ {
+  "ym": "202203",
+  "index": -2.9282,
+  "etf": 2.3081,
+  "fund": 0.3995,
+  "stock": 6.4493,
+  "combo_calmar_opt": 2.0726
+ },
+ {
+  "ym": "202204",
+  "index": -15.5741,
+  "etf": -1.2218,
+  "fund": -1.575,
+  "stock": -7.4355,
+  "combo_calmar_opt": -4.6978
+ },
+ {
+  "ym": "202205",
+  "index": 6.2113,
+  "etf": -0.1232,
+  "fund": 1.0194,
+  "stock": 9.6367,
+  "combo_calmar_opt": 4.0095
+ },
+ {
+  "ym": "202206",
+  "index": 0.646,
+  "etf": -3.0576,
+  "fund": -1.5559,
+  "stock": -1.2238,
+  "combo_calmar_opt": -1.3862
+ },
+ {
+  "ym": "202207",
+  "index": -3.2256,
+  "etf": 2.7617,
+  "fund": 2.4452,
+  "stock": 5.2742,
+  "combo_calmar_opt": 2.7585
+ },
+ {
+  "ym": "202208",
+  "index": -0.4802,
+  "etf": -0.2167,
+  "fund": -0.8608,
+  "stock": 4.5492,
+  "combo_calmar_opt": 0.8647
+ },
+ {
+  "ym": "202209",
+  "index": 1.804,
+  "etf": -2.2901,
+  "fund": -2.2046,
+  "stock": -6.1264,
+  "combo_calmar_opt": -2.9888
+ },
+ {
+  "ym": "202210",
+  "index": 3.4992,
+  "etf": 2.9787,
+  "fund": 2.335,
+  "stock": 6.2128,
+  "combo_calmar_opt": 3.6791
+ },
+ {
+  "ym": "202211",
+  "index": 3.3066,
+  "etf": 3.4834,
+  "fund": 2.293,
+  "stock": 11.5339,
+  "combo_calmar_opt": 5.2856
+ },
+ {
+  "ym": "202212",
+  "index": -1.1195,
+  "etf": -2.9391,
+  "fund": -2.4839,
+  "stock": 1.9555,
+  "combo_calmar_opt": -1.0612
+ },
+ {
+  "ym": "202301",
+  "index": 1.3117,
+  "etf": 1.6368,
+  "fund": 1.6548,
+  "stock": 5.8684,
+  "combo_calmar_opt": 2.8828
+ },
+ {
+  "ym": "202302",
+  "index": 2.4639,
+  "etf": -0.0856,
+  "fund": 0.1722,
+  "stock": 1.9734,
+  "combo_calmar_opt": 0.916
+ },
+ {
+  "ym": "202303",
+  "index": 1.2944,
+  "etf": 2.9315,
+  "fund": 2.0521,
+  "stock": -9.8706,
+  "combo_calmar_opt": -1.5125
+ },
+ {
+  "ym": "202304",
+  "index": -0.2011,
+  "etf": 1.4583,
+  "fund": 0.8967,
+  "stock": -0.107,
+  "combo_calmar_opt": 0.542
+ },
+ {
+  "ym": "202305",
+  "index": -0.3204,
+  "etf": 1.3746,
+  "fund": 0.6733,
+  "stock": -6.6034,
+  "combo_calmar_opt": -1.539
+ },
+ {
+  "ym": "202306",
+  "index": -1.2375,
+  "etf": 2.8785,
+  "fund": 2.7448,
+  "stock": 4.5163,
+  "combo_calmar_opt": 2.8914
+ },
+ {
+  "ym": "202307",
+  "index": 1.5516,
+  "etf": 1.4799,
+  "fund": 1.3175,
+  "stock": 35.4681,
+  "combo_calmar_opt": 11.6023
+ },
+ {
+  "ym": "202308",
+  "index": -0.0591,
+  "etf": 0.0501,
+  "fund": -0.1028,
+  "stock": -2.8667,
+  "combo_calmar_opt": -0.9123
+ },
+ {
+  "ym": "202309",
+  "index": -1.0438,
+  "etf": -2.6054,
+  "fund": -2.1043,
+  "stock": 10.6884,
+  "combo_calmar_opt": 1.7894
+ },
+ {
+  "ym": "202310",
+  "index": -0.2513,
+  "etf": 0.898,
+  "fund": 0.3048,
+  "stock": -3.707,
+  "combo_calmar_opt": -0.895
+ },
+ {
+  "ym": "202311",
+  "index": 0.9665,
+  "etf": 2.605,
+  "fund": 2.1064,
+  "stock": 2.4764,
+  "combo_calmar_opt": 2.1532
+ },
+ {
+  "ym": "202312",
+  "index": 0.0041,
+  "etf": 1.8657,
+  "fund": 1.5959,
+  "stock": 2.6601,
+  "combo_calmar_opt": 1.783
+ },
+ {
+  "ym": "202401",
+  "index": -4.5668,
+  "etf": 1.1397,
+  "fund": 0.399,
+  "stock": 0.4947,
+  "combo_calmar_opt": 0.0052
+ },
+ {
+  "ym": "202402",
+  "index": 15.1682,
+  "etf": 2.4204,
+  "fund": 2.5507,
+  "stock": 6.2171,
+  "combo_calmar_opt": 4.8993
+ },
+ {
+  "ym": "202403",
+  "index": 0.0,
+  "etf": 3.9216,
+  "fund": 2.6197,
+  "stock": 8.5405,
+  "combo_calmar_opt": 4.2642
+ },
+ {
+  "ym": "202404",
+  "index": -1.9992,
+  "etf": -0.1565,
+  "fund": 0.0908,
+  "stock": 3.652,
+  "combo_calmar_opt": 0.9254
+ },
+ {
+  "ym": "202405",
+  "index": -0.522,
+  "etf": 2.4963,
+  "fund": 1.8532,
+  "stock": 9.8785,
+  "combo_calmar_opt": 4.0876
+ },
+ {
+  "ym": "202406",
+  "index": -1.1725,
+  "etf": 1.1191,
+  "fund": 0.4783,
+  "stock": 5.592,
+  "combo_calmar_opt": 1.9114
+ },
+ {
+  "ym": "202407",
+  "index": -4.4859,
+  "etf": 1.047,
+  "fund": 0.7001,
+  "stock": -3.767,
+  "combo_calmar_opt": -1.124
+ },
+ {
+  "ym": "202408",
+  "index": -6.2371,
+  "etf": 0.9889,
+  "fund": 0.5005,
+  "stock": 0.2147,
+  "combo_calmar_opt": -0.2101
+ },
+ {
+  "ym": "202409",
+  "index": -1.0222,
+  "etf": 2.3524,
+  "fund": 2.2827,
+  "stock": 19.8895,
+  "combo_calmar_opt": 7.2412
+ },
+ {
+  "ym": "202410",
+  "index": 39.0364,
+  "etf": 1.6847,
+  "fund": 1.1181,
+  "stock": -5.5938,
+  "combo_calmar_opt": 2.953
+ },
+ {
+  "ym": "202411",
+  "index": 6.672,
+  "etf": 1.7543,
+  "fund": 1.6096,
+  "stock": 9.4156,
+  "combo_calmar_opt": 4.4721
+ },
+ {
+  "ym": "202412",
+  "index": -0.0414,
+  "etf": -0.2579,
+  "fund": -0.2282,
+  "stock": -2.3234,
+  "combo_calmar_opt": -0.841
+ },
+ {
+  "ym": "202501",
+  "index": 0.3318,
+  "etf": 1.8393,
+  "fund": 1.3238,
+  "stock": -4.2017,
+  "combo_calmar_opt": -0.3815
+ },
+ {
+  "ym": "202502",
+  "index": -0.0992,
+  "etf": 0.5585,
+  "fund": 0.7249,
+  "stock": 2.0771,
+  "combo_calmar_opt": 1.0315
+ },
+ {
+  "ym": "202503",
+  "index": 2.0711,
+  "etf": 0.8006,
+  "fund": 0.6208,
+  "stock": 4.8835,
+  "combo_calmar_opt": 2.0626
+ },
+ {
+  "ym": "202504",
+  "index": 6.3296,
+  "etf": 1.9606,
+  "fund": 0.6208,
+  "stock": -4.0528,
+  "combo_calmar_opt": -0.0764
+ },
+ {
+  "ym": "202505",
+  "index": -0.4396,
+  "etf": 1.7791,
+  "fund": 1.7068,
+  "stock": 7.3002,
+  "combo_calmar_opt": 3.1774
+ },
+ {
+  "ym": "202506",
+  "index": 1.845,
+  "etf": 1.5963,
+  "fund": 1.4062,
+  "stock": 2.0085,
+  "combo_calmar_opt": 1.6498
+ },
+ {
+  "ym": "202507",
+  "index": 1.681,
+  "etf": 0.8789,
+  "fund": 1.0111,
+  "stock": 8.238,
+  "combo_calmar_opt": 3.2329
+ },
+ {
+  "ym": "202508",
+  "index": 1.9756,
+  "etf": 0.9251,
+  "fund": 1.2829,
+  "stock": 8.7094,
+  "combo_calmar_opt": 3.5443
+ },
+ {
+  "ym": "202509",
+  "index": -1.7611,
+  "etf": 4.5064,
+  "fund": 3.3481,
+  "stock": -0.474,
+  "combo_calmar_opt": 1.8064
+ },
+ {
+  "ym": "202510",
+  "index": 2.5973,
+  "etf": 2.8609,
+  "fund": 1.8462,
+  "stock": 6.5541,
+  "combo_calmar_opt": 3.4352
+ },
+ {
+  "ym": "202511",
+  "index": 0.0391,
+  "etf": 0.8186,
+  "fund": 0.617,
+  "stock": 1.2834,
+  "combo_calmar_opt": 0.7793
+ },
+ {
+  "ym": "202512",
+  "index": 0.0,
+  "etf": 0.4921,
+  "fund": 0.6628,
+  "stock": 2.7315,
+  "combo_calmar_opt": 1.2
+ },
+ {
+  "ym": "202601",
+  "index": 7.7109,
+  "etf": 6.2249,
+  "fund": 4.3287,
+  "stock": 1.2413,
+  "combo_calmar_opt": 3.9303
+ },
+ {
+  "ym": "202602",
+  "index": 3.3622,
+  "etf": -0.8355,
+  "fund": -0.5876,
+  "stock": -0.174,
+  "combo_calmar_opt": -0.0933
+ },
+ {
+  "ym": "202603",
+  "index": -4.5212,
+  "etf": -4.9769,
+  "fund": -3.8636,
+  "stock": -1.4375,
+  "combo_calmar_opt": -3.3128
+ },
+ {
+  "ym": "202604",
+  "index": 5.1356,
+  "etf": 3.455,
+  "fund": 3.2181,
+  "stock": 10.7015,
+  "combo_calmar_opt": 5.6786
+ },
+ {
+  "ym": "202605",
+  "index": 0.0,
+  "etf": 0.5438,
+  "fund": 0.0846,
+  "stock": -7.2911,
+  "combo_calmar_opt": -2.0907
+ },
+ {
+  "ym": "202606",
+  "index": 0.0,
+  "etf": -4.2504,
+  "fund": -3.038,
+  "stock": -6.8235,
+  "combo_calmar_opt": -3.9911
+ },
+ {
+  "ym": "202607",
+  "index": -7.8354,
+  "etf": 0.9333,
+  "fund": 0.7729,
+  "stock": 1.3018,
+  "combo_calmar_opt": 0.0868
+ }
+]

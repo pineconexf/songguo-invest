@@ -3,17 +3,17 @@ import Layout from '../../layouts/Layout.astro';
 import Chart from '../../components/Chart.astro';
 import strategy from '../../data/strategy.json';
 import history from '../../data/history_records.json';
+import v34picks from '../../data/v34_picks.json';
 
-const v31 = strategy.meta.v31;
+const v34 = strategy.meta.v34;
 const GOLD = '#d9a441';
 const GRAY = '#a39684';
 const GREEN = '#4a7c59';
 const RED = '#b3543e';
-const NAVY = '#5c3a21';
 
 // 月度收益柱状图（可点击）
 const months = strategy.nav.months.map((ym: string) => `${ym.slice(0, 4)}-${ym.slice(4)}`);
-const monthlyRets = strategy.monthly_compare?.v31 ?? [];
+const monthlyRets = strategy.monthly_compare?.v34 ?? [];
 const hsMonthly = strategy.monthly_compare?.hs300 ?? [];
 
 const monthlyOption = {
@@ -21,7 +21,7 @@ const monthlyOption = {
     trigger: 'axis',
     valueFormatter: (v: number | null) => (v == null ? '-' : `${(v as number).toFixed(2)}%`),
   },
-  legend: { data: ['V31 基金版', '沪深300'], top: 0, textStyle: { color: '#555' } },
+  legend: { data: ['V34 基础版', '沪深300'], top: 0, textStyle: { color: '#555' } },
   grid: { left: 56, right: 20, top: 42, bottom: 52 },
   xAxis: { type: 'category', data: months, axisLabel: { interval: 23, color: '#8a7a66' } },
   yAxis: {
@@ -34,7 +34,7 @@ const monthlyOption = {
   ],
   series: [
     {
-      name: 'V31 基金版',
+      name: 'V34 基础版',
       type: 'bar',
       data: monthlyRets,
       itemStyle: {
@@ -57,7 +57,7 @@ const monthlyOption = {
 ---
 <Layout
   title="月度档案"
-  description="松果月度档案 — 172个月策略收益全量可追溯，点击查看每月选股名单与投前投后对比。"
+  description="松果月度档案 — 172个月策略收益全量可追溯，V34选股名单与红旗删除记录可查，V31历史沿革保留。"
 >
   <!-- Hero -->
   <section class="hero" style="padding: 48px 40px;">
@@ -67,7 +67,7 @@ const monthlyOption = {
         <span class="gold">{strategy.meta.window.months}</span> 个月<br />逐月选股档案
       </h1>
       <p class="hero-lead">
-        {strategy.meta.window.start} ~ {strategy.meta.window.end}，每月 Top5 名单 + 投前投后收益全量可查。
+        {strategy.meta.window.start} ~ {strategy.meta.window.end}，V34 每月选股名单 + 红旗删除记录 + 投前投后收益全量可查。
         点击下方任意月份横条，展开该月的选股逻辑与个股表现。
       </p>
     </div>
@@ -82,17 +82,17 @@ const monthlyOption = {
     </div>
     <div class="metric-card">
       <div class="label">年化收益率</div>
-      <div class="value gold">+{v31.annual_return.toFixed(2)}%</div>
-      <div class="sub">V31 基金版（含成本）</div>
+      <div class="value gold">+{v34.annual_return.toFixed(2)}%</div>
+      <div class="sub">V34 基础版（红旗审查·含成本）</div>
     </div>
     <div class="metric-card">
-      <div class="label">历史选股档案</div>
-      <div class="value green">{history.count}</div>
-      <div class="sub">2016.04 起逐月 Top5</div>
+      <div class="label">选股档案</div>
+      <div class="value green">{v34picks.count}</div>
+      <div class="sub">2012.04 起逐月名单（含红旗删除）</div>
     </div>
     <div class="metric-card">
       <div class="label">最大回撤</div>
-      <div class="value red">-{v31.mdd.toFixed(2)}%</div>
+      <div class="value red">-{v34.mdd.toFixed(2)}%</div>
       <div class="sub">同期沪深300 -40.56%</div>
     </div>
   </section>
@@ -114,7 +114,11 @@ const monthlyOption = {
     <div class="section-head">
       <div class="section-kicker">Record Detail</div>
       <h2 class="section-title">月度档案详情</h2>
-      <p class="section-sub">输入月份（如 202607 / 2020-03）查看该月选股名单与投前投后对比。有详细档案的月份（2016.04 起）展示个股，其余展示策略收益。</p>
+      <p class="section-sub">输入月份（如 202607 / 2020-03）查看该月选股名单、红旗删除与投前投后对比。默认 V34 档案，可切 V31 沿革。</p>
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+      <button id="tab-v34" class="version-tab active" style="padding:8px 18px;border-radius:999px;border:1.5px solid var(--gold,#d9a441);background:var(--gold-bg,rgba(217,164,65,0.12));color:var(--gold,#b8860b);font-weight:700;font-size:13.5px;cursor:pointer;">V34 基础版档案（当前）</button>
+      <button id="tab-v31" class="version-tab" style="padding:8px 18px;border-radius:999px;border:1.5px solid var(--border-strong);background:transparent;color:var(--text-3);font-weight:600;font-size:13.5px;cursor:pointer;">V31 沿革档案（旧版）</button>
     </div>
     <input
       id="rec-search"
@@ -126,35 +130,49 @@ const monthlyOption = {
   </section>
 
   <!-- 数据 -->
+  <script type="application/json" id="__V34_PICKS__" set:html={JSON.stringify(v34picks)}></script>
   <script type="application/json" id="__HISTORY_DATA__" set:html={JSON.stringify(history)}></script>
   <script type="application/json" id="__STRATEGY_META__" set:html={JSON.stringify({ months: strategy.nav.months, monthly_compare: strategy.monthly_compare })}></script>
 
   <script>
     import '../../scripts/charts.ts';
 
+    const v34picks = JSON.parse(document.getElementById('__V34_PICKS__')?.textContent ?? '{"months":[]}');
     const history = JSON.parse(document.getElementById('__HISTORY_DATA__')?.textContent ?? '{"months":[]}');
     const meta = JSON.parse(document.getElementById('__STRATEGY_META__')?.textContent ?? '{}');
     const input = document.getElementById('rec-search');
     const results = document.getElementById('rec-results');
+    let currentVersion: 'v34' | 'v31' = 'v34';
+
+    const tabV34 = document.getElementById('tab-v34');
+    const tabV31 = document.getElementById('tab-v31');
+    tabV34?.addEventListener('click', () => { currentVersion = 'v34'; syncTabs(); renderRecord(input?.value ?? ''); });
+    tabV31?.addEventListener('click', () => { currentVersion = 'v31'; syncTabs(); renderRecord(input?.value ?? ''); });
+    function syncTabs() {
+      const active = (el: any) => { if (el) { el.style.borderColor = 'var(--gold,#d9a441)'; el.style.background = 'rgba(217,164,65,0.12)'; el.style.color = 'var(--gold,#b8860b)'; el.style.fontWeight = '700'; } };
+      const idle = (el: any) => { if (el) { el.style.borderColor = 'var(--border-strong)'; el.style.background = 'transparent'; el.style.color = 'var(--text-3)'; el.style.fontWeight = '600'; } };
+      if (currentVersion === 'v34') { active(tabV34); idle(tabV31); } else { active(tabV31); idle(tabV34); }
+    }
 
     function normalize(ym: string): string {
-      // 202607 → 202607; 2020-03 → 202003
       const s = ym.replace(/[^0-9]/g, '');
       if (s.length === 6) return s;
       if (s.length === 7) return s.slice(0, 4) + s.slice(5);
       return s;
     }
 
-    function renderRecord(ym6: string) {
+    function renderRecord(ym6raw: string) {
+      const ym6 = normalize(ym6raw ?? '');
       if (!ym6 || ym6.length !== 6) {
         results.innerHTML = '<p style="color:var(--text-3);font-size:14px;">请输入 6 位月份，如 202607</p>';
         return;
       }
-      // 1. 找历史选股档案
-      const rec = history.months?.find((m: any) => m.ym === ym6);
-      // 2. 找策略月度收益
+      const isV34 = currentVersion === 'v34';
+      const rec = isV34
+        ? v34picks.months?.find((m: any) => m.ym === ym6)
+        : history.months?.find((m: any) => m.ym === ym6);
       const mi = meta.months?.indexOf(ym6);
-      const ret = mi >= 0 ? meta.monthly_compare?.v31?.[mi] : null;
+      const ret = mi >= 0 ? (isV34 ? meta.monthly_compare?.v34?.[mi] : meta.monthly_compare?.v31?.[mi]) : null;
       const hs = mi >= 0 ? meta.monthly_compare?.hs300?.[mi] : null;
 
       if (!rec && ret == null) {
@@ -167,9 +185,9 @@ const monthlyOption = {
       if (ret != null) {
         html += `
           <div style="background:var(--surface-alt);border-radius:10px;padding:16px;margin-bottom:14px;">
-            <b style="font-size:15px;color:var(--navy-800);">${ym6.slice(0,4)} 年 ${ym6.slice(4)} 月 · 策略表现</b>
+            <b style="font-size:15px;color:var(--navy-800);">${ym6.slice(0,4)} 年 ${ym6.slice(4)} 月 · 策略表现（${isV34 ? 'V34 基础版' : 'V31 沿革'}）</b>
             <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px;">
-              <div style="text-align:center;"><div style="font-size:18px;font-weight:700;color:${ret >= 0 ? 'var(--green)' : 'var(--red)'};">${ret >= 0 ? '+' : ''}${ret.toFixed(2)}%</div><div style="font-size:11px;color:var(--text-3);">V31 基金版</div></div>
+              <div style="text-align:center;"><div style="font-size:18px;font-weight:700;color:${ret >= 0 ? 'var(--green)' : 'var(--red)'};">${ret >= 0 ? '+' : ''}${ret.toFixed(2)}%</div><div style="font-size:11px;color:var(--text-3);">策略收益</div></div>
               <div style="text-align:center;"><div style="font-size:18px;font-weight:700;color:${hs >= 0 ? 'var(--green)' : 'var(--red)'};">${hs >= 0 ? '+' : ''}${hs.toFixed(2)}%</div><div style="font-size:11px;color:var(--text-3);">沪深300</div></div>
               <div style="text-align:center;"><div style="font-size:18px;font-weight:700;color:${(ret - hs) >= 0 ? 'var(--green)' : 'var(--red)'};">${(ret - hs) >= 0 ? '+' : ''}${(ret - hs).toFixed(2)}pp</div><div style="font-size:11px;color:var(--text-3);">超额</div></div>
             </div>
@@ -179,32 +197,55 @@ const monthlyOption = {
       // 选股档案卡
       if (rec) {
         const tags = [];
-        if (rec.is_empty) tags.push('<span style="font-size:11px;padding:2px 10px;border-radius:999px;background:var(--red-bg);color:var(--red);font-weight:600;">空仓保险月</span>');
-        if (rec.bull_mode) tags.push('<span style="font-size:11px;padding:2px 10px;border-radius:999px;background:var(--green-bg);color:var(--green);font-weight:600;">牛市增强月</span>');
+        if (isV34) {
+          if (rec.drops && rec.drops.length) tags.push(`<span style="font-size:11px;padding:2px 10px;border-radius:999px;background:var(--red-bg);color:var(--red);font-weight:600;">红旗删除 ${rec.drops.length} 只</span>`);
+        } else {
+          if (rec.is_empty) tags.push('<span style="font-size:11px;padding:2px 10px;border-radius:999px;background:var(--red-bg);color:var(--red);font-weight:600;">空仓保险月</span>');
+          if (rec.bull_mode) tags.push('<span style="font-size:11px;padding:2px 10px;border-radius:999px;background:var(--green-bg);color:var(--green);font-weight:600;">牛市增强月</span>');
+        }
+        const picks = rec.picks ?? [];
         html += `
           <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px;">
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
-              <b style="font-size:15px;color:var(--navy-800);">${ym6.slice(0,4)} 年 ${ym6.slice(4)} 月 · 选股名单（${rec.picks?.length ?? 0} 只）</b>
+              <b style="font-size:15px;color:var(--navy-800);">${ym6.slice(0,4)} 年 ${ym6.slice(4)} 月 · 选股名单（${picks.length} 只）${isV34 ? ' · V34' : ' · V31'}</b>
               ${tags.join('')}
             </div>
             <p style="font-size:12.5px;color:var(--text-3);margin:6px 0 10px;">
-              报告期 ${rec.report_qe} · 候选 ${rec.candidate_count} 只 ·
-              ${rec.bull_mode ? '<b style="color:var(--green);">牛市增强：价值Top1 + 成长Top2</b>' : '<b style="color:var(--navy-700);">普通月 Top4</b>'}
-              · FCF/EV 排名加权（不等权）
+              ${isV34
+                ? '<b style="color:var(--navy-700);">FCF/EV Top4 + 帕伯莱红旗审查</b>（删票满仓集中于保留票；2012-2015 段红旗不亮 = V31 原版）'
+                : `报告期 ${rec.report_qe} · 候选 ${rec.candidate_count} 只 · ${rec.bull_mode ? '<b style="color:var(--green);">牛市增强：价值Top1 + 成长Top2</b>' : '<b style="color:var(--navy-700);">普通月 Top4</b>'} · FCF/EV 排名加权（不等权）`}
             </p>
-            <table class="data-table"><thead><tr><th>代码</th><th>行业</th><th>FCF/EV</th><th>权重</th><th>VC估值</th><th>投前月</th><th>投后月</th></tr></thead><tbody>
-            ${(rec.picks ?? []).map((p: any) => `
-              <tr>
-                <td>${p.ts_code}</td>
-                <td>${p.industry ?? '—'}</td>
-                <td>${p.fcf_ev ?? '—'}</td>
-                <td><b style="color:var(--navy-700);">${p.weight != null ? (p.weight * 100).toFixed(1) + '%' : '—'}</b></td>
-                <td>${p.vc ?? '—'}</td>
-                <td class="${p.prev_ret != null && p.prev_ret < 0 ? 'neg' : 'pos'}">${p.prev_ret != null ? (p.prev_ret > 0 ? '+' : '') + p.prev_ret.toFixed(2) + '%' : '—'}</td>
-                <td class="${p.next_ret != null && p.next_ret < 0 ? 'neg' : 'pos'}">${p.next_ret != null ? (p.next_ret > 0 ? '+' : '') + p.next_ret.toFixed(2) + '%' : '—'}</td>
-              </tr>`).join('')}
+            <table class="data-table"><thead><tr><th>代码</th><th>${isV34 ? '当月收益' : '行业'}</th><th>${isV34 ? '状态' : 'FCF/EV'}</th><th>${isV34 ? '' : '权重'}</th><th>${isV34 ? '' : 'VC估值'}</th><th>投前月</th><th>投后月</th></tr></thead><tbody>
+            ${(isV34 ? rec.picks : (rec.picks ?? [])).map((p: any) => {
+              if (isV34) {
+                const retPct = rec.stock_rets?.[p];
+                return `
+                  <tr>
+                    <td>${p}</td>
+                    <td class="${retPct != null && retPct < 0 ? 'neg' : 'pos'}">${retPct != null ? (retPct > 0 ? '+' : '') + retPct.toFixed(2) + '%' : '—'}</td>
+                    <td>${rec.drops?.includes(p) ? '<b style="color:var(--red);">红旗删除</b>' : '<span style="color:var(--green);">保留</span>'}</td>
+                    <td></td><td></td>
+                    <td>—</td>
+                    <td>—</td>
+                  </tr>`;
+              }
+              return `
+                <tr>
+                  <td>${p.ts_code}</td>
+                  <td>${p.industry ?? '—'}</td>
+                  <td>${p.fcf_ev ?? '—'}</td>
+                  <td><b style="color:var(--navy-700);">${p.weight != null ? (p.weight * 100).toFixed(1) + '%' : '—'}</b></td>
+                  <td>${p.vc ?? '—'}</td>
+                  <td class="${p.prev_ret != null && p.prev_ret < 0 ? 'neg' : 'pos'}">${p.prev_ret != null ? (p.prev_ret > 0 ? '+' : '') + p.prev_ret.toFixed(2) + '%' : '—'}</td>
+                  <td class="${p.next_ret != null && p.next_ret < 0 ? 'neg' : 'pos'}">${p.next_ret != null ? (p.next_ret > 0 ? '+' : '') + p.next_ret.toFixed(2) + '%' : '—'}</td>
+                </tr>`;
+            }).join('')}
             </tbody></table>
-            <p style="font-size:12px;color:var(--text-3);margin-top:8px;">权重 = FCF/EV 排名加权（rank+0.5 归一化），非等权。投前月 = 选股时点上一月收益（止损过滤依据）；投后月 = 持仓月实际收益。</p>
+            <p style="font-size:12px;color:var(--text-3);margin-top:8px;">
+              ${isV34
+                ? 'V34 档案：当月收益 = 个股在持仓月实际收益（%）。红旗删除 = 帕伯莱审查命中被剔除的股票。投前/投后明细见回测系统原始 CSV（v34_picks.json 仅含精简字段）。'
+                : '权重 = FCF/EV 排名加权（rank+0.5 归一化），非等权。投前月 = 选股时点上一月收益（止损过滤依据）；投后月 = 持仓月实际收益。'}
+            </p>
           </div>`;
       }
 
@@ -212,13 +253,11 @@ const monthlyOption = {
     }
 
     input?.addEventListener('input', () => {
-      const ym6 = normalize(input.value);
-      if (ym6.length === 6) renderRecord(ym6);
-      else results.innerHTML = '';
+      renderRecord(input.value);
     });
   </script>
 
   <div class="callout">
-    <b>数据说明</b>：本档案按 <b>V30/V31 定稿口径</b>生成——普通月 Top4（单行业≤2）+ 牛市增强月（上月HS300&gt;+2%时价值Top1+成长Top2，共3只）+ 空仓保险月（上月HS300&lt;-8%空仓），权重为 <b>FCF/EV 排名加权（非等权）</b>。全部为历史回测口径，含成本，不构成投资建议。
+    <b>数据说明</b>：本档案为 <b>V34 定稿口径</b>（V31 + 帕伯莱红旗审查 ABCD3b 规则：净利营收双降等信号命中即删除、仓位集中于保留票、不留现金）——普通月 Top4（单行业≤2）+ 牛市增强月 + 空仓保险月机制同 V31，删票后满仓。全部为历史回测口径，含成本，不构成投资建议。V31 历史档案保留于「V31 沿革档案」切换。
   </div>
 </Layout>

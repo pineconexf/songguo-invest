@@ -5,14 +5,14 @@ import strategy from '../data/strategy.json';
 const cmp = strategy.monthly_compare;
 const rows = cmp.months.map((m: string, i: number) => ({
   m,
-  v31: cmp.v31[i],
+  v34: cmp.v34[i],
   hs: cmp.hs300[i],
   ex: cmp.excess[i],
 }));
 
 // 统计摘要
 const total = rows.length;
-const winMonths = rows.filter((r) => r.v31 > 0).length;
+const winMonths = rows.filter((r) => r.v34 > 0).length;
 const beatMonths = rows.filter((r) => r.ex > 0).length;
 const winRate = (winMonths / total) * 100;
 const beatRate = (beatMonths / total) * 100;
@@ -63,7 +63,7 @@ const fullTable = [...rows].reverse();
         <thead>
           <tr>
             <th>月份</th>
-            <th>V31 基金版</th>
+            <th>V34 基础版</th>
             <th>沪深300</th>
             <th>超额</th>
           </tr>
@@ -73,7 +73,7 @@ const fullTable = [...rows].reverse();
             recent12.map((r) => (
               <tr>
                 <td>{r.m}</td>
-                <td class:list={r.v31 >= 0 ? 'pos' : 'neg'}>{r.v31 >= 0 ? '+' : ''}{r.v31.toFixed(2)}%</td>
+                <td class:list={r.v34 >= 0 ? 'pos' : 'neg'}>{r.v34 >= 0 ? '+' : ''}{r.v34.toFixed(2)}%</td>
                 <td class:list={r.hs >= 0 ? 'pos' : 'neg'}>{r.hs >= 0 ? '+' : ''}{r.hs.toFixed(2)}%</td>
                 <td class:list={r.ex >= 0 ? 'pos' : 'neg'}>{r.ex >= 0 ? '+' : ''}{r.ex.toFixed(2)}pp</td>
               </tr>
@@ -95,7 +95,7 @@ const fullTable = [...rows].reverse();
         <thead>
           <tr>
             <th>月份</th>
-            <th>V31 基金版</th>
+            <th>V34 基础版</th>
             <th>沪深300</th>
             <th>超额</th>
           </tr>
@@ -105,7 +105,7 @@ const fullTable = [...rows].reverse();
             fullTable.map((r) => (
               <tr>
                 <td>{r.m}</td>
-                <td class:list={r.v31 >= 0 ? 'pos' : 'neg'}>{r.v31 >= 0 ? '+' : ''}{r.v31.toFixed(2)}%</td>
+                <td class:list={r.v34 >= 0 ? 'pos' : 'neg'}>{r.v34 >= 0 ? '+' : ''}{r.v34.toFixed(2)}%</td>
                 <td class:list={r.hs >= 0 ? 'pos' : 'neg'}>{r.hs >= 0 ? '+' : ''}{r.hs.toFixed(2)}%</td>
                 <td class:list={r.ex >= 0 ? 'pos' : 'neg'}>{r.ex >= 0 ? '+' : ''}{r.ex.toFixed(2)}pp</td>
               </tr>

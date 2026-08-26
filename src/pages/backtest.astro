@@ -3,22 +3,23 @@ import Layout from '../layouts/Layout.astro';
 import Chart from '../components/Chart.astro';
 import strategy from '../data/strategy.json';
 
-const v31 = strategy.meta.v31;
+const v34 = strategy.meta.v34;
+const v33 = strategy.meta.v33;
 const hs300 = strategy.meta.hs300;
 const GOLD = '#d9a441';
 const GRAY = '#a39684';
 const RED = '#b3543e';
-const NAVY = '#5c3a21';
+const ORANGE = '#c97b2d';
 
 const navMonths = strategy.nav.months.map((ym: string) => `${ym.slice(0, 4)}-${ym.slice(4)}`);
 
-// 1. 净值曲线
+// 1. 净值曲线（V34 基础版 / V33 杠杆版 / 沪深300）
 const navOption = {
   tooltip: {
     trigger: 'axis',
     valueFormatter: (v: number | null) => (v == null ? '-' : `${(v as number).toFixed(2)} 倍`),
   },
-  legend: { data: ['V31 基金版', '沪深300'], top: 0, textStyle: { color: '#555' } },
+  legend: { data: ['V34 基础版', 'V33 杠杆版', '沪深300'], top: 0, textStyle: { color: '#555' } },
   grid: { left: 56, right: 20, top: 42, bottom: 52 },
   xAxis: { type: 'category', data: navMonths, boundaryGap: false, axisLabel: { interval: 23, color: '#8a7a66' } },
   yAxis: { type: 'value', name: '净值（倍数）', nameTextStyle: { color: '#8a7a66' }, scale: true, axisLabel: { color: '#8a7a66' }, splitLine: { lineStyle: { color: '#f0e8d9' } } },
@@ -27,8 +28,9 @@ const navOption = {
     { type: 'slider', height: 16, bottom: 8, start: 0, end: 100 },
   ],
   series: [
-    { name: 'V31 基金版', type: 'line', data: strategy.nav.v31, smooth: true, symbol: 'none', lineStyle: { width: 2.5, color: GOLD }, areaStyle: { opacity: 0.08, color: GOLD } },
-    { name: '沪深300', type: 'line', data: strategy.nav.hs300, smooth: true, symbol: 'none', lineStyle: { width: 1.5, color: GRAY, type: 'dashed' } },
+    { name: 'V34 基础版', type: 'line', data: strategy.nav.v34, smooth: true, symbol: 'none', lineStyle: { width: 2.5, color: GOLD }, areaStyle: { opacity: 0.08, color: GOLD } },
+    { name: 'V33 杠杆版', type: 'line', data: strategy.nav.v33, smooth: true, symbol: 'none', lineStyle: { width: 2, color: ORANGE, type: 'dashed' } },
+    { name: '沪深300', type: 'line', data: strategy.nav.hs300, smooth: true, symbol: 'none', lineStyle: { width: 1.5, color: GRAY, type: 'dotted' } },
   ],
 };
 
@@ -38,44 +40,60 @@ const yearlyOption = {
     trigger: 'axis',
     valueFormatter: (v: number | null) => (v == null ? '-' : `${(v as number).toFixed(2)}%`),
   },
-  legend: { data: ['V31 基金版', '沪深300'], top: 0, textStyle: { color: '#555' } },
+  legend: { data: ['V34 基础版', 'V33 杠杆版', '沪深300'], top: 0, textStyle: { color: '#555' } },
   grid: { left: 56, right: 20, top: 42, bottom: 32 },
   xAxis: { type: 'category', data: strategy.yearly.years, axisLabel: { color: '#8a7a66' } },
   yAxis: { type: 'value', name: '年度收益（%）', nameTextStyle: { color: '#8a7a66' }, axisLabel: { color: '#8a7a66', formatter: '{value}%' }, splitLine: { lineStyle: { color: '#f0e8d9' } } },
   series: [
-    { name: 'V31 基金版', type: 'bar', data: strategy.yearly.v31, itemStyle: { color: GOLD, borderRadius: [3, 3, 0, 0] }, barMaxWidth: 26 },
-    { name: '沪深300', type: 'bar', data: strategy.yearly.hs300, itemStyle: { color: GRAY, borderRadius: [3, 3, 0, 0] }, barMaxWidth: 26 },
+    { name: 'V34 基础版', type: 'bar', data: strategy.yearly.v34, itemStyle: { color: GOLD, borderRadius: [3, 3, 0, 0] }, barMaxWidth: 20 },
+    { name: 'V33 杠杆版', type: 'bar', data: strategy.yearly.v33, itemStyle: { color: ORANGE, borderRadius: [3, 3, 0, 0] }, barMaxWidth: 20 },
+    { name: '沪深300', type: 'bar', data: strategy.yearly.hs300, itemStyle: { color: GRAY, borderRadius: [3, 3, 0, 0] }, barMaxWidth: 20 },
   ],
 };
 
-// 3. 回撤面积图
+// 3. 回撤面积图（V34 + V33 双线）
 const ddOption = {
   tooltip: {
     trigger: 'axis',
     valueFormatter: (v: number | null) => (v == null ? '-' : `${(v as number).toFixed(2)}%`),
   },
-  legend: { data: ['V31 基金版 回测'], top: 0, textStyle: { color: '#555' } },
+  legend: { data: ['V34 基础版 回撤', 'V33 杠杆版 回撤'], top: 0, textStyle: { color: '#555' } },
   grid: { left: 56, right: 20, top: 42, bottom: 52 },
   xAxis: { type: 'category', data: navMonths, boundaryGap: false, axisLabel: { interval: 23, color: '#8a7a66' } },
-  yAxis: { type: 'value', name: '回测（%）', nameTextStyle: { color: '#8a7a66' }, axisLabel: { color: '#8a7a66', formatter: '{value}%' }, splitLine: { lineStyle: { color: '#f0e8d9' } } },
+  yAxis: { type: 'value', name: '回撤（%）', nameTextStyle: { color: '#8a7a66' }, axisLabel: { color: '#8a7a66', formatter: '{value}%' }, splitLine: { lineStyle: { color: '#f0e8d9' } } },
   dataZoom: [
     { type: 'inside', start: 0, end: 100 },
     { type: 'slider', height: 16, bottom: 8, start: 0, end: 100 },
   ],
   series: [
     {
-      name: 'V31 基金版 回测',
+      name: 'V34 基础版 回撤',
       type: 'line',
-      data: strategy.drawdown.v31.map((v: number) => Number((v * 100).toFixed(2))),
+      data: strategy.drawdown.v34.map((v: number) => Number((v * 100).toFixed(2))),
       smooth: true,
       symbol: 'none',
-      lineStyle: { width: 1.5, color: RED },
-      areaStyle: { color: RED, opacity: 0.15 },
+      lineStyle: { width: 1.5, color: GOLD },
+      areaStyle: { color: GOLD, opacity: 0.12 },
       markLine: {
         silent: true,
         symbol: 'none',
         label: { show: false },
-        data: [{ yAxis: -22.66, lineStyle: { color: RED, type: 'dashed', width: 1 } }],
+        data: [{ yAxis: -22.66, lineStyle: { color: GOLD, type: 'dashed', width: 1 } }],
+      },
+    },
+    {
+      name: 'V33 杠杆版 回撤',
+      type: 'line',
+      data: strategy.drawdown.v33.map((v: number) => Number((v * 100).toFixed(2))),
+      smooth: true,
+      symbol: 'none',
+      lineStyle: { width: 1.5, color: RED },
+      areaStyle: { color: RED, opacity: 0.1 },
+      markLine: {
+        silent: true,
+        symbol: 'none',
+        label: { show: false },
+        data: [{ yAxis: -33.65, lineStyle: { color: RED, type: 'dashed', width: 1 } }],
       },
     },
   ],
@@ -87,14 +105,15 @@ const lastN = 24;
 const rows = recent.months
   .map((m: string, i: number) => ({
     m,
-    v31: recent.v31[i],
+    v34: recent.v34[i],
+    v33: recent.v33[i],
     hs: recent.hs300[i],
     ex: recent.excess[i],
   }))
   .slice(-lastN)
   .reverse();
 ---
-<Layout title="策略验证" description="松果投资体系回测验证 — 14年净值曲线、年度收益、回撤全景、逐月对比，数据可复现经审计">
+<Layout title="策略验证" description="松果投资体系回测验证 — 14年净值曲线、年度收益、回撤全景、逐月对比，V34基础版/V33杠杆版双版本，数据可复现经审计">
   <section class="hero" style="padding: 56px 48px;">
     <div class="hero-inner">
       <span class="eyebrow">Track Record · 回测验证</span>
@@ -102,8 +121,8 @@ const rows = recent.months
         <span class="gold">数据透明</span>，可复现<br />经审计的回测记录
       </h1>
       <p class="hero-lead">
-        14 年、172 个月、逐月逐年的完整数据。所有数字可由公开数据复现，
-        回测逻辑经过独立审计，含成本口径，无未来函数。
+        14 年、172 个月、逐月逐年的完整数据。V34 基础版（红旗审查）与 V33 杠杆版（1.5x 融资）双版本对照，
+        所有数字可由公开数据复现，回测逻辑经过独立审计，含成本口径，无未来函数。
       </p>
     </div>
   </section>
@@ -118,42 +137,46 @@ const rows = recent.months
         <thead>
           <tr>
             <th>指标</th>
-            <th>V31 基金版</th>
+            <th>V34 基础版</th>
+            <th>V33 杠杆版</th>
             <th>沪深300</th>
-            <th>超额</th>
           </tr>
         </thead>
         <tbody>
           <tr>
             <td>年化收益率</td>
-            <td class="pos">+{v31.annual_return.toFixed(2)}%</td>
+            <td class="pos">+{v34.annual_return.toFixed(2)}%</td>
+            <td class="pos">+{v33.annual_return.toFixed(2)}%</td>
             <td>{hs300.annual_return.toFixed(2)}%</td>
-            <td class="pos">+{(v31.annual_return - hs300.annual_return).toFixed(2)}pp</td>
           </tr>
           <tr>
             <td>最大回撤</td>
-            <td class="neg">{v31.mdd.toFixed(2)}%</td>
+            <td class="neg">{v34.mdd.toFixed(2)}%</td>
+            <td class="neg">{v33.mdd.toFixed(2)}%</td>
             <td class="neg">{hs300.mdd.toFixed(2)}%</td>
-            <td class="pos">改善 {(v31.mdd - hs300.mdd).toFixed(2)}pp</td>
           </tr>
           <tr>
             <td>累计收益（172 个月）</td>
-            <td class="pos">+{v31.cumulative.toFixed(1)}%</td>
+            <td class="pos">+{v34.cumulative.toFixed(1)}%</td>
+            <td class="pos">+{v33.cumulative.toFixed(1)}%</td>
             <td>+{hs300.cumulative.toFixed(1)}%</td>
-            <td class="pos">+{(v31.cumulative - hs300.cumulative).toFixed(1)}pp</td>
           </tr>
           <tr>
-            <td>Calmar（年化/回测）</td>
-            <td>{v31.calmar.toFixed(2)}</td>
+            <td>Calmar（年化/回撤）</td>
+            <td>{v34.calmar.toFixed(2)}</td>
+            <td>{v33.calmar.toFixed(2)}</td>
             <td>{hs300.calmar.toFixed(2)}</td>
-            <td>-</td>
           </tr>
           <tr>
             <td>回测窗口</td>
-            <td colSpan={3}>{strategy.meta.window.start} - {strategy.meta.window.end}（{strategy.meta.window.months} 个月）</td>
+            <td colSpan={3}>{strategy.meta.window.start} - {strategy.meta.window.end}（{strategy.meta.window.months} 个月，含成本）</td>
           </tr>
         </tbody>
       </table>
+    </div>
+    <div class="callout warn" style="margin-top: 14px;">
+      ⚠️ <b>版本关系</b>：V34 = V31 + 帕伯莱红旗审查（基础版，收益 +8.66pp 且回撤不变）；V33 = V32 + 红旗审查（1.5x 融资杠杆版）。
+      红旗审查有效性主要在 2016-2026 数据完整期验证（2012-2015 段 = 原版表现）。
     </div>
   </section>
 
@@ -162,27 +185,27 @@ const rows = recent.months
       <div class="section-kicker">Net Value</div>
       <h2 class="section-title">14 年净值曲线</h2>
     </div>
-    <p class="section-sub">起点 1.00。金色为策略净值（约 22.6 倍），灰色虚线为同期沪深300（约 1.75 倍）。可拖动下方滑块查看任意时间段。</p>
+    <p class="section-sub">起点 1.00。金色为 V34 基础版（约 59.3 倍），橙色虚线为 V33 杠杆版（约 145 倍），灰色点线为同期沪深300（约 1.75 倍）。可拖动下方滑块查看任意时间段。</p>
     <Chart option={navOption} height="440px" />
   </section>
 
   <section class="card">
     <div class="section-head">
       <div class="section-kicker">Annual</div>
-      <h2 class="section-title">年度收益（V31 vs 沪深300）</h2>
+      <h2 class="section-title">年度收益（V34 / V33 vs 沪深300）</h2>
     </div>
-    <p class="section-sub">14 个完整年度中，策略有 11 年跑赢沪深300（2014/2017/2020 大盘蓝筹暴涨年跑输，属价值风格暴露，非选股错误）。</p>
+    <p class="section-sub">V34 基础版在 2016-2026 数据完整期连续 10 年执行红旗删除（删票后满仓集中于好票）；杠杆版 V33 放大收益与波动，2015 年 +160.9%、2022 年仍正收益，但熊市回撤更深。</p>
     <Chart option={yearlyOption} height="380px" />
   </section>
 
   <section class="card">
     <div class="section-head">
       <div class="section-kicker">Drawdown</div>
-      <h2 class="section-title">回撤全景</h2>
+      <h2 class="section-title">回撤全景（V34 vs V33）</h2>
     </div>
     <p class="section-sub">
-      每次净值从高点回落的过程。红线为最大回撤 -22.66% 的标记线。14 年中最大的回测发生在 2015-2016 股灾段，
-      空仓保险躲过了 2015 年 8-9 月连续暴跌（那两个月单月跌幅分别约 -14% 和 -12%）。
+      金色为 V34 基础版回撤（最大 -22.66%），红色为 V33 杠杆版回撤（最大 -33.65%）。红线标记为各自最深回撤。
+      14 年中最大的回撤发生在 2015-2016 股灾段，空仓保险躲过了 2015 年 8-9 月连续暴跌。
     </p>
     <Chart option={ddOption} height="380px" />
   </section>
@@ -190,7 +213,7 @@ const rows = recent.months
   <section class="card">
     <div class="section-head">
       <div class="section-kicker">Recent 24M</div>
-      <h2 class="section-title">最近 24 个月月度收益（V31 vs 沪深300）</h2>
+      <h2 class="section-title">最近 24 个月月度收益（V34 vs 沪深300）</h2>
     </div>
     <p class="section-sub">完整 172 个月逐月明细见 <a href="/songguo-invest/ranking/">月度榜单</a> 页。</p>
     <div class="table-wrap" style="max-height: 480px; overflow-y: auto;">
@@ -198,9 +221,10 @@ const rows = recent.months
         <thead>
           <tr>
             <th>月份</th>
-            <th>V31 基金版</th>
+            <th>V34 基础版</th>
+            <th>V33 杠杆版</th>
             <th>沪深300</th>
-            <th>超额</th>
+            <th>超额(vs 300)</th>
           </tr>
         </thead>
         <tbody>
@@ -208,7 +232,8 @@ const rows = recent.months
             rows.map((r) => (
               <tr>
                 <td>{r.m}</td>
-                <td class:list={r.v31 >= 0 ? 'pos' : 'neg'}>{r.v31 >= 0 ? '+' : ''}{r.v31.toFixed(2)}%</td>
+                <td class:list={r.v34 >= 0 ? 'pos' : 'neg'}>{r.v34 >= 0 ? '+' : ''}{r.v34.toFixed(2)}%</td>
+                <td class:list={r.v33 >= 0 ? 'pos' : 'neg'}>{r.v33 >= 0 ? '+' : ''}{r.v33.toFixed(2)}%</td>
                 <td class:list={r.hs >= 0 ? 'pos' : 'neg'}>{r.hs >= 0 ? '+' : ''}{r.hs.toFixed(2)}%</td>
                 <td class:list={r.ex >= 0 ? 'pos' : 'neg'}>{r.ex >= 0 ? '+' : ''}{r.ex.toFixed(2)}pp</td>
               </tr>
@@ -235,29 +260,29 @@ const rows = recent.months
       <div class="step">
         <div class="num">2</div>
         <div class="body">
-          <h3>无未来函数</h3>
-          <p>信号判定严格滞后一个月对齐：用上月收盘数据做本月决策，禁止用当月（未知）信息。2026 年 8 月独立审计曾发现旧版本回测含前视偏差（年化虚高至 40%+），已全体系重算，本站数据为审计修正后的口径。</p>
+          <h3>红旗审查机制审计（V34 升级核心）</h3>
+          <p>V34 在 V31 基础上新增帕伯莱红旗审查：净利营收双降等信号命中的股票从组合删除、仓位集中于好票（不补位、不留现金）。172 月全样本被删 256 次：被删票月均 +0.65%，保留票月均 +2.73%，差 -2.08pp——删除动作排除了真实拖累项。删后留现金的 X 版全面跑输（年化 23.15%），证明"删票必须满仓集中"。</p>
         </div>
       </div>
       <div class="step">
         <div class="num">3</div>
         <div class="body">
-          <h3>数据修复</h3>
-          <p>审计中发现 6 个报告期底层数据量纲损坏（估值倍数被缩放 1 万倍），已修复并重跑；修复后年化 10.55% → 11.39%（V25 时期口径），后续版本均为修复后数据。</p>
+          <h3>无未来函数</h3>
+          <p>信号判定严格滞后一个月对齐：用上月收盘数据做本月决策，禁止用当月（未知）信息。2026 年 8 月独立审计曾发现旧版本回测含前视偏差（年化虚高至 40%+），已全体系重算，本站数据为审计修正后的口径。</p>
         </div>
       </div>
       <div class="step">
         <div class="num">4</div>
         <div class="body">
           <h3>保守方向原则</h3>
-          <p>所有口径分歧（月份断档、空仓月归属等）一律按保守方向处理，宁可低估收益，不虚增。</p>
+          <p>所有口径分歧（月份断档、空仓月归属等）一律按保守方向处理，宁可低估收益，不虚增。红旗审查前半段（2012-2015）样本仅 8-12 次，规则基本不亮灯，该段表现 = V31 原版，属"无法验证"而非"规则失效"。</p>
         </div>
       </div>
     </div>
   </section>
 
   <div class="callout">
-    ⚠️ <b>重要提示</b>：历史回测能证明方法论在过去 14 年的有效性，但未来市场结构会变，回测不代表未来收益。本站不构成任何投资建议。
+    ⚠️ <b>重要提示</b>：历史回测能证明方法论在过去 14 年的有效性，但未来市场结构会变，回测不代表未来收益。V33 含 1.5x 融资杠杆，回撤 -33.65%，风险显著高于基础版。本站不构成任何投资建议。
   </div>
 
   <script>
