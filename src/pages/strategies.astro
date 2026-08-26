@@ -61,7 +61,7 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
       <div class="section-kicker">S · Standard · 三类资产</div>
       <h2 class="section-title">Standard 版</h2>
       <p class="section-sub">
-        体系的底层：三类资产——防守组合（ETF/基金是同一组合的场内场外两个壳，二选一即可）、进攻选股、宏观择时。
+        体系的底层：三类资产——防守组合（ETF/基金是同一组合的场内场外两个壳，二选一即可）、进攻选股（V34 红旗审查 + 空仓保险）、宏观择时（指数保险）。
         以下指标统一窗口 <b>{vStd.window.start}–{vStd.window.end}</b>，几何年化、月度再平衡、含成本。
       </p>
     </div>
@@ -108,8 +108,8 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
         <span class="asset-tag" style="background: rgba(160,58,40,0.10); color: #a03a28;">Asset 02 · 进攻</span>
         <h3 class="asset-title">进攻选股</h3>
         <p class="asset-desc">
-          量化价值选股（V34）：FCF/EV Top4 + 帕伯莱红旗审查（净利营收双降删除、满仓集中），月度调仓。
-          三类资产里收益最高、回测也最大——进攻的角色，需要组合管理纪律。
+          量化价值选股（V34）：FCF/EV Top4 + 帕伯莱红旗审查（净利营收双降删除、满仓集中）+ 空仓保险（HS300 月跌超 8% 转持债金），月度调仓。
+          三类资产里收益最高、回撤也最大——进攻的角色，需要组合管理纪律。
         </p>
       </div>
       <div class="link-cards" style="grid-template-columns: repeat(1, 1fr);">
@@ -134,7 +134,7 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
         <h3 class="asset-title">宏观择时</h3>
         <p class="asset-desc">
           Shibor 流动性信号 × 中证500：宽松时持有、收紧时空仓，固定 5bp 阈值，严格滞后一周执行（无前视）。
-          三类资产里的「保险」——大部分时间空仓躲跌，信号确认后在场。
+                    组合层的「指数保险」——与进攻策略内部的空仓保险（HS300<-8%）分工：空仓保险管个股仓位，宏观择时管指数暴露。
         </p>
       </div>
       <div class="link-cards" style="grid-template-columns: repeat(1, 1fr);">
@@ -153,8 +153,9 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
     </div>
 
     <!-- 三类资产对比 -->
-    <table class="data-table" style="margin-top: 28px;">
-      <thead>
+    <div class="table-wrap" style="margin-top: 28px;">
+      <table class="data-table">
+        <thead>
         <tr>
           <th>资产</th>
           <th>角色</th>
@@ -203,17 +204,18 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
           <td>{fmt(s.index.cum, 1)}</td>
         </tr>
       </tbody>
-    </table>
+      </table>
+    </div>
     <div class="callout" style="margin-top: 20px;">
       <b>口径说明</b>：本页统一窗口 {vStd.window.start}–{vStd.window.end}（{vStd.window.months} 个月），与各策略详情页的官方口径（不同起点窗口）并存，两个都真实，使用时以标注为准。{vStd.note}
-      <b>怎么配</b>：防守打底（选一个壳）+ 进攻增厚 + 择时保护。想要更强 → P 版，更能扛波动 → M 版。
+      <b>怎么配</b>：防守打底（选一个壳）+ 进攻增厚（V34，含空仓保险）+ 择时保护（指数保险）。想要更强 → P 版，更能扛波动 → M 版。
     </div>
   </section>
 
   <!-- ========== P · Pro ========== -->
   <section class="card" id="pro">
     <div class="section-head">
-      <div class="section-kicker">P · Pro · 最优组合</div>
+      <div class="section-kicker">P · Pro · 混合组合</div>
       <h2 class="section-title">Pro 版</h2>
       <p class="section-sub">
         用网格扫描（{vPro.grid.step}% 步长，{vPro.grid.pairs} 个两两 + {vPro.grid.triples} 个三资产 + {vPro.grid.full} 个全资产组合，共 <b>{vPro.grid.pairs + vPro.grid.triples + vPro.grid.full} 个组合</b>）
@@ -251,32 +253,34 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
       <div class="section-kicker">EFFICIENT FRONTIER · 有效前沿</div>
       <h3 class="asset-title" style="font-size: 19px;">有效前沿（{vPro.frontier.length} 个代表组合）</h3>
     </div>
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>目标</th>
-          <th>组合配比</th>
-          <th>年化</th>
-          <th>最大回撤</th>
-          <th>夏普</th>
-          <th>Calmar</th>
-        </tr>
-      </thead>
-      <tbody>
-        {
-          vPro.frontier.map((f) => (
-            <tr>
-              <td><b>{f.target}</b></td>
-              <td>{Object.entries(f.weights).map(([k, v]) => `${k === 'index' ? '择时' : k === 'etf' ? 'ETF' : k === 'fund' ? '基金' : '股票'} ${(v * 100).toFixed(0)}%`).join(' / ')}</td>
-              <td class="up">{fmt(f.annual)}</td>
-              <td class="down">{fmt(f.mdd)}</td>
-              <td>{f.sharpe.toFixed(2)}</td>
-              <td>{f.calmar.toFixed(2)}</td>
-            </tr>
-          ))
-        }
-      </tbody>
-    </table>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>目标</th>
+            <th>组合配比</th>
+            <th>年化</th>
+            <th>最大回撤</th>
+            <th>夏普</th>
+            <th>Calmar</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            vPro.frontier.map((f) => (
+              <tr>
+                <td><b>{f.target}</b></td>
+                <td>{Object.entries(f.weights).map(([k, v]) => `${k === 'index' ? '择时' : k === 'etf' ? 'ETF' : k === 'fund' ? '基金' : '股票'} ${(v * 100).toFixed(0)}%`).join(' / ')}</td>
+                <td class="up">{fmt(f.annual)}</td>
+                <td class="down">{fmt(f.mdd)}</td>
+                <td>{f.sharpe.toFixed(2)}</td>
+                <td>{f.calmar.toFixed(2)}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
 
     <!-- 相关性 -->
     <div class="section-head" style="margin-top: 24px;">
@@ -310,11 +314,11 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
   <!-- ========== M · Max ========== -->
   <section class="card" id="max">
     <div class="section-head">
-      <div class="section-kicker">M · Max · 杠杆与期权</div>
+      <div class="section-kicker">M · Max · 杠杆管理</div>
       <h2 class="section-title">Max 版</h2>
       <p class="section-sub">
-        杠杆不是「整体加一遍」——回测结论很明确：<b>对低波动组合整体加融资杠杆，Calmar 不升反降</b>（融资成本 8.35% 吃掉低收益组合的优势）。
-        正确路径：<b>只给进攻腿加杠杆 + 防守腿用期权对冲</b>（宏观 V2）。
+        Max = <b>杠杆管理版</b>：不是「整体加一遍」——回测结论很明确：<b>对低波动组合整体加融资杠杆，Calmar 不升反降</b>（融资成本 8.35% 吃掉低收益组合的优势）。
+        正确路径：<b>进攻腿加杠杆（V33，1.5x）+ 防守腿不加杠杆（保持无杠杆）</b>，极端行情用期权对冲（宏观 V2）。
       </p>
     </div>
 
@@ -347,32 +351,34 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
       <div class="section-kicker">LEVERAGE MAP · 杠杆映射（{vMax.leverage_map.length} 档）</div>
       <h3 class="asset-title" style="font-size: 19px;">同一组合不同杠杆档位的收益-回测</h3>
     </div>
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>组合</th>
-          <th>杠杆</th>
-          <th>年化</th>
-          <th>最大回撤</th>
-          <th>Calmar</th>
-          <th>夏普</th>
-        </tr>
-      </thead>
-      <tbody>
-        {
-          vMax.leverage_map.map((l) => (
-            <tr>
-              <td>{l.combo}</td>
-              <td><b>{l.level}</b></td>
-              <td class="up">{fmt(l.annual)}</td>
-              <td class="down">{fmt(l.mdd)}</td>
-              <td>{l.calmar.toFixed(2)}</td>
-              <td>{l.sharpe.toFixed(2)}</td>
-            </tr>
-          ))
-        }
-      </tbody>
-    </table>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>组合</th>
+            <th>杠杆</th>
+            <th>年化</th>
+            <th>最大回撤</th>
+            <th>Calmar</th>
+            <th>夏普</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            vMax.leverage_map.map((l) => (
+              <tr>
+                <td>{l.combo}</td>
+                <td><b>{l.level}</b></td>
+                <td class="up">{fmt(l.annual)}</td>
+                <td class="down">{fmt(l.mdd)}</td>
+                <td>{l.calmar.toFixed(2)}</td>
+                <td>{l.sharpe.toFixed(2)}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
     <div class="callout" style="margin-top: 8px;">
       <b>读表</b>：同一组合（如 fund+stock 60/40），1.0x → 2x 杠杆，年化从 {vMax.leverage_map[0].annual.toFixed(2)}% 爬到 {fmt(vMax.leverage_map.find((l) => l.combo === vMax.leverage_map[0].combo && l.level === '2x')?.annual ?? vMax.leverage_map[vMax.leverage_map.length - 1].annual)}，
       但 Calmar 一路下滑——杠杆买到的是收益，不是效率。
