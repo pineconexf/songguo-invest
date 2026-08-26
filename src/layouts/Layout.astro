@@ -54,7 +54,55 @@ const navItems = [
     </header>
 
     <main class="container main-content">
-      <slot />
+      <div class="layout-3col">
+        <!-- 左栏：自营引流（粘性） -->
+        <aside class="side-col side-left">
+          <div class="side-card">
+            <div class="side-card-title">📬 每周一篇深度文章</div>
+            <p style="font-size: 13px; line-height: 1.6; color: var(--text-2); margin: 8px 0 10px;">
+              行业研究、策略拆解、实盘复盘，全部同步在公众号 <b>「松果商业笔记」</b>。
+            </p>
+            <a href="/songguo-invest/services/" class="btn btn-gold" style="display:block; text-align:center; font-size: 13px; padding: 8px 10px;">关注「松果商业笔记」→</a>
+          </div>
+          <div class="side-card">
+            <div class="side-card-title">🔒 松果投资实验室 Pro</div>
+            <p style="font-size: 13px; line-height: 1.6; color: var(--text-2); margin: 8px 0 10px;">
+              策略跟踪、每月调仓记录、深读研究——会员专享，丰俭由人。
+            </p>
+            <a href="/songguo-invest/services/" style="font-size: 13px; color: var(--gold-600); font-weight: 700; text-decoration: none;">了解 Pro →</a>
+          </div>
+          <div class="side-card">
+            <div class="side-card-title">🧰 免费工具推荐</div>
+            <p style="font-size: 13px; line-height: 1.8; color: var(--text-2); margin: 8px 0 0;">
+              <a href="/songguo-invest/tools/etf-allocator/" style="color: inherit;">ETF 组合配置器</a><br />
+              <a href="/songguo-invest/tools/fund-scorecard/" style="color: inherit;">基金打分卡</a><br />
+              <a href="/songguo-invest/tools/compound/" style="color: inherit;">复利计算器</a>
+            </p>
+          </div>
+        </aside>
+
+        <!-- 主内容 -->
+        <div class="side-main">
+          <slot />
+        </div>
+
+        <!-- 右栏：读者反馈（粘性） -->
+        <aside class="side-col side-right">
+          <div class="side-card" style="border-color: rgba(217,164,65,0.4);">
+            <div class="side-card-title">💬 给「松果投资实验室」留言</div>
+            <p style="font-size: 12px; line-height: 1.6; color: var(--text-3); margin: 8px 0 10px;">
+              用了工具、读了文章，有任何意见或改进建议，欢迎留言——每一条都会看到。
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <input id="fb-name" type="text" placeholder="称呼（选填）" style="width: 100%; padding: 8px 10px; border: 1px solid var(--border-strong); border-radius: 8px; font-size: 13px; box-sizing: border-box;" />
+              <textarea id="fb-content" rows="4" placeholder="你的意见 / 建议（必填）：功能、内容、布局、产品……" style="width: 100%; padding: 8px 10px; border: 1px solid var(--border-strong); border-radius: 8px; font-size: 13px; box-sizing: border-box; resize: vertical; font-family: inherit;"></textarea>
+              <input id="fb-contact" type="text" placeholder="联系方式（选填，便于回复）" style="width: 100%; padding: 8px 10px; border: 1px solid var(--border-strong); border-radius: 8px; font-size: 13px; box-sizing: border-box;" />
+              <button id="fb-submit" class="btn btn-gold" style="font-size: 13px; padding: 8px 10px;">提交留言</button>
+              <div id="fb-msg" style="font-size: 12px; color: var(--text-3); min-height: 16px;">留言仅用于产品改进，不对外公开。</div>
+            </div>
+          </div>
+        </aside>
+      </div>
     </main>
 
     <footer class="site-footer">
@@ -69,5 +117,53 @@ const navItems = [
         </p>
       </div>
     </footer>
+
+    <script>
+      // 读者反馈提交：formsubmit.co（https，直达邮箱；失败提示重试）
+      const fbBtn = document.getElementById('fb-submit');
+      if (fbBtn) {
+        fbBtn.addEventListener('click', async () => {
+          const get = (id: string) => ((document.getElementById(id) as HTMLInputElement).value || '').trim();
+          const content = get('fb-content');
+          const msg = document.getElementById('fb-msg') as HTMLElement;
+          if (!content) {
+            msg.textContent = '请先填写意见内容';
+            msg.style.color = 'var(--red)';
+            return;
+          }
+          fbBtn.textContent = '提交中…';
+          (fbBtn as HTMLButtonElement).disabled = true;
+          try {
+            const r = await fetch('https://formsubmit.co/ajax/Pinecone.finn@gmail.com', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+              body: JSON.stringify({
+                name: get('fb-name'),
+                content,
+                contact: get('fb-contact'),
+                page: location.pathname,
+                _subject: '松果投资实验室·读者留言',
+              }),
+            });
+            const d = await r.json().catch(() => ({}));
+            if (r.ok && d.success === 'true') {
+              msg.textContent = '✅ 感谢留言！我们会认真看每一条反馈。';
+              msg.style.color = 'var(--green)';
+              ['fb-name', 'fb-content', 'fb-contact'].forEach((id) => {
+                (document.getElementById(id) as HTMLInputElement).value = '';
+              });
+            } else {
+              msg.textContent = '提交失败，请稍后再试。';
+              msg.style.color = 'var(--red)';
+            }
+          } catch {
+            msg.textContent = '网络异常，提交失败，可稍后重试。';
+            msg.style.color = 'var(--red)';
+          }
+          fbBtn.textContent = '提交留言';
+          (fbBtn as HTMLButtonElement).disabled = false;
+        });
+      }
+    </script>
   </body>
 </html>

@@ -1081,3 +1081,36 @@ html.js .action-card.in {
   transition-delay: 0.24s;
 }
 
+
+/* ===== 三栏布局（主内容 + 左右粘性侧栏） ===== */
+.layout-3col {
+  display: grid;
+  grid-template-columns: 235px minmax(0, 1fr) 280px;
+  gap: var(--sp-4);
+  align-items: start;
+}
+.side-col {
+  position: sticky;
+  top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+.side-main {
+  min-width: 0;
+}
+.side-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: var(--sp-3);
+}
+.side-card-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+@media (max-width: 1180px) {
+  .layout-3col { grid-template-columns: minmax(0, 1fr); }
+  .side-col { display: none; }
+}
