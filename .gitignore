@@ -18,6 +18,10 @@ Thumbs.db
 .env.*
 screenshots/_profile_*
 screenshots/*.png
+screenshots/
+
+# 本地模拟产物（serve-local.sh 生成，不入库）
+_local_sim/
 
 # V4 验收临时 profile
 screenshots/v4/_profile*

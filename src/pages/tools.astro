@@ -12,8 +12,9 @@ const tools = [
   {
     type: '查询计算类', strategy: 'timing',
     name: '宏观信号查询',
-    desc: '查询当前 Shibor 流动性信号：宽松（进攻）还是收紧（防守），及本周信号与历史对照。',
-    status: 'soon', statusLabel: '开发中', cta: '敬请期待',
+    desc: '查询当前 Shibor 流动性信号：宽松（进攻）还是收紧（防守），809 周历史一键回溯。',
+    status: 'live', statusLabel: '已上线', cta: '免费使用',
+    href: '/songguo-invest/tools/macro-signal/',
   },
   {
     type: '查询计算类', strategy: 'offense',
@@ -39,20 +40,23 @@ const tools = [
   {
     type: '查询计算类', strategy: 'offense',
     name: '回测验证工具',
-    desc: '策略历史回测验证：把你的选股思路放回 14 年数据里检验。',
-    status: 'soon', statusLabel: '开发中', cta: '敬请期待',
+    desc: '双策略对比：输入年化/回撤/时长，算 Calmar 与夏普，跟松果 V31 参照锚对比。',
+    status: 'live', statusLabel: '已上线', cta: '免费使用',
+    href: '/songguo-invest/tools/backtest-compare/',
   },
   {
     type: '查询计算类', strategy: 'defense',
     name: 'ETF 组合配置',
-    desc: '四拼图权重配置器：债券/黄金/红利/QDII 组合配比，一键算回测与年化（ETF 壳）。',
-    status: 'soon', statusLabel: '开发中', cta: '敬请期待',
+    desc: '四拼图权重配置器：债25%/金30%/红利10%/QDII35%，输入金额一键算份额（ETF 壳）。',
+    status: 'live', statusLabel: '已上线', cta: '免费使用',
+    href: '/songguo-invest/tools/etf-allocator/',
   },
   {
     type: '查询计算类', strategy: 'defense',
     name: '基金打分卡',
-    desc: '五维打分（夏普/回测/管理人/规模/费率）帮你在候选里选出每块拼图的 Top 基金（基金壳）。',
-    status: 'soon', statusLabel: '开发中', cta: '敬请期待',
+    desc: '收益/回撤/费率/规模/经理年限五维规则打分，帮你在候选里筛出优质基金（基金壳）。',
+    status: 'live', statusLabel: '已上线', cta: '免费使用',
+    href: '/songguo-invest/tools/fund-scorecard/',
   },
   {
     type: '资讯讯息类', strategy: 'all',

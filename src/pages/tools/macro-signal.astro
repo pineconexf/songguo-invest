@@ -1,0 +1,235 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Chart from '../../components/Chart.astro';
+import macro from '../../data/macro_signal.json';
+
+// 宏观信号查询工具：809 周 Shibor 信号（2011-W01 ~ 2026-W34）
+// 口径：shibor 1W 周均值环比下行>5bp → 宽松（买入中证500）；否则收紧（空仓）
+// 数据源：src/data/macro_signal.json（walk-forward 样本外年化 +10.04%）
+const weeks = macro.weeks as Array<{
+  week: string; shibor: number | null; diff_bp: number | null;
+  signal: string; action: string; hs300_ret: number | null; zz500_ret: number | null;
+}>;
+const stats = macro.stats as {
+  total_weeks: number; loose_weeks: number; tight_weeks: number; loose_pct: number;
+  start: string; end: string; threshold: string; note: string;
+};
+const latest = weeks[weeks.length - 1];
+const prev = weeks[weeks.length - 2];
+
+// 图表：最近 104 周 Shibor 走势，宽松周绿点 / 收紧周灰点
+const chartWeeks = weeks.slice(-104);
+const chartOption = {
+  tooltip: { trigger: 'axis' as const },
+  grid: { left: 44, right: 16, top: 30, bottom: 28 },
+  xAxis: { type: 'category' as const, data: chartWeeks.map((w) => w.week), axisLabel: { interval: 11, color: '#9a8c7a', fontSize: 11 } },
+  yAxis: { type: 'value' as const, name: 'Shibor 1W 周均值 (%)', nameTextStyle: { color: '#9a8c7a' }, axisLabel: { color: '#9a8c7a' }, splitLine: { lineStyle: { color: 'rgba(139,94,60,0.10)' } } },
+  series: [{
+    name: 'Shibor 1W', type: 'line' as const, smooth: true, showSymbol: true, symbolSize: 5,
+    lineStyle: { width: 1.6, color: '#d9a441' },
+    data: chartWeeks.map((w) => ({
+      value: w.shibor,
+      itemStyle: { color: w.signal === '宽松' ? '#4a7c59' : (w.signal === '收紧' ? '#b3543e' : '#9a8c7a') },
+    })),
+  }],
+  legend: { data: ['Shibor 1W'], textStyle: { color: '#5c3a21' }, top: 0 },
+};
+const last24 = weeks.slice(-24).reverse();
+---
+<Layout
+  title="宏观信号查询"
+  description="松果宏观信号查询 — 809 周 Shibor 流动性信号（宽松/收紧），当前信号一键查询，历史信号回溯。免费工具，不构成投资建议。"
+>
+  <section class="hero" style="padding: 56px 48px;">
+    <div class="hero-inner">
+      <span class="eyebrow">Free Tool · 宏观择时</span>
+      <h1>
+        现在该<span class="gold">进攻</span>还是防守？<br />让流动性信号说话
+      </h1>
+      <p class="hero-lead">
+        松果宏观时钟 V1：以 Shibor 1W 周均值环比变化为信号（下行 &gt;5bp 即宽松），
+        覆盖 809 周（{stats.start} ~ {stats.end}），walk-forward 样本外年化 +10.04%。
+        查任意一周，看当时信号怎么判。
+      </p>
+    </div>
+  </section>
+
+  <!-- 当前信号 -->
+  <section class="card" style="max-width: 860px; margin: 0 auto;">
+    <div class="section-head">
+      <div class="section-kicker">Latest Signal · 最新一期</div>
+      <h2 class="section-title">当前信号：{latest.signal === '宽松' ? '宽松（进攻）' : '收紧（防守）'}</h2>
+      <p class="section-sub">数据截至 {latest.week}（{stats.end} 更新），口径：环比下行 &gt;{stats.threshold} 为宽松。</p>
+    </div>
+    <div class="metric-grid" style="grid-template-columns: repeat(4, 1fr);">
+      <div class="metric-card"><div class="label">信号周</div><div class="value" style="font-size:20px;">{latest.week}</div></div>
+      <div class="metric-card"><div class="label">Shibor 1W 周均值</div><div class="value" style="font-size:20px;">{latest.shibor}%</div></div>
+      <div class="metric-card"><div class="label">环比变化</div><div class="value" style="font-size:20px;" class:list={[latest.diff_bp !== null && latest.diff_bp < 0 ? 'pos' : 'neg']}>{latest.diff_bp !== null ? (latest.diff_bp > 0 ? '+' : '') + latest.diff_bp + ' bp' : '—'}</div></div>
+      <div class="metric-card"><div class="label">体系动作</div><div class="value" style="font-size:20px;">{latest.action}</div></div>
+    </div>
+    <div class="callout" style="margin-top: var(--sp-4);">
+      <b>信号含义</b>：{latest.signal === '宽松'
+        ? `Shibor 周环比下行 ${Math.abs(latest.diff_bp)}bp &gt; 5bp 阈值 → 流动性宽松，体系动作「买入中证500」（进攻仓位）。`
+        : `Shibor 周环比${latest.diff_bp !== null && latest.diff_bp < 0 ? '下行 ' + Math.abs(latest.diff_bp) + 'bp，未过 5bp 阈值' : '上行 ' + latest.diff_bp + 'bp'} → 流动性未明显宽松，体系动作「空仓」（防守等待）。`}
+      上一周（{prev.week}）Shibor {prev.shibor}%（环比 {prev.diff_bp > 0 ? '+' : ''}{prev.diff_bp} bp，{prev.signal}）。
+    </div>
+  </section>
+
+  <!-- 查询 -->
+  <section class="card" style="max-width: 860px; margin: var(--sp-5) auto 0;">
+    <div class="section-head">
+      <div class="section-kicker">Query · 历史回溯</div>
+      <h2 class="section-title">查询任意一周的信号</h2>
+      <p class="section-sub">输入周号（如 2026-W34）或年份（如 2015），查看当时的流动性判定与当周收益。</p>
+    </div>
+    <div style="display:flex; gap: var(--sp-3); flex-wrap: wrap; margin-bottom: var(--sp-4);">
+      <input id="ms-query" type="text" placeholder="例如 2026-W34 或 2015" style="flex:1; min-width:220px; padding:12px 14px; border:1px solid rgba(139,94,60,0.25); border-radius:10px; font-size:15px; background:var(--bg); color:var(--navy-900);" />
+      <button id="ms-run" class="btn btn-gold">查询 →</button>
+    </div>
+    <div id="ms-result">
+      <div style="color: var(--navy-600); font-size: 14px;">查询结果将显示在这里。</div>
+    </div>
+  </section>
+
+  <!-- 历史统计 -->
+  <section class="card" style="max-width: 860px; margin: var(--sp-5) auto 0;">
+    <div class="section-head">
+      <div class="section-kicker">Stats · 809 周全样本</div>
+      <h2 class="section-title">信号历史分布</h2>
+      <p class="section-sub">{stats.note}</p>
+    </div>
+    <div class="metric-grid" style="grid-template-columns: repeat(4, 1fr);">
+      <div class="metric-card"><div class="label">总周数</div><div class="value">{stats.total_weeks}</div></div>
+      <div class="metric-card"><div class="label">宽松周</div><div class="value pos">{stats.loose_weeks}（{stats.loose_pct}%）</div></div>
+      <div class="metric-card"><div class="label">收紧周</div><div class="value neg">{stats.tight_weeks}（{(100 - stats.loose_pct).toFixed(1)}%）</div></div>
+      <div class="metric-card"><div class="label">样本外年化</div><div class="value pos">+10.04%</div></div>
+    </div>
+    <div class="callout warn" style="margin-top: var(--sp-4);">
+      <b>已知边界</b>：纯宏观策略 2021 年结构性行情中信号失效（-1.7% vs 基准 +16.5%）。宏观管仓位，个股管选股，组合管风险。
+    </div>
+  </section>
+
+  <!-- 图表 -->
+  <section class="card" style="max-width: 860px; margin: var(--sp-5) auto 0;">
+    <div class="section-head">
+      <div class="section-kicker">Trend · 近两年走势</div>
+      <h2 class="section-title">Shibor 1W 周均值（近 104 周）</h2>
+      <p class="section-sub">绿点 = 宽松周（环比下行 &gt;5bp，买入信号）；红点 = 收紧周（空仓等待）。</p>
+    </div>
+    <Chart option={chartOption} height="360px" />
+  </section>
+
+  <!-- 最近 24 周信号表 -->
+  <section class="card" style="max-width: 860px; margin: var(--sp-5) auto 0;">
+    <div class="section-head">
+      <div class="section-kicker">Recent 24 Weeks</div>
+      <h2 class="section-title">最近 24 周信号明细</h2>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr><th>周</th><th>Shibor 1W</th><th>环比 (bp)</th><th>信号</th><th>动作</th><th>中证500 当周</th><th>沪深300 当周</th></tr>
+        </thead>
+        <tbody>
+          {
+            last24.map((w) => (
+              <tr>
+                <td>{w.week}</td>
+                <td>{w.shibor}%</td>
+                <td class:list={[w.diff_bp !== null && w.diff_bp < 0 ? 'pos' : 'neg']}>{w.diff_bp !== null ? (w.diff_bp > 0 ? '+' : '') + w.diff_bp : '—'}</td>
+                <td><span style={{ color: w.signal === '宽松' ? 'var(--green)' : 'var(--red)' }}>{w.signal === '宽松' ? '宽松' : '收紧'}</span></td>
+                <td>{w.action}</td>
+                <td class:list={[w.zz500_ret !== null && w.zz500_ret >= 0 ? 'pos' : 'neg']}>{w.zz500_ret !== null ? (w.zz500_ret * 100).toFixed(2) + '%' : '—'}</td>
+                <td class:list={[w.hs300_ret !== null && w.hs300_ret >= 0 ? 'pos' : 'neg']}>{w.hs300_ret !== null ? (w.hs300_ret * 100).toFixed(2) + '%' : '—'}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="callout" style="max-width: 860px; margin: var(--sp-4) auto 0;">
+    <b>口径说明</b>：Shibor 1W 周均值环比下行 &gt;5bp → 宽松，买入中证500；否则空仓。0.05% 成本，walk-forward 样本外验证。
+    本工具为方法论演示，<b>不构成投资建议</b>。投资有风险，入市需谨慎。
+  </div>
+
+  <script define:vars={{ weeks }}>
+    const ALL_WEEKS = weeks;
+    const byWeek = new Map(ALL_WEEKS.map((w) => [w.week, w]));
+    const fmtPct = (v) => v === null || v === undefined ? '—' : (v >= 0 ? '+' : '') + (v * 100).toFixed(2) + '%';
+    const fmtBp = (v) => v === null || v === undefined ? '—' : (v > 0 ? '+' : '') + v.toFixed(2) + ' bp';
+
+    function renderWeekRow(w) {
+      const isLoose = w.signal === '宽松';
+      return `<tr>
+        <td><b>${w.week}</b></td>
+        <td>${w.shibor}%</td>
+        <td style="color:${w.diff_bp !== null && w.diff_bp < 0 ? 'var(--green)' : 'var(--red)'}">${fmtBp(w.diff_bp)}</td>
+        <td><span style="color:${isLoose ? 'var(--green)' : 'var(--red)'}; font-weight:700;">${w.signal}</span></td>
+        <td>${w.action}</td>
+        <td style="color:${w.zz500_ret !== null && w.zz500_ret >= 0 ? 'var(--green)' : 'var(--red)'}">${fmtPct(w.zz500_ret)}</td>
+        <td style="color:${w.hs300_ret !== null && w.hs300_ret >= 0 ? 'var(--green)' : 'var(--red)'}">${fmtPct(w.hs300_ret)}</td>
+      </tr>`;
+    }
+
+    function run() {
+      const q = document.getElementById('ms-query').value.trim().toUpperCase();
+      const box = document.getElementById('ms-result');
+      if (!q) { box.innerHTML = '<div style="color: var(--navy-600); font-size: 14px;">请输入周号（2026-W34）或年份（2015）。</div>'; return; }
+
+      // 1) 精确周号
+      const exact = byWeek.get(q);
+      if (exact) {
+        const isLoose = exact.signal === '宽松';
+        box.innerHTML = `
+          <div style="border:1px solid rgba(139,94,60,0.2); border-radius:12px; padding: var(--sp-4);">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+              <div><b style="font-size:20px; color:var(--navy-900);">${exact.week}</b>
+                <span style="margin-left:10px; font-size:14px; color:${isLoose ? 'var(--green)' : 'var(--red)'}; font-weight:700;">${exact.signal}</span>
+                <span style="margin-left:8px; font-size:13px; color:var(--navy-600);">动作：${exact.action}</span>
+              </div>
+            </div>
+            <div class="metric-grid" style="grid-template-columns: repeat(4, 1fr); margin-top: var(--sp-3);">
+              <div class="metric-card"><div class="label">Shibor 1W</div><div class="value" style="font-size:18px;">${exact.shibor}%</div></div>
+              <div class="metric-card"><div class="label">环比变化</div><div class="value" style="font-size:18px; color:${exact.diff_bp !== null && exact.diff_bp < 0 ? 'var(--green)' : 'var(--red)'}">${fmtBp(exact.diff_bp)}</div></div>
+              <div class="metric-card"><div class="label">中证500 当周</div><div class="value" style="font-size:18px; color:${exact.zz500_ret !== null && exact.zz500_ret >= 0 ? 'var(--green)' : 'var(--red)'}">${fmtPct(exact.zz500_ret)}</div></div>
+              <div class="metric-card"><div class="label">沪深300 当周</div><div class="value" style="font-size:18px; color:${exact.hs300_ret !== null && exact.hs300_ret >= 0 ? 'var(--green)' : 'var(--red)'}">${fmtPct(exact.hs300_ret)}</div></div>
+            </div>
+            <div style="font-size:13px; color:var(--navy-600); margin-top:10px;">口径：环比下行 &gt;5bp 为宽松。该周${isLoose ? '体系判定流动性宽松（进攻）' : '体系判定流动性未宽松（防守）'}。</div>
+          </div>`;
+        return;
+      }
+
+      // 2) 年份
+      if (/^\d{4}$/.test(q)) {
+        const ys = ALL_WEEKS.filter((w) => w.week.startsWith(q));
+        if (!ys.length) { box.innerHTML = `<div style="color: var(--red);">未找到 ${q} 年的信号数据（覆盖 ${ALL_WEEKS[0].week} ~ ${ALL_WEEKS[ALL_WEEKS.length - 1].week}）。</div>`; return; }
+        const loose = ys.filter((w) => w.signal === '宽松').length;
+        const yearRetZZ = ys.reduce((s, w) => s + (w.zz500_ret || 0), 0);
+        box.innerHTML = `
+          <div style="border:1px solid rgba(139,94,60,0.2); border-radius:12px; padding: var(--sp-4);">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
+              <b style="font-size:20px; color:var(--navy-900);">${q} 年信号汇总</b>
+              <span style="font-size:13px; color:var(--navy-600);">${ys.length} 周 · 宽松 ${loose} 周（${(loose / ys.length * 100).toFixed(1)}%）· 中证500 年内累加 ${fmtPct(yearRetZZ)}</span>
+            </div>
+            <div class="table-wrap" style="max-height:320px; overflow:auto;">
+              <table class="data-table">
+                <thead><tr><th>周</th><th>Shibor 1W</th><th>环比</th><th>信号</th><th>动作</th><th>中证500</th><th>沪深300</th></tr></thead>
+                <tbody>${ys.map(renderWeekRow).join('')}</tbody>
+              </table>
+            </div>
+          </div>`;
+        return;
+      }
+
+      box.innerHTML = '<div style="color: var(--red);">格式不支持。请输入周号（如 2026-W34）或年份（如 2015）。</div>';
+    }
+    document.getElementById('ms-run')?.addEventListener('click', run);
+    document.getElementById('ms-query').addEventListener('keydown', (e) => { if (e.key === 'Enter') run(); });
+  </script>
+
+  <script>
+    import '../../scripts/charts.ts';
+  </script>
+</Layout>

@@ -29,15 +29,45 @@ import Layout from '../layouts/Layout.astro';
       <div class="link-card" style="cursor: default;">
         <h3><span class="gold">每日资讯解读</span></h3>
         <p>宏观/行业/个股信号当日解读，帮你在信息洪流里抓住关键变化。</p>
+        <div style="font-size:12px; color:var(--navy-600); margin-top:8px;">每交易日更新 · 示范：8/26 已发布</div>
       </div>
       <div class="link-card" style="cursor: default;">
         <h3><span class="gold">每周行业雷达</span></h3>
         <p>7 天政策催化 + 科技突破 + 行业景气度周报，与策略体系同源。</p>
+        <div style="font-size:12px; color:var(--navy-600); margin-top:8px;">每周五更新 · 示范：第 26 期已发布</div>
       </div>
       <div class="link-card" style="cursor: default;">
         <h3><span class="gold">策略月报</span></h3>
         <p>三类资产/组合当月表现复盘 + 下月操作要点，回测测试数据同步公开。</p>
+        <div style="font-size:12px; color:var(--navy-600); margin-top:8px;">每月初更新 · 示范：2026 年 7 月版已发布</div>
       </div>
+    </div>
+  </section>
+
+  <!-- 近期文章（内容挂载位） -->
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">Recent Articles</div>
+      <h2 class="section-title">近期文章</h2>
+      <p class="section-sub">三类内容服务的近期更新。全文在公众号「松果商业笔记」发布，此处同步目录。</p>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr><th>日期</th><th>类型</th><th>标题</th><th>状态</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>2026-08-26</td><td>每日资讯</td><td>市场全景 + 松果信号 + 今日关注（8/25 收盘）</td><td><span style="color: var(--green); font-weight: 600;">示范</span></td></tr>
+          <tr><td>2026-08-24</td><td>行业雷达</td><td>第 26 期：算电协同 / 创新药出海 / 虚拟电厂 / 煤炭规划</td><td><span style="color: var(--green); font-weight: 600;">示范</span></td></tr>
+          <tr><td>2026-08-03</td><td>策略月报</td><td>2026 年 7 月：防守组合扛住急跌，V31 超额 +6.84pp</td><td><span style="color: var(--green); font-weight: 600;">示范</span></td></tr>
+          <tr><td>2026-05-20</td><td>市场洞察</td><td>4 万亿电网投资图谱</td><td style="color: var(--navy-600);">已发布（公众号）</td></tr>
+          <tr><td>2026-05-15</td><td>市场洞察</td><td>中国创新药出海加速：估值锚点正在切换</td><td style="color: var(--navy-600);">已发布（公众号）</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout" style="margin-top: var(--sp-4);">
+      <b>内容节奏</b>：每日资讯每交易日更新、行业雷达每周五更新、策略月报每月初更新——
+      完整内容请关注公众号「松果商业笔记」，或回看 <a href="/songguo-invest/archive/">历史档案</a>。
     </div>
   </section>
 

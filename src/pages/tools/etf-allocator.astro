@@ -1,0 +1,139 @@
+---
+import Layout from '../../layouts/Layout.astro';
+
+// ETF 组合配置器（全ETF版 · 四拼图）
+// 权重定稿：债 25% / 金 30% / 红利 10% / QDII 35%（2026-08-21 生活投资策略全ETF版）
+// 参考价：2026-08-25 收盘（新浪财经 hq.sinajs.cn 实测），页面内可修改
+// 组合历史表现：2014-01 ~ 2026-08 共 152 个月，年化 10.1%（含成本保守）/ MDD -6.2% / 夏普 1.2 / 卡玛 1.6
+const pieces = [
+  { code: '511010', name: '国债ETF（国泰）', role: '债券拼图', weight: 25, price: 141.302, note: '国内利率债，组合压舱石，T+0' },
+  { code: '159934', name: '黄金ETF（易方达）', role: '黄金拼图', weight: 30, price: 9.965, note: '对冲货币贬值+地缘风险，与股票低相关' },
+  { code: '510880', name: '红利ETF（华泰柏瑞）', role: '红利拼图', weight: 10, price: 3.409, note: '上证红利，高股息现金流资产' },
+  { code: '513500', name: '标普500ETF（博时）', role: 'QDII拼图', weight: 35, price: 2.695, note: '全球核心权益，与 A 股相关性 0.01~0.20' },
+];
+---
+<Layout
+  title="ETF 组合配置"
+  description="松果 ETF 组合配置器 — 四拼图权重（债25%/金30%/红利10%/QDII35%）一键算出各 ETF 应买金额与份额。免费工具，不构成投资建议。"
+>
+  <section class="hero" style="padding: 56px 48px;">
+    <div class="hero-inner">
+      <span class="eyebrow">Free Tool · 防守组合</span>
+      <h1>
+        四块拼图，<br /><span class="gold">一键配好你的钱</span>
+      </h1>
+      <p class="hero-lead">
+        债 25% + 金 30% + 红利 10% + QDII 35%——低相关四拼图，
+        2014 年以来年化约 10%、最大回撤 -6.2%，覆盖 2015/2018/2022 三次大熊市。
+        输入拟投资金额，立刻算出每只 ETF 买多少。
+      </p>
+    </div>
+  </section>
+
+  <section class="card" style="max-width: 860px; margin: 0 auto;">
+    <div class="section-head">
+      <div class="section-kicker">Allocator · 四拼图配置</div>
+      <h2 class="section-title">输入拟投资金额</h2>
+      <p class="section-sub">权重为松果生活策略全ETF版定稿（可微调，总和需 100%）；单价参考 2026-08-25 收盘价，可按你的成交价修改。</p>
+    </div>
+
+    <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap: var(--sp-4); margin-bottom: var(--sp-4);">
+      <label class="valuator-field" style="grid-column: span 2;">
+        <span>拟投资金额（元）</span>
+        <input id="ea-amount" type="number" step="1000" min="0" value="200000" placeholder="如 200000" />
+      </label>
+    </div>
+
+    <div class="table-wrap" style="margin-bottom: var(--sp-4);">
+      <table class="data-table">
+        <thead>
+          <tr><th>拼图</th><th>ETF</th><th>权重 %</th><th>参考价（元）</th></tr>
+        </thead>
+        <tbody>
+          {
+            pieces.map((p, i) => (
+              <tr>
+                <td>{p.role}</td>
+                <td>{p.code} {p.name}</td>
+                <td><input id={`ea-w${i}`} type="number" step="1" min="0" max="100" value={p.weight} style="width:70px; padding:6px 8px; border:1px solid rgba(139,94,60,0.25); border-radius:8px; font-size:14px;" /></td>
+                <td><input id={`ea-p${i}`} type="number" step="0.001" min="0" value={p.price} style="width:90px; padding:6px 8px; border:1px solid rgba(139,94,60,0.25); border-radius:8px; font-size:14px;" /></td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <button id="ea-run" class="btn btn-gold" style="width:100%;">计算配置 →</button>
+
+    <div id="ea-result" style="display:none; margin-top: var(--sp-5); border-top: 1px solid rgba(139,94,60,0.15); padding-top: var(--sp-4);">
+      <div class="metric-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: var(--sp-4);">
+        <div class="metric-card"><div class="label">拟投资金额</div><div id="ea-total" class="value" style="font-size:20px;">--</div></div>
+        <div class="metric-card"><div class="label">四块合计</div><div id="ea-sum" class="value" style="font-size:20px;">--</div></div>
+        <div class="metric-card"><div class="label">权重合计</div><div id="ea-wsum" class="value" style="font-size:20px;">--</div></div>
+        <div class="metric-card"><div class="label">建仓提示</div><div id="ea-hint" class="value" style="font-size:16px;">--</div></div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>拼图</th><th>ETF</th><th>权重</th><th>应买金额</th><th>参考价</th><th>应买份数（100份/手）</th><th>实际金额</th></tr></thead>
+          <tbody id="ea-rows"></tbody>
+        </table>
+      </div>
+      <div class="callout" style="margin-top: var(--sp-4);">
+        <b>组合历史表现（2014-01 ~ 2026-08，152 个月，含成本保守口径）</b>：年化 <b>10.1%</b> / 最大回撤 <b>-6.2%</b> / 夏普 1.2 / 卡玛 1.6。
+        压力年：2015 +3.4%、2018 +1.2%、2022 -0.5%——三次大熊市全部覆盖且无大亏。回测数据来源：松果生活策略全ETF版定稿（life_etf.json 净值序列）。<b>历史回测不代表未来收益，不构成投资建议。</b>
+      </div>
+    </div>
+  </section>
+
+  <div class="callout" style="max-width: 860px; margin: var(--sp-4) auto 0;">
+    <b>拼图逻辑</b>：低相关性是组合灵魂——标普500 与 A 股相关性 0.01~0.20，黄金对冲货币风险，债券压舱。
+    每加一块拼图先问它跟已有持仓的相关性。完整方法论见 <a href="/songguo-invest/portfolio/">组合管理</a>。
+  </div>
+
+  <script>
+    const PIECES = [
+      { code: '511010', name: '国债ETF（国泰）', role: '债券拼图' },
+      { code: '159934', name: '黄金ETF（易方达）', role: '黄金拼图' },
+      { code: '510880', name: '红利ETF（华泰柏瑞）', role: '红利拼图' },
+      { code: '513500', name: '标普500ETF（博时）', role: 'QDII拼图' },
+    ];
+    const fmt = (v: number) => v >= 10000 ? (v / 10000).toFixed(1) + ' 万' : v.toFixed(0) + ' 元';
+    const fmtY = (v: number) => Math.round(v).toLocaleString() + ' 元';
+
+    function run() {
+      const $ = (id: string) => document.getElementById(id) as HTMLInputElement;
+      const amount = parseFloat($('ea-amount').value) || 0;
+      const w = [0, 1, 2, 3].map((i) => parseFloat($(`ea-w${i}`).value) || 0);
+      const price = [0, 1, 2, 3].map((i) => parseFloat($(`ea-p${i}`).value) || 0);
+      const wsum = w.reduce((a, b) => a + b, 0);
+
+      ($('ea-total') as HTMLElement).textContent = fmt(amount);
+      ($('ea-wsum') as HTMLElement).textContent = wsum.toFixed(0) + '%';
+      ($('ea-sum') as HTMLElement).textContent = fmt(amount);
+      const hint = ($('ea-hint') as HTMLElement);
+      if (amount <= 0) { hint.textContent = '请输入金额'; hint.style.color = 'var(--red)'; }
+      else if (Math.abs(wsum - 100) > 0.01) { hint.textContent = `权重合计 ${wsum}%≠100%`; hint.style.color = 'var(--red)'; }
+      else { hint.textContent = '权重 100% ✓'; hint.style.color = 'var(--green)'; }
+
+      let sumCheck = 0;
+      ($('ea-rows') as HTMLElement).innerHTML = PIECES.map((p, i) => {
+        const money = amount * w[i] / 100;
+        const lots = Math.floor(money / price[i] / 100); // 场内 1 手 = 100 份
+        const actual = lots * 100 * price[i];
+        sumCheck += actual;
+        return `<tr>
+          <td>${p.role}</td>
+          <td>${p.code} ${p.name}</td>
+          <td>${w[i]}%</td>
+          <td>${fmtY(money)}</td>
+          <td>${price[i].toFixed(3)}</td>
+          <td><b>${lots * 100} 份（${lots} 手）</b></td>
+          <td>${fmtY(actual)}</td>
+        </tr>`;
+      }).join('');
+      ($('ea-sum') as HTMLElement).textContent = fmt(sumCheck) + (Math.abs(sumCheck - amount) > 1 ? `（按 100 份整手取整）` : '');
+    }
+    document.getElementById('ea-run')?.addEventListener('click', run);
+  </script>
+</Layout>
