@@ -37,7 +37,7 @@ function runCountUp(el: HTMLElement) {
   requestAnimationFrame(tick);
 }
 
-const revealEls = Array.from(document.querySelectorAll<HTMLElement>('.reveal'));
+const revealEls = Array.from(document.querySelectorAll<HTMLElement>('.reveal, .action-card'));
 const countEls = Array.from(document.querySelectorAll<HTMLElement>('[data-count]'));
 const stepEls = Array.from(document.querySelectorAll<HTMLElement>('.steps-step'));
 
