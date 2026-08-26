@@ -54,15 +54,33 @@ const navItems = [
     </header>
 
     <main class="container main-content">
-      <div class="layout-3col">
-        <!-- 左栏：自营引流（粘性） -->
-        <aside class="side-col side-left">
+      <div class="layout-2col">
+        <!-- 主内容 -->
+        <div class="side-main">
+          <slot />
+        </div>
+
+        <!-- 右侧栏：引流 + 留言（粘性，合并） -->
+        <aside class="side-col">
           <div class="side-card">
             <div class="side-card-title">📬 每周一篇深度文章</div>
             <p style="font-size: 13px; line-height: 1.6; color: var(--text-2); margin: 8px 0 10px;">
               行业研究、策略拆解、实盘复盘，全部同步在公众号 <b>「松果商业笔记」</b>。
             </p>
             <a href="/songguo-invest/services/" class="btn btn-gold" style="display:block; text-align:center; font-size: 13px; padding: 8px 10px;">关注「松果商业笔记」→</a>
+          </div>
+          <div class="side-card" style="border-color: rgba(217,164,65,0.4);">
+            <div class="side-card-title">💬 给「松果投资实验室」留言</div>
+            <p style="font-size: 12px; line-height: 1.6; color: var(--text-3); margin: 8px 0 10px;">
+              用了工具、读了文章，有任何意见或改进建议，欢迎留言——每一条都会看到。
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <input id="fb-name" type="text" placeholder="称呼（选填）" style="width: 100%; padding: 8px 10px; border: 1px solid var(--border-strong); border-radius: 8px; font-size: 13px; box-sizing: border-box;" />
+              <textarea id="fb-content" rows="4" placeholder="你的意见 / 建议（必填）：功能、内容、布局、产品……" style="width: 100%; padding: 8px 10px; border: 1px solid var(--border-strong); border-radius: 8px; font-size: 13px; box-sizing: border-box; resize: vertical; font-family: inherit;"></textarea>
+              <input id="fb-contact" type="text" placeholder="联系方式（选填，便于回复）" style="width: 100%; padding: 8px 10px; border: 1px solid var(--border-strong); border-radius: 8px; font-size: 13px; box-sizing: border-box;" />
+              <button id="fb-submit" class="btn btn-gold" style="font-size: 13px; padding: 8px 10px;">提交留言</button>
+              <div id="fb-msg" style="font-size: 12px; color: var(--text-3); min-height: 16px;">留言仅用于产品改进，不对外公开。</div>
+            </div>
           </div>
           <div class="side-card">
             <div class="side-card-title">🔒 松果投资实验室 Pro</div>
@@ -78,28 +96,6 @@ const navItems = [
               <a href="/songguo-invest/tools/fund-scorecard/" style="color: inherit;">基金打分卡</a><br />
               <a href="/songguo-invest/tools/compound/" style="color: inherit;">复利计算器</a>
             </p>
-          </div>
-        </aside>
-
-        <!-- 主内容 -->
-        <div class="side-main">
-          <slot />
-        </div>
-
-        <!-- 右栏：读者反馈（粘性） -->
-        <aside class="side-col side-right">
-          <div class="side-card" style="border-color: rgba(217,164,65,0.4);">
-            <div class="side-card-title">💬 给「松果投资实验室」留言</div>
-            <p style="font-size: 12px; line-height: 1.6; color: var(--text-3); margin: 8px 0 10px;">
-              用了工具、读了文章，有任何意见或改进建议，欢迎留言——每一条都会看到。
-            </p>
-            <div style="display: flex; flex-direction: column; gap: 8px;">
-              <input id="fb-name" type="text" placeholder="称呼（选填）" style="width: 100%; padding: 8px 10px; border: 1px solid var(--border-strong); border-radius: 8px; font-size: 13px; box-sizing: border-box;" />
-              <textarea id="fb-content" rows="4" placeholder="你的意见 / 建议（必填）：功能、内容、布局、产品……" style="width: 100%; padding: 8px 10px; border: 1px solid var(--border-strong); border-radius: 8px; font-size: 13px; box-sizing: border-box; resize: vertical; font-family: inherit;"></textarea>
-              <input id="fb-contact" type="text" placeholder="联系方式（选填，便于回复）" style="width: 100%; padding: 8px 10px; border: 1px solid var(--border-strong); border-radius: 8px; font-size: 13px; box-sizing: border-box;" />
-              <button id="fb-submit" class="btn btn-gold" style="font-size: 13px; padding: 8px 10px;">提交留言</button>
-              <div id="fb-msg" style="font-size: 12px; color: var(--text-3); min-height: 16px;">留言仅用于产品改进，不对外公开。</div>
-            </div>
           </div>
         </aside>
       </div>

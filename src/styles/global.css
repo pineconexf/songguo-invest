@@ -1082,10 +1082,10 @@ html.js .action-card.in {
 }
 
 
-/* ===== 三栏布局（主内容 + 左右粘性侧栏） ===== */
-.layout-3col {
+/* ===== 两栏布局（主内容 + 右侧粘性侧栏） ===== */
+.layout-2col {
   display: grid;
-  grid-template-columns: 235px minmax(0, 1fr) 280px;
+  grid-template-columns: minmax(0, 1fr) 260px;
   gap: var(--sp-4);
   align-items: start;
 }
@@ -1110,7 +1110,7 @@ html.js .action-card.in {
   font-weight: 700;
   color: var(--text);
 }
-@media (max-width: 1180px) {
-  .layout-3col { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 1080px) {
+  .layout-2col { grid-template-columns: minmax(0, 1fr); }
   .side-col { display: none; }
 }
