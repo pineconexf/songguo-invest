@@ -1,0 +1,207 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+<Layout
+  title="行业对比工具"
+  description="松果行业对比工具 — 跨行业横向对比：估值、增速、资金流、景气度，找出相对占优的赛道。免费工具，不构成投资建议。"
+>
+  <section class="hero" style="padding: 56px 48px;">
+    <div class="hero-inner">
+      <span class="eyebrow">Free Tool · 行业研究</span>
+      <h1>
+        行业好不好，<br /><span class="gold">拉出来比一比</span>
+      </h1>
+      <p class="hero-lead">
+        输入最多 5 个行业的估值 / 增速 / 资金流 / 景气度，
+        雷达图 + 柱状图横向对比，一眼看出相对占优的赛道。
+      </p>
+    </div>
+  </section>
+
+  <!-- 输入区 -->
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">Input · 行业数据</div>
+      <h2 class="section-title">填写行业指标</h2>
+      <p class="section-sub">
+        估值 = 当前 PE（越小越便宜）；增速 = 行业营收增速 %；资金流 = 主力资金热度（0-100）；景气度 = 行业景气评分（0-100）。
+        可加载下方示例画像，也可自填。
+      </p>
+    </div>
+    <div id="ic-rows">
+      <div class="ic-row" style="display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+        <input type="text" placeholder="行业名，如 创新药" class="ic-name" style="padding: 10px 12px; border: 1px solid rgba(139,94,60,0.25); border-radius: 8px; font-size: 14px;" />
+        <input type="number" placeholder="PE" class="ic-pe" style="padding: 10px 12px; border: 1px solid rgba(139,94,60,0.25); border-radius: 8px; font-size: 14px;" />
+        <input type="number" placeholder="增速%" class="ic-growth" style="padding: 10px 12px; border: 1px solid rgba(139,94,60,0.25); border-radius: 8px; font-size: 14px;" />
+        <input type="number" placeholder="资金流" class="ic-flow" style="padding: 10px 12px; border: 1px solid rgba(139,94,60,0.25); border-radius: 8px; font-size: 14px;" />
+        <input type="number" placeholder="景气度" class="ic-boom" style="padding: 10px 12px; border: 1px solid rgba(139,94,60,0.25); border-radius: 8px; font-size: 14px;" />
+      </div>
+    </div>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px;">
+      <button id="ic-add" class="btn btn-ghost" style="font-size: 13.5px;">+ 添加行业（最多 5）</button>
+      <button id="ic-preset" class="btn btn-ghost" style="font-size: 13.5px;">加载雷达 26 期赛道画像（示例）</button>
+      <button id="ic-run" class="btn btn-gold">开始对比 →</button>
+    </div>
+    <p style="font-size: 12px; color: var(--text-3); margin-top: 8px;">示例画像为行业雷达第 26 期赛道热度转评分（演示用，非实时行情数据）。</p>
+  </section>
+
+  <!-- 结果区 -->
+  <section class="card" id="ic-result" style="display: none;">
+    <div class="section-head">
+      <div class="section-kicker">Compare · 对比结果</div>
+      <h2 class="section-title">行业横向对比</h2>
+    </div>
+    <div class="metric-grid" style="grid-template-columns: repeat(4, 1fr);">
+      <div class="metric-card"><div class="label">估值最便宜</div><div class="value" style="font-size: 17px;" id="ic-best-pe">—</div></div>
+      <div class="metric-card"><div class="label">增速最快</div><div class="value" style="font-size: 17px;" id="ic-best-growth">—</div></div>
+      <div class="metric-card"><div class="label">资金流最强</div><div class="value" style="font-size: 17px;" id="ic-best-flow">—</div></div>
+      <div class="metric-card"><div class="label">综合占优</div><div class="value" style="font-size: 17px; color: var(--gold-700);" id="ic-best-overall">—</div></div>
+    </div>
+    <div class="chart" id="ic-radar" style="height: 380px; margin-top: 14px;"></div>
+    <div class="chart" id="ic-bar" style="height: 300px; margin-top: 10px;"></div>
+    <div id="ic-verdict" style="margin-top: 14px; background: var(--surface-alt); border-radius: 10px; padding: 16px; font-size: 13.5px; line-height: 1.8;"></div>
+  </section>
+
+  <div class="callout warn">
+    ⚠️ <b>说明</b>：对比结果为输入数据的直接呈现，用于方法论演示。行业热度不等于买入信号，需结合估值与个人风险承受力。不构成投资建议。
+  </div>
+
+  <script>
+    import * as echarts from 'echarts/core';
+    import { RadarChart, BarChart } from 'echarts/charts';
+    import { GridComponent, TooltipComponent, LegendComponent, RadarComponent } from 'echarts/components';
+    import { CanvasRenderer } from 'echarts/renderers';
+    echarts.use([RadarChart, BarChart, GridComponent, TooltipComponent, LegendComponent, RadarComponent, CanvasRenderer]);
+
+    // 内置示例：行业雷达第 26 期 TOP5 赛道画像（评分供演示，非实时行情数据）
+    const PRESET = [
+      { name: 'AI 算力/算电协同', pe: 35, growth: 41, flow: 90, boom: 92 },
+      { name: '创新药出海', pe: 28, growth: 30, flow: 85, boom: 88 },
+      { name: '虚拟电厂/新型电力', pe: 25, growth: 22, flow: 75, boom: 80 },
+      { name: '银行/高股息', pe: 6, growth: 5, flow: 88, boom: 70 },
+      { name: '煤炭/传统能源', pe: 9, growth: 8, flow: 82, boom: 68 },
+    ];
+
+    const GOLD = '#d9a441', GREEN = '#4a7c59', RED = '#b3543e', NAVY = '#5c3a21', GRAY = '#a39684';
+
+    const rowsWrap = document.getElementById('ic-rows');
+    const addBtn = document.getElementById('ic-add');
+    const presetBtn = document.getElementById('ic-preset');
+    const runBtn = document.getElementById('ic-run');
+    const resultSec = document.getElementById('ic-result');
+
+    function addRow(name = '', pe = '', growth = '', flow = '', boom = '') {
+      const div = document.createElement('div');
+      div.className = 'ic-row';
+      div.style.cssText = 'display:grid; grid-template-columns: 1.4fr 1fr 1fr 1fr 1fr 24px; gap:8px; margin-bottom:8px;';
+      div.innerHTML = `
+        <input type="text" class="ic-name" value="${name}" placeholder="行业名" style="padding:10px 12px; border:1px solid rgba(139,94,60,0.25); border-radius:8px; font-size:14px;" />
+        <input type="number" class="ic-pe" value="${pe}" placeholder="PE" style="padding:10px 12px; border:1px solid rgba(139,94,60,0.25); border-radius:8px; font-size:14px;" />
+        <input type="number" class="ic-growth" value="${growth}" placeholder="增速%" style="padding:10px 12px; border:1px solid rgba(139,94,60,0.25); border-radius:8px; font-size:14px;" />
+        <input type="number" class="ic-flow" value="${flow}" placeholder="资金流" style="padding:10px 12px; border:1px solid rgba(139,94,60,0.25); border-radius:8px; font-size:14px;" />
+        <input type="number" class="ic-boom" value="${boom}" placeholder="景气度" style="padding:10px 12px; border:1px solid rgba(139,94,60,0.25); border-radius:8px; font-size:14px;" />
+        <button class="ic-del" title="删除" style="border:none; background:none; color:#b3543e; font-size:18px; cursor:pointer;">×</button>`;
+      div.querySelector('.ic-del')?.addEventListener('click', () => {
+        if (rowsWrap.children.length > 1) div.remove();
+      });
+      rowsWrap.appendChild(div);
+    }
+
+    addBtn?.addEventListener('click', () => {
+      if (rowsWrap.children.length >= 5) { alert('最多对比 5 个行业'); return; }
+      addRow();
+    });
+
+    presetBtn?.addEventListener('click', () => {
+      rowsWrap.innerHTML = '';
+      PRESET.forEach((p) => addRow(p.name, String(p.pe), String(p.growth), String(p.flow), String(p.boom)));
+    });
+
+    function readRows() {
+      const out = [];
+      rowsWrap.querySelectorAll('.ic-row').forEach((row) => {
+        const name = row.querySelector('.ic-name')?.value?.trim();
+        if (!name) return;
+        const pe = parseFloat(row.querySelector('.ic-pe')?.value);
+        const growth = parseFloat(row.querySelector('.ic-growth')?.value);
+        const flow = parseFloat(row.querySelector('.ic-flow')?.value);
+        const boom = parseFloat(row.querySelector('.ic-boom')?.value);
+        if (isNaN(pe) || isNaN(growth) || isNaN(flow) || isNaN(boom)) return;
+        out.push({ name, pe, growth, flow, boom });
+      });
+      return out;
+    }
+
+    runBtn?.addEventListener('click', () => {
+      const data = readRows();
+      if (data.length < 2) { alert('至少填写 2 个完整行业（名称 + 4 项指标）'); return; }
+      resultSec.style.display = 'block';
+
+      // 估值优势分（PE 越低越高，40x 封底）：max(0, 100 - pe * 2.5)
+      const rows = data.map((d) => ({
+        ...d,
+        valueScore: Math.max(0, Math.min(100, 100 - d.pe * 2.5)),
+        overall: Math.max(0, Math.min(100, 100 - d.pe * 2.5)) * 0.3 + d.growth * 0.25 + d.flow * 0.25 + d.boom * 0.2,
+      }));
+
+      const bestPe = rows.reduce((a, b) => (a.pe < b.pe ? a : b));
+      const bestG = rows.reduce((a, b) => (a.growth > b.growth ? a : b));
+      const bestF = rows.reduce((a, b) => (a.flow > b.flow ? a : b));
+      const bestO = rows.reduce((a, b) => (a.overall > b.overall ? a : b));
+      document.getElementById('ic-best-pe').textContent = `${bestPe.name}（PE ${bestPe.pe}）`;
+      document.getElementById('ic-best-growth').textContent = `${bestG.name}（+${bestG.growth}%）`;
+      document.getElementById('ic-best-flow').textContent = `${bestF.name}（${bestF.flow}）`;
+      document.getElementById('ic-best-overall').textContent = bestO.name;
+
+      // 雷达图（估值优势/增速/资金流/景气度 四维，0-100 归一）
+      const radarOpt = {
+        tooltip: {},
+        legend: { top: 0, textStyle: { color: '#5c3a21' } },
+        radar: {
+          indicator: [
+            { name: '估值优势', max: 100 }, { name: '增速', max: 100 },
+            { name: '资金流', max: 100 }, { name: '景气度', max: 100 },
+          ],
+          radius: '65%',
+          axisName: { color: '#8a7a66', fontSize: 12 },
+          splitLine: { lineStyle: { color: 'rgba(139,94,60,0.15)' } },
+          splitArea: { areaStyle: { color: ['rgba(217,164,65,0.03)', 'rgba(217,164,65,0.06)'] } },
+        },
+        series: [{
+          type: 'radar',
+          data: rows.map((r, i) => ({
+            name: r.name,
+            value: [Math.round(r.valueScore), Math.min(100, r.growth), r.flow, r.boom],
+            lineStyle: { width: 2, color: [GOLD, GREEN, RED, NAVY, GRAY][i % 5] },
+            itemStyle: { color: [GOLD, GREEN, RED, NAVY, GRAY][i % 5] },
+            areaStyle: { opacity: 0.12 },
+          })),
+        }],
+      };
+      const radar = echarts.init(document.getElementById('ic-radar'));
+      radar.setOption(radarOpt);
+
+      // 柱状图：增速 + 综合分
+      const barOpt = {
+        tooltip: { trigger: 'axis' },
+        legend: { top: 0, textStyle: { color: '#5c3a21' } },
+        grid: { left: 44, right: 16, top: 40, bottom: 28 },
+        xAxis: { type: 'category', data: rows.map((r) => r.name), axisLabel: { color: '#8a7a66' } },
+        yAxis: { type: 'value', name: '分数', nameTextStyle: { color: '#8a7a66' }, axisLabel: { color: '#8a7a66' }, splitLine: { lineStyle: { color: 'rgba(139,94,60,0.10)' } } },
+        series: [
+          { name: '增速 %', type: 'bar', data: rows.map((r) => r.growth), itemStyle: { color: GOLD, borderRadius: [3, 3, 0, 0] }, barMaxWidth: 22 },
+          { name: '综合评分', type: 'bar', data: rows.map((r) => Math.round(r.overall)), itemStyle: { color: GREEN, borderRadius: [3, 3, 0, 0] }, barMaxWidth: 22 },
+        ],
+      };
+      const bar = echarts.init(document.getElementById('ic-bar'));
+      bar.setOption(barOpt);
+
+      // 结论
+      const sorted = [...rows].sort((a, b) => b.overall - a.overall);
+      document.getElementById('ic-verdict').innerHTML =
+        `<b>综合占优排序</b>：${sorted.map((r, i) => `${i + 1}. ${r.name}（${Math.round(r.overall)} 分）`).join('　')}<br>
+        <span style="color:var(--navy-600); font-size:13px;">估值优势 = 100 − PE×2.5（PE≤40 有效）；综合分 = 估值优势×30% + 增速×25% + 资金流×25% + 景气度×20%。分数为演示口径，不构成投资建议。</span>`;
+      window.addEventListener('resize', () => { radar.resize(); bar.resize(); });
+    });
+  </script>
+</Layout>

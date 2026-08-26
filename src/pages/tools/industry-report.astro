@@ -1,0 +1,202 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import industry from '../../data/research_industry.json';
+
+const fw = industry.framework;
+const hot = industry.hot_sectors;
+const ev = industry.events;
+const warn = industry.warnings;
+const mrep = industry.monthly_report;
+---
+<Layout
+  title="行业研究报告"
+  description="松果行业研究报告 — 六维研究框架（景气度/竞争格局/估值水位/政策催化/资金流向/风险边界），最近行业报告与月度要点。免费工具，不构成投资建议。"
+>
+  <section class="hero" style="padding: 56px 48px;">
+    <div class="hero-inner">
+      <span class="eyebrow">Research · 行业研究</span>
+      <h1>
+        一个行业，<br /><span class="gold">六个维度</span>看懂
+      </h1>
+      <p class="hero-lead">
+        景气度、竞争格局、估值水位、政策催化、资金流向、风险边界——
+        松果行业研究六维框架，让行业分析有章可循，不靠感觉。
+      </p>
+    </div>
+  </section>
+
+  <!-- 六维框架 -->
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">Framework · 六维框架</div>
+      <h2 class="section-title">{fw.name}</h2>
+      <p class="section-sub">每一维都问一个核心问题、锚定一类数据——研究行业时逐维填空，不遗漏关键视角。</p>
+    </div>
+    <div class="metric-grid" style="grid-template-columns: repeat(3, 1fr);">
+      {fw.dims.map((dim) => (
+        <div class="metric-card" style="padding: 18px 16px; min-height: 120px;">
+          <div class="label" style="font-size: 14px; color: var(--gold-700);">{dim.key}</div>
+          <div style="font-size: 13px; color: var(--navy-800); margin: 8px 0 6px; line-height: 1.6;">{dim.q}</div>
+          <div style="font-size: 12px; color: var(--text-3); line-height: 1.5;">锚定：{dim.data}</div>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- 热点赛道 -->
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">Radar · 本周行业雷达（第 26 期）</div>
+      <h2 class="section-title">本周高热度赛道 TOP 5</h2>
+      <p class="section-sub">来源：松果每周行业雷达（2026-08-24 周），覆盖 8/18-8/24 政策催化 + 科技突破 + 行业景气。</p>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>#</th><th>赛道</th><th>热度来源</th><th>触发逻辑</th></tr></thead>
+        <tbody>
+          {hot.map((h) => (
+            <tr>
+              <td>{h.rank}</td>
+              <td><b>{h.name}</b></td>
+              <td><span class="tool-type">{h.heat}</span></td>
+              <td style="color: var(--navy-600);">{h.note}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 触发事件 -->
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">Events · 触发事件</div>
+      <h2 class="section-title">本周触发事件（5 条）</h2>
+    </div>
+    <div class="steps">
+      {ev.map((e, i) => (
+        <div class="step">
+          <div class="num">{i + 1}</div>
+          <div class="body">
+            <h3>{e.title}</h3>
+            <p>{e.detail}</p>
+            <p style="font-size: 12.5px; color: var(--text-3); margin-top: 6px;">
+              <b>性质</b>：{e.nature} ｜ <b>市场映射</b>：{e.mapping}
+            </p>
+          </div>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- 月度要点 -->
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">Monthly · 策略月报（2026 年 7 月）</div>
+      <h2 class="section-title">7 月市场与体系表现</h2>
+      <p class="section-sub">{mrep.market}</p>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>资产/策略</th><th>7 月</th><th>YTD</th><th>历史最大回撤</th><th>定位</th></tr></thead>
+        <tbody>
+          {mrep.assets.map((a) => (
+            <tr>
+              <td>{a.name}</td>
+              <td class={a.jul.startsWith('+') ? 'pos' : 'neg'}>{a.jul}</td>
+              <td class={a.ytd.startsWith('+') ? 'pos' : 'neg'}>{a.ytd}</td>
+              <td class="neg">{a.mdd}</td>
+              <td style="color: var(--navy-600);">{a.role}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    <div class="callout" style="margin-top: 14px;">
+      <b>超额</b>：{mrep.excess}
+    </div>
+    <div class="callout warn" style="margin-top: 8px;">
+      <b>信号</b>：{mrep.signal}
+    </div>
+    <div class="steps" style="margin-top: 14px;">
+      {mrep.actions.map((a, i) => (
+        <div class="step"><div class="num">{i + 1}</div><div class="body"><p style="margin:0;">{a}</p></div></div>
+      ))}
+    </div>
+  </section>
+
+  <!-- 报告生成器 -->
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">Generator · 研究提纲生成</div>
+      <h2 class="section-title">行业研究报告提纲生成器</h2>
+      <p class="section-sub">输入你关注的行业，按六维框架生成研究提纲与数据缺口清单——帮你把一篇行业报告拆成可执行的调研任务。</p>
+    </div>
+    <div style="display: flex; gap: var(--sp-3); flex-wrap: wrap; margin-bottom: var(--sp-4);">
+      <input id="ir-industry" type="text" placeholder="输入行业，如：虚拟电厂 / 创新药 / AI 算力" style="flex: 1; min-width: 260px; padding: 12px 14px; border: 1px solid rgba(139,94,60,0.25); border-radius: 10px; font-size: 15px; background: var(--bg); color: var(--navy-900);" />
+      <button id="ir-run" class="btn btn-gold">生成提纲 →</button>
+    </div>
+    <div id="ir-result" style="display: none;">
+      <div id="ir-outline" style="background: var(--surface-alt); border-radius: 10px; padding: 18px; line-height: 1.8; font-size: 14px;"></div>
+      <div id="ir-gaps" style="margin-top: 12px; background: rgba(217,164,65,0.06); border: 1px solid rgba(217,164,65,0.25); border-radius: 10px; padding: 16px; font-size: 13.5px; line-height: 1.8;"></div>
+    </div>
+  </section>
+
+  <!-- 预警 -->
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">Watch · 下周预警</div>
+      <h2 class="section-title">下周需要盯的变量</h2>
+    </div>
+    <div class="steps">
+      {warn.map((w, i) => (
+        <div class="step"><div class="num">{i + 1}</div><div class="body"><p style="margin:0;">{w}</p></div></div>
+      ))}
+    </div>
+  </section>
+
+  <script>
+    const run = document.getElementById('ir-run');
+    const input = document.getElementById('ir-industry');
+    const result = document.getElementById('ir-result');
+    const outline = document.getElementById('ir-outline');
+    const gaps = document.getElementById('ir-gaps');
+
+    const DIMS = [
+      ['景气度', '当前景气位置？订单/开工/价格信号？', 'PMI、产量、价格指数、库存周期'],
+      ['竞争格局', '集中度如何？龙头是谁？格局在变好还是变差？', 'CR3/CR5、新进入者、产能规划'],
+      ['估值水位', '当前 PE/PB 在自身历史什么分位？', 'PE/PB 分位数、EV/EBITDA、股息率'],
+      ['政策催化', '有没有明确政策事件？力度多大？', '发改委/工信部文件、补贴细则、试点办法'],
+      ['资金流向', '主力/北向/两融在流入还是流出？', '板块资金流、成交占比、融资余额'],
+      ['风险边界', '最大风险是什么？什么情况逻辑会破坏？', '政策退坡、需求证伪、估值透支'],
+    ];
+
+    run?.addEventListener('click', () => {
+      const ind = (input?.value || '').trim();
+      if (!ind) { alert('请先输入行业名称'); return; }
+      result.style.display = 'block';
+      outline.innerHTML = `<b style="font-size:15px;">「${ind}」研究报告提纲（六维框架）</b>
+        <ol style="margin:10px 0 0 18px; padding:0;">
+          ${DIMS.map(([k, q]) => `<li><b>${k}</b>：${q}</li>`).join('')}
+        </ol>
+        <p style="margin-top:10px; color:var(--text-3); font-size:12.5px;">写作结构：产业全景 → 六维逐项 → 结论与风险 → 数据来源附录。</p>`;
+      gaps.innerHTML = `<b style="color:var(--gold-700);">数据缺口清单（需调研补齐）</b>
+        <ul style="margin:8px 0 0 18px; padding:0;">
+          <li>「${ind}」最新行业规模与增速（口径：XX 协会/统计局）</li>
+          <li>头部企业 PE/PB 及历史分位（口径：tushare 或同花顺）</li>
+          <li>近 3 个月板块资金流与成交占比</li>
+          <li>最新政策文件原文与落地时间表</li>
+          <li>产业链上中下游代表公司与传导关系</li>
+        </ul>`;
+    });
+    input?.addEventListener('keydown', (e) => { if (e.key === 'Enter') run?.click(); });
+  </script>
+
+  <div class="callout">
+    <b>数据说明</b>：行业雷达为每周生成（{industry.source}），全部事件来自公开政策/新闻检索，标注出处。
+    完整六维报告由「松果商业笔记」公众号发布，此处同步目录与要点。
+  </div>
+  <div class="callout warn">
+    ⚠️ <b>合规</b>：研究展示不构成投资建议。行业热度不等于买入信号，需结合估值与个人风险承受力。
+  </div>
+</Layout>

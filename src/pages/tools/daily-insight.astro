@@ -1,0 +1,137 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import daily from '../../data/research_daily.json';
+import macro from '../../data/macro_signal.json';
+
+const d = daily.latest;
+const weeks = macro.weeks as Array<{ week: string; signal: string; action: string; shibor: number | null }>;
+const latest = weeks[weeks.length - 1];
+---
+<Layout
+  title="每日资讯解读"
+  description="松果每日资讯解读 — 市场全景、松果信号速查、政策产业关注，帮你在信息洪流中抓住关键信号。免费工具，不构成投资建议。"
+>
+  <section class="hero" style="padding: 56px 48px;">
+    <div class="hero-inner">
+      <span class="eyebrow">Research · 全策略通用</span>
+      <h1>
+        每天 5 分钟，<br />抓住<span class="gold">关键信号</span>
+      </h1>
+      <p class="hero-lead">
+        市场全景 + 松果信号速查 + 政策产业关注——不追涨杀跌的资讯读法。
+        数据由松果资讯管线每日生成，全部标注来源与口径。
+      </p>
+    </div>
+  </section>
+
+  <!-- 当日观点 -->
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">Daily View · {d.date}</div>
+      <h2 class="section-title">今日解读（数据截至 {d.market_date} 收盘）</h2>
+      <p class="section-sub">{d.source}</p>
+    </div>
+    <div class="callout" style="font-size: 15px;">
+      <b>一句话</b>：{d.headline}
+    </div>
+    <div class="metric-grid" style="margin-top: 14px;">
+      <div class="metric-card"><div class="label">上证指数</div><div class="value">{d.market[0].close}</div><div class="sub">+0.67% · 8589 亿</div></div>
+      <div class="metric-card"><div class="label">深证成指</div><div class="value">{d.market[1].close}</div><div class="sub">+0.45% · 9730 亿</div></div>
+      <div class="metric-card"><div class="label">中证500</div><div class="value">{d.market[4].close}</div><div class="sub">+0.87%（中小盘强）</div></div>
+      <div class="metric-card"><div class="label">沪深300</div><div class="value">{d.market[3].close}</div><div class="sub">+0.22% · 4804 亿</div></div>
+    </div>
+    <p class="section-sub" style="margin-top: 12px;">{d.turnover_note}</p>
+  </section>
+
+  <!-- 市场全景 -->
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">Market · 市场全景</div>
+      <h2 class="section-title">指数收盘一览</h2>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>指数</th><th>收盘</th><th>涨跌幅</th><th>成交额</th></tr></thead>
+        <tbody>
+          {d.market.map((m) => (
+            <tr>
+              <td>{m.index}</td>
+              <td>{m.close}</td>
+              <td class={m.chg.startsWith('+') ? 'pos' : 'neg'}>{m.chg}</td>
+              <td>{m.vol}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 松果信号速查 -->
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">Songguo Signals · 体系口径</div>
+      <h2 class="section-title">松果信号速查</h2>
+      <p class="section-sub">当前宏观信号（{latest.week}）：<b class={latest.signal === '宽松' ? 'pos' : 'neg'}>{latest.signal === '宽松' ? '宽松 → 买入中证500' : '收紧 → 空仓'}</b>（Shibor 1W 周均值 {latest.shibor}%）。详细口径见 <a href="/songguo-invest/tools/macro-signal/">宏观信号查询</a>。</p>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>信号</th><th>当前值</th><th>判定</th></tr></thead>
+        <tbody>
+          {d.signals.map((s) => (
+            <tr>
+              <td>{s.name}</td>
+              <td>{s.value}</td>
+              <td class={s.verdict.includes('跑赢') || s.verdict.includes('YTD') ? 'pos' : s.verdict.includes('空仓') ? '' : 'pos'}>{s.verdict}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    <div class="callout" style="margin-top: 14px;">
+      <b>一句话</b>：{d.signal_summary}
+    </div>
+  </section>
+
+  <!-- 今日关注 -->
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">Focus · 政策/产业信号</div>
+      <h2 class="section-title">今日关注</h2>
+    </div>
+    <div class="steps">
+      {d.focus.map((f, i) => (
+        <div class="step">
+          <div class="num">{i + 1}</div>
+          <div class="body">
+            <h3>{f.title}</h3>
+            <p>{f.point}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- 松果口径 -->
+  <section class="card">
+    <div class="section-head">
+      <div class="section-kicker">Songguo View · 怎么看</div>
+      <h2 class="section-title">松果口径怎么看今天</h2>
+    </div>
+    <div class="metric-grid" style="grid-template-columns: repeat(3, 1fr);">
+      {d.viewpoints.map((v) => (
+        <div class="metric-card" style="padding: 18px 16px;">
+          <div class="label" style="font-size: 13.5px; color: var(--gold-700);">{v.topic}</div>
+          <div style="font-size: 13.5px; line-height: 1.7; color: var(--navy-800); margin-top: 8px;">{v.point}</div>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <div class="callout">
+    <b>更新机制</b>：{daily.update_note} 每交易日收盘后生成，公众号「松果商业笔记」同步推送。
+    历史期次归档于 <a href="/songguo-invest/archive/">历史档案</a>。
+  </div>
+  <div class="callout warn">
+    ⚠️ <b>合规</b>：本文为信息整理与研究展示，数据来源已标注，不构成投资建议。投资有风险，入市需谨慎。
+  </div>
+</Layout>
