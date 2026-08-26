@@ -100,9 +100,8 @@ const fmtPct = (v: number, d = 1) => (v >= 0 ? '+' : '') + (v * 100).toFixed(d) 
       </table>
     </div>
 
-    <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom: var(--sp-3);">
+    <div style="margin-bottom: var(--sp-3);">
       <button id="ea-run" class="btn btn-gold">计算配置 →</button>
-      <button id="ea-live" class="btn btn-ghost" style="border:1.5px solid var(--border-strong);">📡 读取实时行情</button>
     </div>
     <div id="ea-msg" style="font-size: 13px; color: var(--text-3); margin-bottom: var(--sp-2);">权重合计 100% ✓（默认稳健档：债25/金30/红利10/QDII35）</div>
 
@@ -357,14 +356,18 @@ const fmtPct = (v: number, d = 1) => (v >= 0 ? '+' : '') + (v * 100).toFixed(d) 
       </svg>`;
     }
 
-    // 实时行情：腾讯 qt.gtimg.cn —— 返回格式 v_sh511010="1~名称~代码~现价~..." 本身就是合法 JS
+    // 实时行情：页面加载自动拉取（腾讯 qt.gtimg.cn，返回 v_sh511010="..." 即合法 JS）
+    // 成功 → 价格列标注"实时 HH:MM"；失败/被墙 → 保留参考价并标注"参考价 08-25"
     function loadQuote() {
       const codes = ['sh511010', 'sz159934', 'sh510880', 'sz513500'];
-      const btn = $('ea-live') as HTMLButtonElement;
-      btn.textContent = '📡 读取中…';
-      btn.disabled = true;
       const s = document.createElement('script');
       s.src = `https://qt.gtimg.cn/q=${codes.join(',')}&_t=${Date.now()}`;
+      const timeout = setTimeout(() => {
+        [0, 1, 2, 3].forEach((i) => {
+          const st = $(`ea-ps${i}`) as HTMLElement;
+          if (!st.textContent.includes('实时')) st.textContent = '参考价 08-25（行情超时）';
+        });
+      }, 6000);
       s.onload = () => {
         let got = 0;
         codes.forEach((c, i) => {
@@ -376,21 +379,29 @@ const fmtPct = (v: number, d = 1) => (v >= 0 ? '+' : '') + (v * 100).toFixed(d) 
             ($(`ea-p${i}`) as HTMLInputElement).value = px.toFixed(3);
             const st = $(`ea-ps${i}`) as HTMLElement;
             const qtime = (parts[30] || '').replace(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/, '$1-$2-$3 $4:$5');
-            st.textContent = qtime ? `实时 ${qtime}` : '实时行情 ✓';
+            st.textContent = qtime ? `实时 ${qtime.slice(5)}` : '实时行情 ✓';
             st.style.color = 'var(--green)';
             got++;
           }
         });
-        btn.textContent = got > 0 ? `📡 实时价已更新（${got}/4）` : '📡 未获取到行情，可重试';
-        btn.disabled = false;
+        clearTimeout(timeout);
+        const msg = $('ea-msg') as HTMLElement;
+        msg.textContent = got > 0 ? `权重合计 100% ✓ · 价格已自动更新为实时行情（${got}/4）` : msg.textContent;
       };
       s.onerror = () => {
-        btn.textContent = '📡 行情获取失败（网络被墙/超时），使用参考价';
-        btn.disabled = false;
+        clearTimeout(timeout);
+        [0, 1, 2, 3].forEach((i) => {
+          const st = $(`ea-ps${i}`) as HTMLElement;
+          if (!st.textContent.includes('实时')) st.textContent = '参考价 08-25';
+        });
       };
       document.body.appendChild(s);
-      setTimeout(() => { if (btn.disabled) { btn.textContent = '📡 行情超时，使用参考价'; btn.disabled = false; } }, 8000);
     }
-    $('ea-live')!.addEventListener('click', loadQuote);
+    // 页面加载自动拉取；计算时若价格仍为参考价则再尝试一次
+    loadQuote();
+    ($('ea-run') as HTMLElement).addEventListener('click', () => {
+      const needLive = [0, 1, 2, 3].some((i) => !($(`ea-ps${i}`) as HTMLElement).textContent.includes('实时'));
+      if (needLive) loadQuote();
+    });
   </script>
 </Layout>
