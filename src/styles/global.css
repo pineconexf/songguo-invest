@@ -645,6 +645,11 @@ table.data-table {
   overflow: hidden;
 }
 
+/* 版本卡/对比卡：描述文字固定两行高，保证各卡小指标区水平对齐 */
+#versions .link-card > p {
+  min-height: 2.7em;
+}
+
 .link-card::after {
   content: "→";
   position: absolute;
