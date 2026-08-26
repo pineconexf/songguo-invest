@@ -115,7 +115,7 @@ const fmtPct = (v: number, d = 1) => (v >= 0 ? '+' : '') + (v * 100).toFixed(d) 
         <div class="metric-card"><div class="label">建仓提示</div><div id="ea-hint" class="value" style="font-size:15px;">--</div></div>
       </div>
 
-      <!-- 回撤预期：把该档位历史最大回撤套用到输入金额 -->
+      <!-- 回撤预期 + 金额回套 152 个月 -->
       <div class="metric-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: var(--sp-4);">
         <div class="metric-card" style="border:1.5px solid rgba(160,58,40,0.3);">
           <div class="label">回撤预期 · 历史最大回撤情景</div>
@@ -132,6 +132,32 @@ const fmtPct = (v: number, d = 1) => (v >= 0 ? '+' : '') + (v * 100).toFixed(d) 
           <div class="value" id="ea-tiername" style="font-size:16px;">--</div>
           <div class="sub" id="ea-tiersub" style="font-size:12px; color: var(--text-3);">年化 / 最大回撤 / 夏普 / 卡玛 / 压力年</div>
         </div>
+      </div>
+
+      <!-- 金额回套 152 个月：我的钱走一遍 -->
+      <div class="section-head" style="margin-top: 8px;">
+        <div class="section-kicker">Simulation · 金额回套 152 个月</div>
+        <h2 class="section-title" id="ea-simtitle">你的钱，152 个月后会变成多少？</h2>
+      </div>
+      <div class="metric-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: var(--sp-3);">
+        <div class="metric-card" style="border:2px solid var(--gold-500);">
+          <div class="label">152 个月后最终金额（按当前档位逐月真实回测滚动）</div>
+          <div class="value" id="ea-final" style="font-size:26px; color: var(--gold-600);">--</div>
+          <div class="sub" id="ea-finalgain" style="font-size:12px; color: var(--text-3);">--</div>
+        </div>
+        <div class="metric-card"><div class="label">存银行对照（年化 2%）</div><div class="value" id="ea-bank" style="font-size:20px;">--</div><div class="sub" style="font-size:12px; color: var(--text-3);">同一笔钱、同一时间，放银行定期的结果</div></div>
+        <div class="metric-card"><div class="label">历史最大回撤谷底</div><div class="value" id="ea-trough" style="font-size:20px; color:#a03a28;">--</div><div class="sub" id="ea-troughsub" style="font-size:12px; color: var(--text-3);">--</div></div>
+        <div class="metric-card"><div class="label">单月最大跌幅</div><div class="value" id="ea-worstm" style="font-size:20px; color:#a03a28;">--</div><div class="sub" id="ea-worstmsub" style="font-size:12px; color: var(--text-3);">--</div></div>
+      </div>
+      <div style="background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-md); padding: var(--sp-4); margin-bottom: var(--sp-4); overflow: hidden;">
+        <div style="font-size: 12px; color: var(--text-3); margin-bottom: 8px;">月度账面金额曲线（2014-01 起 152 个月逐月真实收益滚动）</div>
+        <div id="ea-chart" style="width: 100%;"></div>
+      </div>
+      <div class="table-wrap" style="max-height: 320px; overflow-y: auto; margin-bottom: var(--sp-4);">
+        <table class="data-table" style="min-width: 560px;">
+          <thead><tr><th>月份</th><th>当月收益</th><th>账面金额</th><th>距最高点</th></tr></thead>
+          <tbody id="ea-months"></tbody>
+        </table>
       </div>
 
       <div class="table-wrap">
@@ -158,13 +184,18 @@ const fmtPct = (v: number, d = 1) => (v >= 0 ? '+' : '') + (v * 100).toFixed(d) 
   </div>
 
   <script>
+    import tiersData from '../../data/etf_tiers.json';
     const PIECE_META = [
       { code: '511010', name: '国债ETF（国泰）', role: '债券拼图' },
       { code: '159934', name: '黄金ETF（易方达）', role: '黄金拼图' },
       { code: '510880', name: '红利ETF（华泰柏瑞）', role: '红利拼图' },
       { code: '513500', name: '标普500ETF（博时）', role: 'QDII拼图' },
     ];
-    const TIERS = JSON.parse(document.getElementById('ea-tier-data')?.textContent || '[]');
+    const TIERS = [
+      { key: 'conservative', ...tiersData.conservative },
+      { key: 'stable', ...tiersData.stable },
+      { key: 'aggressive', ...tiersData.aggressive },
+    ];
     const fmt = (v: number) => v >= 10000 ? (v / 10000).toFixed(1) + ' 万' : v.toFixed(0) + ' 元';
     const fmtY = (v: number) => Math.round(v).toLocaleString() + ' 元';
     const pct = (v: number, d = 1) => (v >= 0 ? '+' : '') + (v * 100).toFixed(d) + '%';
@@ -226,6 +257,46 @@ const fmtPct = (v: number, d = 1) => (v >= 0 ? '+' : '') + (v * 100).toFixed(d) 
       ($('ea-recover') as HTMLElement).textContent = '每次回撤均修复';
       syncTierCard(tier);
 
+      // ==== 金额回套 152 个月：逐月用真实月度收益滚动 ====
+      const monthly = Object.entries(tier.monthly || {}).sort((a, b) => (a[0] < b[0] ? -1 : 1));
+      let nav = amount;
+      const series = [{ ym: monthly[0][0], val: amount }];
+      for (const [ym, ret] of monthly) { nav *= (1 + ret); series.push({ ym, val: nav }); }
+      const final = series[series.length - 1].val;
+      const gain = final / amount - 1;
+      const years = monthly.length / 12;
+      const bank = amount * Math.pow(1.02, years);
+      // 最大回撤谷底 + 单月最大跌幅
+      let peak = amount, trough = { ym: '', val: amount, dd: 0 }, worst = { ym: '', ret: 0 };
+      for (let i = 0; i < series.length; i++) {
+        peak = Math.max(peak, series[i].val);
+        const dd = series[i].val / peak - 1;
+        if (dd < trough.dd) trough = { ym: series[i].ym, val: series[i].val, dd };
+        if (i > 0 && monthly[i - 1][1] < worst.ret) worst = { ym: monthly[i - 1][0], ret: monthly[i - 1][1] };
+      }
+      ($('ea-final') as HTMLElement).textContent = fmt(final);
+      ($('ea-finalgain') as HTMLElement).textContent = `${fmt(amount)} → ${fmt(final)}，累计 ${pct(gain)}（${years.toFixed(1)} 年，年化 ${pct(tier.metrics.annual)}）`;
+      ($('ea-bank') as HTMLElement).textContent = fmt(bank);
+      ($('ea-trough') as HTMLElement).textContent = fmt(trough.val);
+      ($('ea-troughsub') as HTMLElement).textContent = `${trough.ym}，从最高点 ${pct(trough.dd)}`;
+      ($('ea-worstm') as HTMLElement).textContent = pct(worst.ret);
+      ($('ea-worstmsub') as HTMLElement).textContent = `${worst.ym}，单月最差`;
+      ($('ea-simtitle') as HTMLElement).textContent = `${fmt(amount)} 走完 152 个月 → ${fmt(final)}`;
+      // 月度明细表（倒序：最近在上）
+      let mpeak = amount;
+      ($('ea-months') as HTMLElement).innerHTML = series.slice(1).map((s, i) => {
+        mpeak = Math.max(mpeak, s.val);
+        const dd = s.val / mpeak - 1;
+        const ret = monthly[i][1];
+        return `<tr>
+          <td>${s.ym}</td>
+          <td style="color:${ret >= 0 ? 'var(--green)' : 'var(--red)'};">${pct(ret, 2)}</td>
+          <td><b>${fmt(s.val)}</b></td>
+          <td style="color:${dd < 0 ? 'var(--red)' : 'var(--text-3)'};">${dd < 0 ? pct(dd) : '创新高'}</td>
+        </tr>`;
+      }).reverse().join('');
+      drawChart(series, amount);
+
       let sumCheck = 0;
       ($('ea-rows') as HTMLElement).innerHTML = PIECE_META.map((p, i) => {
         const money = amount * w[i] / 100;
@@ -247,6 +318,44 @@ const fmtPct = (v: number, d = 1) => (v >= 0 ? '+' : '') + (v * 100).toFixed(d) 
       ($('ea-result') as HTMLElement).style.display = 'block';
     }
     $('ea-run')!.addEventListener('click', run);
+
+    // SVG 月度金额曲线（152 点折线 + 面积 + 谷底标注 + 起点线）
+    function drawChart(series, amount) {
+      const el = $('ea-chart') as HTMLElement;
+      const W = 860, H = 260, pad = { l: 76, r: 14, t: 24, b: 10 };
+      const vals = series.map((s) => s.val);
+      const vmin = Math.min(amount, ...vals) * 0.96;
+      const vmax = Math.max(...vals) * 1.04;
+      const x = (i: number) => pad.l + (i / (series.length - 1)) * (W - pad.l - pad.r);
+      const y = (v: number) => H - pad.b - ((v - vmin) / (vmax - vmin)) * (H - pad.t - pad.b);
+      const pts = series.map((s, i) => `${x(i).toFixed(1)},${y(s.val).toFixed(1)}`).join(' ');
+      const area = `${pad.l},${y(vmin).toFixed(1)} ${pts} ${x(series.length - 1).toFixed(1)},${y(vmin).toFixed(1)}`;
+      // 谷底
+      let peak = amount, ti = -1, td = 0;
+      for (let i = 0; i < series.length; i++) {
+        peak = Math.max(peak, series[i].val);
+        const dd = series[i].val / peak - 1;
+        if (dd < td) { td = dd; ti = i; }
+      }
+      let yTicks = '';
+      for (let k = 0; k <= 4; k++) {
+        const v = vmin + (vmax - vmin) * k / 4;
+        const yy = y(v).toFixed(1);
+        yTicks += `<text x="${pad.l - 8}" y="${yy}" text-anchor="end" style="font-size:11px; fill:#8a7a63;">${fmt(v)}</text><line x1="${pad.l}" y1="${yy}" x2="${W - pad.r}" y2="${yy}" stroke="#e6dfd3" stroke-dasharray="3 3"/>`;
+      }
+      const troughMark = ti >= 0 ? `
+        <circle cx="${x(ti).toFixed(1)}" cy="${y(series[ti].val).toFixed(1)}" r="4.5" fill="#a03a28"/>
+        <text x="${Math.min(x(ti) + 8, W - 150)}" y="${(y(series[ti].val) - 10).toFixed(1)}" style="font-size:12px; fill:#a03a28; font-weight:700;">谷底 ${series[ti].ym} ${pct(td)}</text>` : '';
+      const endMark = `<circle cx="${x(series.length - 1).toFixed(1)}" cy="${y(series[series.length - 1].val).toFixed(1)}" r="4" fill="#8B5E3C"/><text x="${x(series.length - 1) - 70}" y="${(y(series[series.length - 1].val) - 10).toFixed(1)}" style="font-size:12px; fill:#8B5E3C; font-weight:700;">${series[series.length - 1].ym} ${fmt(series[series.length - 1].val)}</text>`;
+      el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" style="width:100%; height:auto; display:block; font-family: inherit;">
+        ${yTicks}
+        <polygon points="${area}" fill="rgba(217,164,65,0.14)"/>
+        <polyline points="${pts}" fill="none" stroke="#D9A441" stroke-width="2"/>
+        <line x1="${pad.l}" y1="${y(amount).toFixed(1)}" x2="${W - pad.r}" y2="${y(amount).toFixed(1)}" stroke="#8a7a63" stroke-dasharray="4 4"/>
+        <text x="${pad.l + 4}" y="${(y(amount) - 6).toFixed(1)}" style="font-size:11px; fill:#8a7a63;">起点 ${fmt(amount)}</text>
+        ${troughMark}${endMark}
+      </svg>`;
+    }
 
     // 实时行情：腾讯 qt.gtimg.cn —— 返回格式 v_sh511010="1~名称~代码~现价~..." 本身就是合法 JS
     function loadQuote() {
@@ -283,8 +392,5 @@ const fmtPct = (v: number, d = 1) => (v >= 0 ? '+' : '') + (v * 100).toFixed(d) 
       setTimeout(() => { if (btn.disabled) { btn.textContent = '📡 行情超时，使用参考价'; btn.disabled = false; } }, 8000);
     }
     $('ea-live')!.addEventListener('click', loadQuote);
-  </script>
-  <script type="application/json" id="ea-tier-data" is:inline>
-    {JSON.stringify(TIERS)}
   </script>
 </Layout>

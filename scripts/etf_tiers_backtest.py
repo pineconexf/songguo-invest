@@ -163,11 +163,11 @@ def main():
         print(f"\n== {cfg['label']} == 年化 {m['annual']*100:.2f}% / MDD {m['mdd']*100:.2f}% / 夏普 {m['sharpe']:.2f} / 卡玛 {m['calmar']:.2f}")
         print(f"   压力年: " + ', '.join(f"{k} {v*100:+.1f}%" for k, v in py.items()))
 
-    # ==== 输出 1：网站数据（不含月度序列，瘦身） ====
+    # ==== 输出 1：网站数据（含月度收益序列，供"金额回套 152 个月"使用） ====
     web = {}
     for t, v in result.items():
         web[t] = {k: (v[k] if k != 'monthly' else None) for k in v}
-        del web[t]['monthly']
+        web[t]['monthly'] = {ym: round(r, 6) for ym, r in v['monthly'].items()}
         web[t]['annual_pct'] = round(v['metrics']['annual'] * 100, 2)
         web[t]['mdd_pct'] = round(v['metrics']['mdd'] * 100, 2)
     site_path = r'D:\pineconeinvestfiles\松果投资体系网站\01_网站开发\src\data\etf_tiers.json'
