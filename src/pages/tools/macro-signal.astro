@@ -150,9 +150,32 @@ const last24 = weeks.slice(-24).reverse();
   </section>
 
   <div class="callout" style="max-width: 860px; margin: var(--sp-4) auto 0;">
-    <b>口径说明</b>：Shibor 1W 周均值环比下行 &gt;5bp → 宽松，买入中证500；否则空仓。0.05% 成本，walk-forward 样本外验证。
-    本工具为方法论演示，<b>不构成投资建议</b>。投资有风险，入市需谨慎。
-  </div>
+      <b>口径说明</b>：Shibor 1W 周均值环比下行 &gt;5bp → 宽松，买入中证500；否则空仓。0.05% 成本，walk-forward 样本外验证。
+      本工具为方法论演示，<b>不构成投资建议</b>。投资有风险，入市需谨慎。
+    </div>
+
+    <!-- 竞品对比：韭圈儿/且慢温度计 vs 松果（真实调研 2026-08） -->
+    <section class="card" style="max-width: 860px; margin: var(--sp-5) auto 0;">
+      <div class="section-head">
+        <div class="section-kicker">基准对比 · 同类工具</div>
+        <h2 class="section-title">和市面上的"温度计/择时"比，差在哪？</h2>
+        <p class="section-sub">对比基于各家公开功能（2026-08 调研）：温度计看估值冷热，松果看流动性松紧——不同的信号源。</p>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th></th><th>韭圈儿温度计</th><th>且慢温度计</th><th style="background: rgba(217,164,65,0.08);">松果宏观信号</th></tr></thead>
+          <tbody>
+            <tr><td><b>给你什么</b></td><td>指数估值温度（PE/历史分位）</td><td>指数估值温度（PE/PB 分位）</td><td style="background: rgba(217,164,65,0.08);"><b>流动性信号</b>（Shibor 松紧 → 进攻/防守动作）</td></tr>
+            <tr><td><b>信号源</b></td><td>估值维度（贵不贵）</td><td>估值维度（贵不贵）</td><td style="background: rgba(217,164,65,0.08);"><b>货币流动性维度</b>（钱松不松）——估值之外的第二条腿</td></tr>
+            <tr><td><b>结论明确度</b></td><td>给温度数字，不给买卖动作</td><td>给温度数字，不给买卖动作</td><td style="background: rgba(217,164,65,0.08);"><b>直接给动作</b>：宽松→买入中证500；收紧→空仓防守</td></tr>
+            <tr><td><b>适合谁</b></td><td>看估值高低判断的投资者</td><td>看估值高低判断的投资者</td><td style="background: rgba(217,164,65,0.08);"><b>想用"钱松不松"验证择时的投资者</b>（与估值信号互补）</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="font-size: 12px; color: var(--text-3); margin-top: 8px;">
+        一句话：温度计卖「估值冷热」，松果卖「<b>流动性松紧 + 明确动作</b>」——而且它是 809 周全样本 walk-forward 验证的完整信号，不是拍脑袋阈值。
+      </div>
+    </section>
 
   <script define:vars={{ weeks }}>
     const ALL_WEEKS = weeks;

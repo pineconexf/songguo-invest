@@ -1,6 +1,14 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import tiersData from '../../data/etf_tiers.json';
+import macroData from '../../data/macro_signal.json';
+
+// 宏观信号（松果宏观时钟口径，macro_signal.json 最新周）
+const macroLast = macroData.weeks[macroData.weeks.length - 1];
+const MACRO_NOTE =
+  macroLast.signal === '宽松'
+    ? { tag: '🟢 宽松', text: `Shibor 周环比下行超阈值（W${macroLast.week.slice(5)}，${macroLast.shibor}%），风险偏好可上移一档` }
+    : { tag: '🔴 收紧', text: `Shibor 周环比上行超阈值（W${macroLast.week.slice(5)}，${macroLast.shibor}%），建议配保守/稳健档` };
 
 // ETF 组合配置器 v3 —— 三档真实回测（152 个月，2014-01 ~ 2026-08，同窗口同方法）
 // 数据：scripts/etf_tiers_backtest.py 生成（新浪日线 × tushare 复权因子 → 前复权 → 月收益 → 权重加权）
@@ -27,6 +35,9 @@ const fmtPct = (v: number, d = 1) => (v >= 0 ? '+' : '') + (v * 100).toFixed(d) 
   <section class="hero" style="padding: 56px 48px;">
     <div class="hero-inner">
       <span class="eyebrow">Free Tool · 防守组合</span>
+      <div style="display:inline-block; background: #faf6ef; border: 1px solid rgba(139,94,60,0.2); border-radius: 8px; padding: 6px 12px; font-size: 12px; margin-bottom: 12px;">
+        <b>宏观信号（最新）：</b>{MACRO_NOTE.tag} · {MACRO_NOTE.text}
+      </div>
       <h1>
         选你的风险档位，<br /><span class="gold">照单买入四拼图</span>
       </h1>
@@ -106,7 +117,12 @@ const fmtPct = (v: number, d = 1) => (v >= 0 ? '+' : '') + (v * 100).toFixed(d) 
     <div id="ea-msg" style="font-size: 13px; color: var(--text-3); margin-bottom: var(--sp-2);">权重合计 100% ✓（默认稳健档：债25/金30/红利10/QDII35）</div>
 
     <!-- 结果 -->
-    <div id="ea-result" style="display:none; margin-top: var(--sp-4); border-top: 1px solid rgba(139,94,60,0.15); padding-top: var(--sp-4);">
+        <div id="ea-result" style="display:none; margin-top: var(--sp-4); border-top: 1px solid rgba(139,94,60,0.15); padding-top: var(--sp-4);">
+          <!-- 人话结论卡：结论先行 -->
+          <div id="ea-say" style="background: var(--surface-2); border: 1px solid var(--border); border-left: 3px solid var(--gold-500); border-radius: var(--r-md); padding: var(--sp-4); margin-bottom: var(--sp-4); font-size: 15px; line-height: 1.7;">
+            <b style="color: var(--gold-600);">一句话结论：</b><span id="ea-saytext">选中档位、输入金额后，这里用一句大白话告诉你这笔钱会怎样。</span>
+            <div style="font-size: 12px; color: var(--text-3); margin-top: 6px;">按该档位 152 个月真实回测推演的大白话版本，不是预测。</div>
+          </div>
       <div class="metric-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: var(--sp-4);">
         <div class="metric-card"><div class="label">拟投资金额</div><div id="ea-total" class="value" style="font-size:20px;">--</div></div>
         <div class="metric-card"><div class="label">实买合计（整手）</div><div id="ea-sum" class="value" style="font-size:20px;">--</div></div>
@@ -181,6 +197,29 @@ const fmtPct = (v: number, d = 1) => (v >= 0 ? '+' : '') + (v * 100).toFixed(d) 
     每加一块拼图先问它跟已有持仓的相关性。完整方法论见 <a href="/songguo-invest/portfolio/">组合管理</a>。
     <b>买入提示</b>：场内 ETF 按 100 份/手取整，剩余零钱可留作下次再平衡或放货币基金。
   </div>
+
+  <!-- 竞品对比：帮你投 vs 且慢 vs 松果（真实调研 2026-08） -->
+  <section class="card" style="max-width: 920px; margin: var(--sp-4) auto 0;" id="vs">
+    <div class="section-head">
+      <div class="section-kicker">基准对比 · 同类工具</div>
+      <h2 class="section-title">和市面上的"帮你配"比，差在哪？</h2>
+      <p class="section-sub">对比基于公开产品说明（2026-08 调研）：帮你看清每个工具到底给你什么、要你付出什么。</p>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th></th><th>支付宝「帮你投」</th><th>且慢「四笔钱」</th><th style="background: rgba(217,164,65,0.08);">松果 ETF 配置器</th></tr></thead>
+        <tbody>
+          <tr><td><b>给你什么</b></td><td>AI 自动调仓，买入后不用管</td><td>大V 主理人策略，跟投抄作业</td><td style="background: rgba(217,164,65,0.08);"><b>152 个月回测全透明</b>，每档权重可改，金额直接算份额</td></tr>
+          <tr><td><b>你要付出</b></td><td>0.5%/年 服务费（800 元起投）</td><td>跟投门槛+补仓操作，需持续关注</td><td style="background: rgba(217,164,65,0.08);">免费，自己操作 ETF 交易</td></tr>
+          <tr><td><b>透明度</b></td><td>黑盒：看不到具体持仓逻辑</td><td>主理人买卖信号可见，但历史收益口径不一</td><td style="background: rgba(217,164,65,0.08);"><b>每档回测可复现</b>（脚本+月度明细本地归档）</td></tr>
+          <tr><td><b>适合谁</b></td><td>不想操心的全委托型</td><td>愿意跟进、信任主理人的半主动型</td><td style="background: rgba(217,164,65,0.08);"><b>想搞懂自己钱怎么配、要透明回测的主动型</b></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="font-size: 12px; color: var(--text-3); margin-top: 8px;">
+      一句话：帮你投卖「省心」，且慢卖「跟人」，松果卖「<b>透明 + 自由</b>」——回测给你看、权重给你改。
+    </div>
+  </section>
 
   <script>
     import tiersData from '../../data/etf_tiers.json';
@@ -315,6 +354,20 @@ const fmtPct = (v: number, d = 1) => (v >= 0 ? '+' : '') + (v * 100).toFixed(d) 
       ($('ea-sum') as HTMLElement).textContent = fmt(sumCheck);
       ($('ea-rest') as HTMLElement).textContent = fmt(Math.max(0, amount - sumCheck));
       ($('ea-result') as HTMLElement).style.display = 'block';
+      // 人话结论卡：结论先行（大白话版本，基于该档位 152 个月真实回测推演）
+      const say = $('ea-saytext') as HTMLElement;
+      if (say) {
+        const bankDiff = final - bank;
+        const mddSay =
+          mdd < -0.09 ? '这档波动最大，能扛住 30% 回撤再选。'
+          : mdd < -0.07 ? '波动中等，适合拿三年以上的钱。'
+          : '波动最小，适合防守型。';
+        say.textContent =
+          `按「${tier.label}」配：${fmt(amount)} 放 152 个月 → 约 ${fmt(final)}` +
+          `（折合年化 ${pct(tier.metrics.annual)}，最惨账面跌到约 ${fmt(ddAmount)}，发生在 ${trough.ym}）。` +
+          `同一笔钱存银行(2%)只有 ${fmt(bank)}，差 ${fmt(bankDiff)}。` +
+          mddSay;
+      }
     }
     $('ea-run')!.addEventListener('click', run);
 

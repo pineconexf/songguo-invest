@@ -92,10 +92,33 @@ const dims = [
     <b>费率</b>——申赎+管理费侵蚀复利，指数/债基应 &lt;0.5%；
     <b>规模</b>——百亿是收益的敌人，20-100 亿最舒适；
     <b>经理年限</b>——≥3 年硬过滤对冲风格漂移，策略透明优先。
-    完整方法论见 <a href="/songguo-invest/portfolio/">组合管理</a>。
-  </div>
+        完整方法论见 <a href="/songguo-invest/portfolio/">组合管理</a>。
+      </div>
 
-  <script>
+      <!-- 竞品对比：晨星评级 / 天天基金评分 vs 松果（真实调研 2026-08） -->
+      <section class="card" style="max-width: 860px; margin: var(--sp-4) auto 0;">
+        <div class="section-head">
+          <div class="section-kicker">基准对比 · 同类工具</div>
+          <h2 class="section-title">和市面上的"基金评分"比，差在哪？</h2>
+          <p class="section-sub">对比基于各家公开功能（2026-08 调研）：星级只告诉你结果，松果把每个分为什么这么给摊开给你看。</p>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th></th><th>晨星评级</th><th>天天基金评分</th><th style="background: rgba(217,164,65,0.08);">松果基金打分卡</th></tr></thead>
+            <tbody>
+              <tr><td><b>给你什么</b></td><td>1-5 星评级（同类相对）</td><td>综合评分 + 排名</td><td style="background: rgba(217,164,65,0.08);"><b>五维逐项打分 + 档位结论</b>（可入池/候选/谨慎/不达标）</td></tr>
+              <tr><td><b>维度透明度</b></td><td>权重不公开，黑箱排名</td><td>维度不公开，黑箱排名</td><td style="background: rgba(217,164,65,0.08);"><b>五维公开固定</b>：收益30 回撤25 费率15 规模15 经理15，权重写在页面</td></tr>
+              <tr><td><b>结论明确度</b></td><td>给星级，不说"适不适合你"</td><td>给分数，不说"该不该入池"</td><td style="background: rgba(217,164,65,0.08);"><b>给档位 + 短板提示</b>：哪一维拖后腿一眼可见</td></tr>
+              <tr><td><b>适合谁</b></td><td>看榜单选基的普通用户</td><td>看排名选基的用户</td><td style="background: rgba(217,164,65,0.08);"><b>想按自己的标准筛基金、要可复算依据的人</b></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="font-size: 12px; color: var(--text-3); margin-top: 8px;">
+          一句话：晨星/天天卖「星级/分数」，松果卖「<b>公开权重 + 可复算五维</b>」——为什么得这个分，你一眼能验证。
+        </div>
+      </section>
+
+      <script>
     function run() {
       const $ = (id: string) => document.getElementById(id) as HTMLInputElement;
       const ret = parseFloat($('fs-ret').value);

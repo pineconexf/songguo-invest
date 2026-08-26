@@ -71,10 +71,33 @@ import Layout from '../../layouts/Layout.astro';
   </section>
 
   <div class="callout" style="max-width: 760px; margin: var(--sp-4) auto 0;">
-    <b>维度口径</b>：质量（ROE）——近 3 年 ROE 能否持续 &gt;8%（V27.2 收紧信号）；估值（PB/PE）——
-    PB 与 PE 组合分档（V30 分位思路的简化版）；股息（增强项）——&gt;3% 视为有现金回报托底。
-    完整体系见 <a href="/songguo-invest/methodology/">四层体系架构</a>。
-  </div>
+      <b>维度口径</b>：质量（ROE）——近 3 年 ROE 能否持续 &gt;8%（V27.2 收紧信号）；估值（PB/PE）——
+      PB 与 PE 组合分档（V30 分位思路的简化版）；股息（增强项）——&gt;3% 视为有现金回报托底。
+      完整体系见 <a href="/songguo-invest/methodology/">四层体系架构</a>。
+    </div>
+
+    <!-- 竞品对比：理杏仁 / 蛋卷估值 / 韭圈儿 vs 松果（真实调研 2026-08） -->
+    <section class="card" style="max-width: 760px; margin: var(--sp-4) auto 0;">
+      <div class="section-head">
+        <div class="section-kicker">基准对比 · 同类工具</div>
+        <h2 class="section-title">和市面上的"估值查询"比，差在哪？</h2>
+        <p class="section-sub">对比基于各家公开功能（2026-08 调研）：它们只回答"贵不贵"，松果回答"贵不贵 + 值不值得进一步看"。</p>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th></th><th>理杏仁</th><th>蛋卷估值表</th><th style="background: rgba(217,164,65,0.08);">松果估值计算器</th></tr></thead>
+          <tbody>
+            <tr><td><b>给你什么</b></td><td>指数/个股估值分位（PE/PB 历史的百分位）</td><td>指数估值百分位表</td><td style="background: rgba(217,164,65,0.08);"><b>质量+估值+股息三维画像 → 一句话档位</b>（便宜/合理/中性/偏贵）</td></tr>
+            <tr><td><b>维度</b></td><td>单维度：估值历史分位</td><td>单维度：估值历史分位</td><td style="background: rgba(217,164,65,0.08);"><b>三维</b>：质量（ROE 门槛）+ 估值（PB/PE 分档）+ 股息增强</td></tr>
+            <tr><td><b>结论明确度</b></td><td>给分位数字，不给判断</td><td>给分位数字，不给判断</td><td style="background: rgba(217,164,65,0.08);"><b>给档位判断 + 下一步提示</b>（可进观察池/需验证基本面）</td></tr>
+            <tr><td><b>适合谁</b></td><td>自己会看分位数据的进阶者</td><td>查指数位置的投资者</td><td style="background: rgba(217,164,65,0.08);"><b>想直接知道"贵不贵、值不值得看"的任何人</b></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="font-size: 12px; color: var(--text-3); margin-top: 8px;">
+        一句话：理杏仁/蛋卷卖「分位数据」，松果卖「<b>三维档位 + 判断</b>」——贵不贵之外，还告诉你质量撑不撑得住这个价。
+      </div>
+    </section>
 
   <script>
     function run() {

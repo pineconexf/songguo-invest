@@ -19,42 +19,81 @@ import Layout from '../../layouts/Layout.astro';
   </section>
 
   <section class="card" style="max-width: 640px; margin: 0 auto;">
-    <div class="section-head">
-      <div class="section-kicker">Compound · 复利计算</div>
-      <h2 class="section-title">输入你的参数</h2>
-    </div>
-    <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap: var(--sp-4); margin-bottom: var(--sp-4);">
-      <label class="valuator-field">
-        <span>本金（元）</span>
-        <input id="c-principal" type="number" step="1000" min="0" value="100000" />
-      </label>
-      <label class="valuator-field">
-        <span>年化收益率（%）</span>
-        <input id="c-rate" type="number" step="0.5" min="0" value="10" />
-      </label>
-      <label class="valuator-field">
-        <span>投资年限（年）</span>
-        <input id="c-years" type="number" step="1" min="1" value="10" />
-      </label>
-      <label class="valuator-field">
-        <span>每年追加投入（元，可选）</span>
-        <input id="c-add" type="number" step="1000" min="0" value="0" />
-      </label>
-    </div>
-    <button id="c-run" class="btn btn-gold" style="width:100%;">计算 →</button>
+      <div class="section-head">
+        <div class="section-kicker">Compound · 正向复利</div>
+        <h2 class="section-title">算一笔账：我的钱会长成多少？</h2>
+      </div>
+      <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap: var(--sp-4); margin-bottom: var(--sp-4);">
+        <label class="valuator-field">
+          <span>本金（元）</span>
+          <input id="c-principal" type="number" step="1000" min="0" value="100000" />
+        </label>
+        <label class="valuator-field">
+          <span>年化收益率（%）</span>
+          <input id="c-rate" type="number" step="0.5" min="0" value="10" />
+        </label>
+        <label class="valuator-field">
+          <span>投资年限（年）</span>
+          <input id="c-years" type="number" step="1" min="1" value="10" />
+        </label>
+        <label class="valuator-field">
+          <span>每年追加投入（元，可选）</span>
+          <input id="c-add" type="number" step="1000" min="0" value="0" />
+        </label>
+      </div>
+      <button id="c-run" class="btn btn-gold" style="width:100%;">计算 →</button>
 
-    <div id="c-result" style="display:none; margin-top: var(--sp-5); border-top: 1px solid rgba(139,94,60,0.15); padding-top: var(--sp-4);">
-      <div style="text-align:center;">
-        <div id="c-final" class="value gold" style="font-size:44px;">--</div>
-        <div style="font-size:13px; color: var(--navy-600);">期末总资产</div>
-        <div id="c-meta" style="font-size:14px; color: var(--navy-700); margin-top: 10px;">--</div>
+      <div id="c-result" style="display:none; margin-top: var(--sp-5); border-top: 1px solid rgba(139,94,60,0.15); padding-top: var(--sp-4);">
+        <div style="text-align:center;">
+          <div id="c-final" class="value gold" style="font-size:44px;">--</div>
+          <div style="font-size:13px; color: var(--navy-600);">期末总资产</div>
+          <div id="c-meta" style="font-size:14px; color: var(--navy-700); margin-top: 10px;">--</div>
+        </div>
+        <div class="callout" style="margin-top: var(--sp-4);">
+          <b>对照</b>：同期沪深300 年化约 3.97%。若 10 年本金 10 万、每年追加 1 万，按 3.97% 复利期末约 19.6 万——
+          与按体系执行（示例年化 24.30%）的差距，就是"体系化稳健投资"的价值。数据为历史回测，不构成投资建议。
+        </div>
       </div>
-      <div class="callout" style="margin-top: var(--sp-4);">
-        <b>对照</b>：同期沪深300 年化约 3.97%。若 10 年本金 10 万、每年追加 1 万，按 3.97% 复利期末约 19.6 万——
-        与按体系执行（示例年化 24.30%）的差距，就是"体系化稳健投资"的价值。数据为历史回测，不构成投资建议。
+    </section>
+
+    <!-- 目标倒推：解决"我这个目标现实吗" -->
+    <section class="card" style="max-width: 640px; margin: var(--sp-5) auto 0;" id="ct">
+      <div class="section-head">
+        <div class="section-kicker">Reverse · 目标倒推</div>
+        <h2 class="section-title">我的目标，配得上这样的年化吗？</h2>
+        <p class="section-sub">输入目标金额与年限，工具反推"需要多少年化"——然后跟现实区间对照，告诉你这个目标靠不靠谱。</p>
       </div>
-    </div>
-  </section>
+      <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap: var(--sp-4); margin-bottom: var(--sp-4);">
+        <label class="valuator-field">
+          <span>目标金额（元）</span>
+          <input id="ct-target" type="number" step="10000" min="0" value="1000000" />
+        </label>
+        <label class="valuator-field">
+          <span>现有本金（元）</span>
+          <input id="ct-principal" type="number" step="1000" min="0" value="200000" />
+        </label>
+        <label class="valuator-field">
+          <span>投资年限（年）</span>
+          <input id="ct-years" type="number" step="1" min="1" value="10" />
+        </label>
+        <label class="valuator-field">
+          <span>每年追加投入（元，可选）</span>
+          <input id="ct-add" type="number" step="1000" min="0" value="0" />
+        </label>
+      </div>
+      <button id="ct-run" class="btn btn-gold" style="width:100%;">倒推年化 →</button>
+      <div id="ct-result" style="display:none; margin-top: var(--sp-5); border-top: 1px solid rgba(139,94,60,0.15); padding-top: var(--sp-4);">
+        <div style="text-align:center;">
+          <div id="ct-rate" class="value gold" style="font-size:44px;">--</div>
+          <div style="font-size:13px; color: var(--navy-600);">要实现这个目标，需要的年化收益率</div>
+          <div id="ct-verdict" style="font-size:15px; font-weight:700; margin-top: 12px;">--</div>
+          <div id="ct-compare" style="font-size:13px; color: var(--navy-600); margin-top: 6px;">--</div>
+        </div>
+        <div class="callout warn" style="margin-top: var(--sp-4);">
+          <b>年化现实区间对照</b>（真实参照）：沪深300 长期约 3.97%；松果 ETF 四拼图稳健档回测约 10.1%；松果 V34 体系（含成本）约 32.96%。若倒推年化远超 32.96%——目标不现实，要么加本金、要么延年限、要么降目标；若在 10~33% 之间——现实可做，按体系执行即可。历史回测不代表未来，不构成投资建议。
+        </div>
+      </div>
+    </section>
 
   <script>
     function run() {
@@ -75,5 +114,55 @@ import Layout from '../../layouts/Layout.astro';
       ($('c-result') as HTMLElement).style.display = 'block';
     }
     document.getElementById('c-run')?.addEventListener('click', run);
-  </script>
+
+        // 目标倒推：目标 + 年限 → 反推所需年化（含每年追加的年金部分用二分法求年化）
+        function ctRun() {
+          const $ = (id: string) => document.getElementById(id) as HTMLInputElement;
+          const target = parseFloat($('ct-target').value) || 0;
+          const principal = parseFloat($('ct-principal').value) || 0;
+          const years = parseFloat($('ct-years').value) || 1;
+          const add = parseFloat($('ct-add').value) || 0;
+          if (!(target > 0) || !(principal >= 0)) { alert('请填写目标金额与现有本金'); return; }
+
+          // 反推年化：二分法（含每年追加的年金，期末追加）
+          const f = (r: number) => {
+            let total = principal * Math.pow(1 + r, years);
+            if (add > 0) { for (let i = 1; i <= years; i++) total += add * Math.pow(1 + r, years - i); }
+            return total;
+          };
+          let lo = -0.9, hi = 1.5; // 年化 -90% ~ 150% 区间
+          if (target > f(hi)) { hi = 2.5; }
+          for (let i = 0; i < 60; i++) {
+            const mid = (lo + hi) / 2;
+            if (f(mid) < target) lo = mid; else hi = mid;
+          }
+          const needRate = lo * 100; // 所需年化（%）
+
+          const rateEl = $('ct-rate') as HTMLElement;
+          rateEl.textContent = needRate >= 0 ? `+${needRate.toFixed(1)}%` : `${needRate.toFixed(1)}%`;
+          rateEl.style.color = needRate > 33 ? 'var(--red)' : needRate > 10 ? 'var(--gold-600)' : 'var(--navy-700)';
+
+          const verdict = $('ct-verdict') as HTMLElement;
+          const compare = $('ct-compare') as HTMLElement;
+          if (needRate > 33) {
+            verdict.textContent = '这个目标不现实——需要年化超过 33%，超出松果 V34 与市场化水平。';
+            verdict.style.color = 'var(--red)';
+            compare.textContent = '建议：加大本金 / 延长年限 / 降低目标（对照：V34 含成本 32.96%、ETF稳健档 10.1%、沪深300 3.97%）。';
+          } else if (needRate > 10) {
+            verdict.textContent = '目标现实可做——在松果体系能力区间内，按体系执行有机会达成。';
+            verdict.style.color = 'var(--green)';
+            compare.textContent = '对照：该年化位于 ETF 稳健档 10.1% 与 V34 32.96% 之间。';
+          } else if (needRate >= 0) {
+            verdict.textContent = '目标保守易达——低于 ETF 稳健档回测水准，降低目标或加弹性。';
+            verdict.style.color = 'var(--gold-600)';
+            compare.textContent = '对照：ETF 四拼图稳健档 10.1% 就能超过这个目标。';
+          } else {
+            verdict.textContent = '目标无需年化即可达成——本金+追加已够，或需负收益。';
+            verdict.style.color = 'var(--navy-700)';
+            compare.textContent = '提示：这种设定下甚至不需要正收益，考虑减投入。';
+          }
+          ($('ct-result') as HTMLElement).style.display = 'block';
+        }
+        document.getElementById('ct-run')?.addEventListener('click', ctRun);
+      </script>
 </Layout>
