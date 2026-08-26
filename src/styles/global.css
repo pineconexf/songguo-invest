@@ -1091,7 +1091,7 @@ html.js .action-card.in {
 }
 .bottom-strip-grid {
   display: grid;
-  grid-template-columns: 1fr 1.8fr 1fr 1.2fr;
+  grid-template-columns: 1fr 2fr 1fr;
   gap: var(--sp-4);
   align-items: start;
 }
@@ -1127,6 +1127,7 @@ html.js .action-card.in {
 }
 @media (max-width: 860px) {
   .bottom-strip-grid { grid-template-columns: 1fr 1fr; }
+  .bs-col-wide { grid-column: 1 / -1; }
 }
 @media (max-width: 520px) {
   .bottom-strip-grid { grid-template-columns: 1fr; }
