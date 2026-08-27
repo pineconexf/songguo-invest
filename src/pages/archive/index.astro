@@ -63,6 +63,17 @@ const cards = [
     tag: '组合可追溯',
     search: 'pro 组合 最优 calmar 网格 基金 股票 配比 年度',
   },
+  {
+    href: '/songguo-invest/pay/',
+    group: '付费档案',
+    groupKey: 'pay',
+    title: '付费档案 · 3 份 PDF',
+    desc: '809周宏观手册 · 574样本复盘 · 回测口径白皮书，数据全部可复算',
+    stat: '3 份 · ¥9.9 起',
+    sub: '方法 ¥9.9 / 实证 ¥19.9 / 口径 ¥29.9 · 免费样章可读',
+    tag: '可复算',
+    search: '付费 档案 pdf 手册 白皮书 复盘 样章 购买 shibor 宏观 选股 口径 付费',
+  },
 ];
 ---
 <Layout
@@ -98,9 +109,9 @@ const cards = [
 
   <!-- 档案卡片（按体系分组） -->
   {
-    ['defense', 'offense', 'timing', 'pro'].map((gk) => {
+    ['defense', 'offense', 'timing', 'pro', 'pay'].map((gk) => {
       const groupCards = cards.filter((c) => c.groupKey === gk);
-      const groupLabel = { defense: 'Standard · 防守组合', offense: 'Standard · 进攻选股', timing: 'Standard · 宏观择时', pro: 'Pro 版 · 最优组合' }[gk];
+      const groupLabel = { defense: 'Standard · 防守组合', offense: 'Standard · 进攻选股', timing: 'Standard · 宏观择时', pro: 'Pro 版 · 最优组合', pay: '付费档案 · PDF 产品' }[gk];
       return (
         <section class="card archive-group" data-group={gk} style="margin-top: 20px;">
           <div class="section-head" style="padding-bottom: 12px; border-bottom: 1px solid var(--border); margin-bottom: 18px;">
