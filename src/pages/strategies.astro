@@ -61,7 +61,7 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
       <div class="section-kicker">S · Standard · 三类资产</div>
       <h2 class="section-title">Standard 版</h2>
       <p class="section-sub">
-        体系的底层：三类资产——防守组合（ETF/基金是同一组合的场内场外两个壳，二选一即可）、进攻选股（V34 红旗审查 + 空仓保险）、宏观择时（指数保险）。
+        体系的底层：三类资产——防守组合（ETF/基金是同一组合的场内场外两个壳，二选一即可）、进攻选股（V35 红旗审查 + 空仓保险）、宏观择时（指数保险）。
         以下指标统一窗口 <b>{vStd.window.start}–{vStd.window.end}</b>，几何年化、月度再平衡、含成本。
       </p>
     </div>
@@ -108,7 +108,7 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
         <span class="asset-tag" style="background: rgba(160,58,40,0.10); color: #a03a28;">Asset 02 · 进攻</span>
         <h3 class="asset-title">进攻选股</h3>
         <p class="asset-desc">
-          量化价值选股（V34）：FCF/EV Top4 + 帕伯莱红旗审查（净利营收双降删除、满仓集中）+ 空仓保险（HS300 月跌超 8% 转持债金），月度调仓。
+          量化价值选股（V35）：FCF/EV Top4 + 帕伯莱红旗审查（净利营收双降删除、满仓集中）+ 空仓保险（HS300 月跌超 8% 转持债金），月度调仓。
           三类资产里收益最高、回撤也最大——进攻的角色，需要组合管理纪律。
         </p>
       </div>
@@ -208,7 +208,7 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
     </div>
     <div class="callout" style="margin-top: 20px;">
       <b>口径说明</b>：本页统一窗口 {vStd.window.start}–{vStd.window.end}（{vStd.window.months} 个月），与各策略详情页的官方口径（不同起点窗口）并存，两个都真实，使用时以标注为准。{vStd.note}
-      <b>怎么配</b>：防守打底（选一个壳）+ 进攻增厚（V34，含空仓保险）+ 择时保护（指数保险）。想要更强 → P 版，更能扛波动 → M 版。
+      <b>怎么配</b>：防守打底（选一个壳）+ 进攻增厚（V35，含空仓保险）+ 择时保护（指数保险）。想要更强 → P 版，更能扛波动 → M 版。
     </div>
   </section>
 
@@ -318,26 +318,26 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
       <h2 class="section-title">Max 版</h2>
       <p class="section-sub">
         Max = <b>杠杆管理版</b>：不是「整体加一遍」——回测结论很明确：<b>对低波动组合整体加融资杠杆，Calmar 不升反降</b>（融资成本 8.35% 吃掉低收益组合的优势）。
-        正确路径：<b>进攻腿加杠杆（V33，1.5x）+ 防守腿不加杠杆（保持无杠杆）</b>，极端行情用期权对冲（宏观 V2）。
+        正确路径：<b>进攻腿加杠杆（V36，1.5x）+ 防守腿不加杠杆（保持无杠杆）</b>，极端行情用期权对冲（宏观 V2）。
       </p>
     </div>
 
     <!-- 核心结论 -->
     <div class="metric-grid" style="grid-template-columns: repeat(4, 1fr);">
       <div class="metric-card">
-        <div class="label">V33 进攻腿（杠杆）</div>
+        <div class="label">V36 进攻腿（杠杆）</div>
                 <div class="value" style="font-size: 22px;">+36.12%</div>
-                <div class="sub">1.5x 融资 + 红旗审查 · 125月窗（对比 V34 基础版 +27.99%）</div>
+                <div class="sub">1.5x 融资 + 红旗审查 · 125月窗（对比 V35 基础版 +27.99%）</div>
       </div>
       <div class="metric-card">
-        <div class="label">杠杆代价（V33 回撤）</div>
+        <div class="label">杠杆代价（V36 回撤）</div>
                 <div class="value" style="font-size: 22px; color: #a03a28;">-28.58%</div>
-                <div class="sub">对比 V34 -16.78% · Calmar 1.67→1.264</div>
+                <div class="sub">对比 V35 -16.78% · Calmar 1.67→1.264</div>
       </div>
       <div class="metric-card">
         <div class="label">期权对冲路径</div>
                 <div class="value" style="font-size: 22px;">1.31</div>
-                <div class="sub">V32 50% + 宏观V2 50%（48 月短样本，待 V33 版重跑）</div>
+                <div class="sub">V32 50% + 宏观V2 50%（48 月短样本，待 V36 版重跑）</div>
       </div>
       <div class="metric-card">
         <div class="label">融资成本</div>

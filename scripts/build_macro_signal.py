@@ -19,11 +19,14 @@ HS300 = r"D:\pineconeinvestfiles\松果投资分析体系\宏观策略_共享数
 ZZ500 = r"D:\pineconeinvestfiles\松果投资分析体系\宏观策略_共享数据\zz500_weekly.csv"
 OUT = r"D:\pineconeinvestfiles\松果投资体系网站\01_网站开发\src\data\macro_signal.json"
 
-# 1. 读 shibor 周度
+# 1. 读 shibor 周度（week 统一为无横杠格式 2011W01，与用户输入口径一致）
+def norm_wk(w):
+    return w.strip().replace('-', '')
+
 shibor = []
 with open(SRC, encoding='utf-8-sig') as f:
     for row in csv.DictReader(f):
-        shibor.append((row['week'].strip(), float(row['shibor_1w_avg'])))
+        shibor.append((norm_wk(row['week']), float(row['shibor_1w_avg'])))
 shibor.sort(key=lambda x: x[0])
 print(f"shibor 周度数据: {len(shibor)} 周 ({shibor[0][0]} ~ {shibor[-1][0]})")
 
@@ -32,7 +35,7 @@ def read_weekly(p):
     d = {}
     with open(p, encoding='utf-8-sig') as f:
         for row in csv.DictReader(f):
-            wk = row['week'].strip()
+            wk = norm_wk(row['week'])
             for k, v in row.items():
                 if k != 'week' and v:
                     try:

@@ -16,7 +16,7 @@
     ],
     "turnover_note": "两市合计成交约 1.83 万亿。中小盘（中证500 +0.87%）强于大盘，风险偏好边际修复。",
     "signals": [
-      {"name": "Shibor 1W（2026-W34）", "value": "1.3854%（环比 -1.08bp）", "verdict": "收紧/空仓", "note": "未过 5bp 宽松阈值"},
+      {"name": "Shibor 1W（2026W34）", "value": "1.3854%（环比 -1.08bp）", "verdict": "收紧/空仓", "note": "未过 5bp 宽松阈值"},
       {"name": "ETF 四拼图 8 月表现", "value": "+4.00%（截至 8 月）", "verdict": "防守组合 YTD +4.65%", "note": ""},
       {"name": "公募组合 8 月表现", "value": "+2.58%（截至 8 月）", "verdict": "防守组合 YTD +3.25%", "note": ""},
       {"name": "沪深300（基准）", "value": "YTD -1.02%", "verdict": "防守类显著跑赢", "note": ""}

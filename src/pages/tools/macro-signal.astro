@@ -3,7 +3,7 @@ import Layout from '../../layouts/Layout.astro';
 import Chart from '../../components/Chart.astro';
 import macro from '../../data/macro_signal.json';
 
-// 宏观信号查询工具：809 周 Shibor 信号（2011-W01 ~ 2026-W34）
+// 宏观信号查询工具：809 周 Shibor 信号（2011W01 ~ 2026W34）
 // 口径：shibor 1W 周均值环比下行>5bp → 宽松（买入中证500）；否则收紧（空仓）
 // 数据源：src/data/macro_signal.json（walk-forward 样本外年化 +10.04%）
 const weeks = macro.weeks as Array<{
@@ -80,10 +80,10 @@ const last24 = weeks.slice(-24).reverse();
     <div class="section-head">
       <div class="section-kicker">Query · 历史回溯</div>
       <h2 class="section-title">查询任意一周的信号</h2>
-      <p class="section-sub">输入周号（如 2026-W34）或年份（如 2015），查看当时的流动性判定与当周收益。</p>
+      <p class="section-sub">输入周号（如 2026W34）或年份（如 2015），查看当时的流动性判定与当周收益。</p>
     </div>
     <div style="display:flex; gap: var(--sp-3); flex-wrap: wrap; margin-bottom: var(--sp-4);">
-      <input id="ms-query" type="text" placeholder="例如 2026-W34 或 2015" style="flex:1; min-width:220px; padding:12px 14px; border:1px solid rgba(139,94,60,0.25); border-radius:10px; font-size:15px; background:var(--bg); color:var(--navy-900);" />
+      <input id="ms-query" type="text" placeholder="例如 2026W34 或 2015" style="flex:1; min-width:220px; padding:12px 14px; border:1px solid rgba(139,94,60,0.25); border-radius:10px; font-size:15px; background:var(--bg); color:var(--navy-900);" />
       <button id="ms-run" class="btn btn-gold">查询 →</button>
     </div>
     <div id="ms-result">
@@ -197,9 +197,9 @@ const last24 = weeks.slice(-24).reverse();
     }
 
     function run() {
-      const q = document.getElementById('ms-query').value.trim().toUpperCase();
-      const box = document.getElementById('ms-result');
-      if (!q) { box.innerHTML = '<div style="color: var(--navy-600); font-size: 14px;">请输入周号（2026-W34）或年份（2015）。</div>'; return; }
+      const q = document.getElementById('ms-query').value.trim().toUpperCase().replace(/-/g, '');
+            const box = document.getElementById('ms-result');
+            if (!q) { box.innerHTML = '<div style="color: var(--navy-600); font-size: 14px;">请输入周号（2026W34）或年份（2015）。</div>'; return; }
 
       // 1) 精确周号
       const exact = byWeek.get(q);
@@ -246,7 +246,7 @@ const last24 = weeks.slice(-24).reverse();
         return;
       }
 
-      box.innerHTML = '<div style="color: var(--red);">格式不支持。请输入周号（如 2026-W34）或年份（如 2015）。</div>';
+      box.innerHTML = '<div style="color: var(--red);">格式不支持。请输入周号（如 2026W34）或年份（如 2015）。</div>';
     }
     document.getElementById('ms-run')?.addEventListener('click', run);
     document.getElementById('ms-query').addEventListener('keydown', (e) => { if (e.key === 'Enter') run(); });

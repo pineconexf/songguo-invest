@@ -553,6 +553,20 @@ table.data-table {
   background: var(--surface-alt);
 }
 
+/* ---------- 对比区「松果」列：深色底反白，一眼可辨 ---------- */
+table.data-table th.songguo-col,
+table.data-table td.songguo-col {
+  background: var(--navy-800);
+  color: #fff;
+}
+table.data-table th.songguo-col b,
+table.data-table td.songguo-col b {
+  color: var(--gold-400);
+}
+table.data-table td.songguo-col {
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
 .pos {
   color: var(--green);
   font-weight: 600;
@@ -692,7 +706,7 @@ table.data-table {
 /* ---------- 大师/人物卡 ---------- */
 .master-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: var(--sp-4);
 }
 
@@ -895,6 +909,9 @@ table.data-table {
   .metric-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+  .master-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 
   .hero {
     padding: var(--sp-6) var(--sp-5);
@@ -904,6 +921,10 @@ table.data-table {
 @media (max-width: 720px) {
   .nav {
     height: 56px;
+  }
+
+  .master-grid {
+    grid-template-columns: 1fr;
   }
 
   .nav-link {

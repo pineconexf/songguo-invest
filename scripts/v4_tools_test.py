@@ -55,10 +55,10 @@ check('当前信号渲染', '收紧（防守）' in str(ev("document.querySelect
 check('图表 canvas 渲染', bool(ev("document.querySelectorAll('.chart canvas').length >= 1")))
 check('信号表行数=24', ev("document.querySelectorAll('.data-table tbody tr').length") == 24)
 # 查询周号
-ev("""(() => { const i=document.getElementById('ms-query'); i.value='2026-W32'; document.getElementById('ms-run').click(); return true; })()""")
+ev("""(() => { const i=document.getElementById('ms-query'); i.value='2026W32'; document.getElementById('ms-run').click(); return true; })()""")
 time.sleep(0.8)
 q1 = str(ev("document.getElementById('ms-result').innerText"))
-check('查询 2026-W32', '宽松' in q1 and '2026-W32' in q1)
+check('查询 2026W32', '宽松' in q1 and '2026W32' in q1)
 # 查询年份
 ev("""(() => { const i=document.getElementById('ms-query'); i.value='2015'; document.getElementById('ms-run').click(); return true; })()""")
 time.sleep(0.8)

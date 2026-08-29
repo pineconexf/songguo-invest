@@ -2,12 +2,12 @@
 import Layout from '../layouts/Layout.astro';
 import strategy from '../data/strategy.json';
 
-const v34 = strategy.meta.v34;
+const v35 = strategy.meta.v35;
 const hs300 = strategy.meta.hs300;
 ---
 <Layout
   title="组合管理"
-  description="松果组合管理 — 宏观 V1 × 个股 V34 融合：宏观管仓位、个股管选股、组合管风险。基础版无杠杆，14年回测验证。"
+  description="松果组合管理 — 宏观 V1 × 个股 V35 融合：宏观管仓位、个股管选股、组合管风险。基础版无杠杆，14年回测验证。"
 >
   <!-- Hero -->
   <section class="hero" style="padding: 56px 48px;">
@@ -17,7 +17,7 @@ const hs300 = strategy.meta.hs300;
         宏观管<span class="gold">仓位</span><br />个股管选股
       </h1>
       <p class="hero-lead">
-        定案策略：宏观 <b>V1 常规版</b>（Shibor 信号 × 中证500）× 个股 <b>V34 基础版</b>（Top4 + FCF/EV 加权 + 帕伯莱红旗审查）。
+        定案策略：宏观 <b>V1 常规版</b>（Shibor 信号 × 中证500）× 个股 <b>V35 基础版</b>（Top4 + FCF/EV 加权 + 帕伯莱红旗审查）。
         无杠杆、无对冲工具，用体系与纪律管理风险。
       </p>
     </div>
@@ -48,7 +48,7 @@ const hs300 = strategy.meta.hs300;
         <div class="num">3</div>
         <div class="body">
           <h3>空仓保险：管风险</h3>
-          <p>上月沪深300 &lt;-8% → 当月空仓（14 年触发 13 次，躲过 2015 股灾连跌月）。空仓月资金配置债金 50/50（V34 资金增强版）。</p>
+          <p>上月沪深300 &lt;-8% → 当月空仓（14 年触发 13 次，躲过 2015 股灾连跌月）。空仓月资金配置债金 50/50（V35 资金增强版）。</p>
         </div>
       </div>
       <div class="step">
@@ -65,33 +65,33 @@ const hs300 = strategy.meta.hs300;
   <section class="card">
     <div class="section-head">
       <div class="section-kicker">Key Metrics</div>
-      <h2 class="section-title">V34 基础版核心指标</h2>
+      <h2 class="section-title">V35 基础版核心指标</h2>
       <p class="section-sub">14 年、172 个月，含成本口径（佣金万2.5+印花税0.05%+空仓切换），无杠杆。</p>
     </div>
     <div class="metric-grid">
       <div class="metric-card">
         <div class="label">年化收益率</div>
-        <div class="value gold">+{v34.annual_return.toFixed(2)}%</div>
+        <div class="value gold">+{v35.annual_return.toFixed(2)}%</div>
         <div class="sub">沪深300 同期 +3.97%</div>
       </div>
       <div class="metric-card">
         <div class="label">最大回撤</div>
-        <div class="value red">-{v34.mdd.toFixed(2)}%</div>
+        <div class="value red">-{v35.mdd.toFixed(2)}%</div>
         <div class="sub">沪深300 同期 -40.56%</div>
       </div>
       <div class="metric-card">
         <div class="label">Calmar（年化/回测）</div>
-        <div class="value green">{v34.calmar.toFixed(2)}</div>
+        <div class="value green">{v35.calmar.toFixed(2)}</div>
         <div class="sub">风险调整后收益</div>
       </div>
       <div class="metric-card">
         <div class="label">累计收益（172月）</div>
-        <div class="value gold">+{v34.cumulative.toFixed(1)}%</div>
-        <div class="sub">约 {Math.pow(v34.cumulative / 100 + 1, 1 / 14).toFixed(1)} 倍/年复合</div>
+        <div class="value gold">+{v35.cumulative.toFixed(1)}%</div>
+        <div class="sub">约 {Math.pow(v35.cumulative / 100 + 1, 1 / 14).toFixed(1)} 倍/年复合</div>
       </div>
     </div>
     <div class="callout" style="margin-top: 8px;">
-      <b>定案说明</b>：本站采用基础版策略口径（宏观 V1 + 个股 V34 红旗审查），杠杆版本 V33 仅作对照展示并显著标注风险，
+      <b>定案说明</b>：本站采用基础版策略口径（宏观 V1 + 个股 V35 红旗审查），杠杆版本 V36 仅作对照展示并显著标注风险，
       全部数据为无杠杆历史回测展示。
     </div>
   </section>

@@ -55,11 +55,11 @@ print('5. ALL_WEEKS:', ev("typeof ALL_WEEKS !== 'undefined' ? ALL_WEEKS.length :
 print('6. byWeek:', ev("typeof byWeek !== 'undefined' ? byWeek.size : 'UNDEF'"))
 print('7. run btn:', ev("!!document.getElementById('ms-run')"))
 print('8. click 查询:')
-print('   ', ev("(() => { try { document.getElementById('ms-query').value='2026-W32'; document.getElementById('ms-run').click(); return 'clicked ok'; } catch(e) { return 'ERR: ' + e.message; } })()"))
+print('   ', ev("(() => { try { document.getElementById('ms-query').value='2026W32'; document.getElementById('ms-run').click(); return 'clicked ok'; } catch(e) { return 'ERR: ' + e.message; } })()"))
 time.sleep(1)
 print('9. result:', str(ev("document.getElementById('ms-result').innerText"))[:150])
 print('10. 直接调函数测试:')
-print('   ', ev("(() => { const w = byWeek.get('2026-W32'); return w ? JSON.stringify(w) : 'NOT FOUND'; })()"))
+print('   ', ev("(() => { const w = byWeek.get('2026W32'); return w ? JSON.stringify(w) : 'NOT FOUND'; })()"))
 print()
 print('=== console 消息 ===')
 for c in console_msgs[-10:]:
