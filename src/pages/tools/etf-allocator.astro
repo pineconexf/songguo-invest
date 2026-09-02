@@ -14,11 +14,12 @@ const MACRO_NOTE =
 // 数据：scripts/etf_tiers_backtest.py 生成（新浪日线 × tushare 复权因子 → 前复权 → 月收益 → 权重加权）
 // 口径：无成本同方法重算，三档横向可比；稳健档另有松果定稿口径（含成本保守）10.10% / -6.15% 并存标注
 const PIECE_META = [
-  { code: '511010', name: '国债ETF（国泰）', role: '债券拼图', note: '国内利率债，组合压舱石，T+0' },
-  { code: '159934', name: '黄金ETF（易方达）', role: '黄金拼图', note: '对冲货币贬值+地缘风险，与股票低相关' },
-  { code: '510880', name: '红利ETF（华泰柏瑞）', role: '红利拼图', note: '上证红利，高股息现金流资产' },
-  { code: '513500', name: '标普500ETF（博时）', role: 'QDII拼图', note: '全球核心权益，与 A 股相关性 0.01~0.20' },
+  { code: '511010', name: '国债ETF（国泰）', role: '债券拼图', note: '国内利率债，组合压舱石，T+0', fee: '0.15', custody: '0.05' },
+  { code: '159934', name: '黄金ETF（易方达）', role: '黄金拼图', note: '对冲货币贬值+地缘风险，与股票低相关', fee: '0.50', custody: '0.10' },
+  { code: '510880', name: '红利ETF（华泰柏瑞）', role: '红利拼图', note: '上证红利，高股息现金流资产', fee: '0.50', custody: '0.10' },
+  { code: '513500', name: '标普500ETF（博时）', role: 'QDII拼图', note: '全球核心权益，与 A 股相关性 0.01~0.20', fee: '0.60', custody: '0.20' },
 ];
+// 管理费/托管费为基金合同公开费率（天天基金 F10 档案，2026-09-02 核实）；上证红利指数股息率 3.98%（理杏仁/中证指数 2026-07-31）
 // 参考价：2026-08-25 收盘（新浪财经实测），实时价由腾讯行情拉取后覆盖
 const REF_PRICES = [141.302, 9.965, 3.409, 2.695];
 const TIERS = [
@@ -95,25 +96,29 @@ const fmtPct = (v: number, d = 1) => (v >= 0 ? '+' : '') + (v * 100).toFixed(d) 
     <div class="table-wrap" style="margin-bottom: var(--sp-4);">
       <table class="data-table">
         <thead>
-          <tr><th>拼图</th><th>ETF</th><th>权重 %</th><th>价格（元）</th><th>行情状态</th></tr>
-        </thead>
-        <tbody>
-          {PIECE_META.map((p, i) => (
-            <tr>
-              <td>{p.role}</td>
-              <td>{p.code} {p.name}</td>
-              <td><input id={`ea-w${i}`} type="number" step="1" min="0" max="100" value={TIERS[1].weights[i]} style="width:70px; padding:6px 8px; border:1px solid rgba(139,94,60,0.25); border-radius:8px; font-size:14px;" /></td>
-              <td><input id={`ea-p${i}`} type="number" step="0.001" min="0" value={REF_PRICES[i]} style="width:95px; padding:6px 8px; border:1px solid rgba(139,94,60,0.25); border-radius:8px; font-size:14px;" /></td>
-              <td id={`ea-ps${i}`} style="font-size:12px; color: var(--text-3);">参考价 08-25</td>
-            </tr>
-          ))}
-        </tbody>
+                  <tr><th>拼图</th><th>ETF</th><th>权重 %</th><th>价格（元）</th><th>管理费率</th><th>行情状态</th></tr>
+                </thead>
+                <tbody>
+                  {PIECE_META.map((p, i) => (
+                    <tr>
+                      <td>{p.role}</td>
+                      <td>{p.code} {p.name}</td>
+                      <td><input id={`ea-w${i}`} type="number" step="1" min="0" max="100" value={TIERS[1].weights[i]} style="width:70px; padding:6px 8px; border:1px solid rgba(139,94,60,0.25); border-radius:8px; font-size:14px;" /></td>
+                      <td><input id={`ea-p${i}`} type="number" step="0.001" min="0" value={REF_PRICES[i]} style="width:95px; padding:6px 8px; border:1px solid rgba(139,94,60,0.25); border-radius:8px; font-size:14px;" /></td>
+                      <td style="font-size:12px; color: var(--text-2);">{p.fee}% + 托管{p.custody}%</td>
+                      <td id={`ea-ps${i}`} style="font-size:12px; color: var(--text-3);">参考价 08-25</td>
+                    </tr>
+                  ))}
+                </tbody>
       </table>
     </div>
 
     <div style="margin-bottom: var(--sp-3);">
-      <button id="ea-run" class="btn btn-gold">计算配置 →</button>
-    </div>
+          <button id="ea-run" class="btn btn-gold">计算配置 →</button>
+        </div>
+        <div class="callout" style="margin-bottom: var(--sp-4); font-size: 13px; border-left: 3px solid #d9a441; background: rgba(217,164,65,0.06);">
+          <b>溢价提醒</b>：QDII（标普500ETF）场内价格受外汇额度与供需影响，常出现溢价。买入前可查实时溢价率（场内价 ÷ IOPV − 1），若高于 3% 说明你多付了成本，可等溢价收敛再出手。本工具按场内实时价计算份额，不含溢价风险提示之外的额外成本。
+        </div>
     <div id="ea-msg" style="font-size: 13px; color: var(--text-3); margin-bottom: var(--sp-2);">权重合计 100% ✓（默认稳健档：债25/金30/红利10/QDII35）</div>
 
     <!-- 结果 -->
@@ -130,8 +135,24 @@ const fmtPct = (v: number, d = 1) => (v >= 0 ? '+' : '') + (v * 100).toFixed(d) 
         <div class="metric-card"><div class="label">建仓提示</div><div id="ea-hint" class="value" style="font-size:15px;">--</div></div>
       </div>
 
-      <!-- 回撤预期 + 金额回套 152 个月 -->
-      <div class="metric-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: var(--sp-4);">
+      <!-- 分批建仓 + 现金流视角（G3/G4，结果区） -->
+          <div id="ea-extra" style="display:none; margin-bottom: var(--sp-4);">
+            <div class="metric-grid" style="grid-template-columns: repeat(2, 1fr);">
+              <div class="metric-card">
+                <div class="label">分批建仓建议</div>
+                <div class="value" id="ea-batch" style="font-size:16px;">--</div>
+                <div class="sub">高位不一把梭，分批降择时风险；分批间隔建议 ≥2 周。流程提示，非投资建议。</div>
+              </div>
+              <div class="metric-card">
+                <div class="label">组合年化股息率（现金流视角）</div>
+                <div class="value" id="ea-divyield" style="font-size:16px;">--</div>
+                <div class="sub">按红利拼图权重 × 上证红利指数股息率 3.98%（2026-07-31，理杏仁/中证指数口径）估算，非分红保证。</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 回撤预期 + 金额回套 152 个月 -->
+          <div class="metric-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: var(--sp-4);">
         <div class="metric-card" style="border:1.5px solid rgba(160,58,40,0.3);">
           <div class="label">回撤预期 · 历史最大回撤情景</div>
           <div class="value" id="ea-ddval" style="font-size:22px; color:#a03a28;">--</div>
@@ -224,11 +245,11 @@ const fmtPct = (v: number, d = 1) => (v >= 0 ? '+' : '') + (v * 100).toFixed(d) 
   <script>
     import tiersData from '../../data/etf_tiers.json';
     const PIECE_META = [
-      { code: '511010', name: '国债ETF（国泰）', role: '债券拼图' },
-      { code: '159934', name: '黄金ETF（易方达）', role: '黄金拼图' },
-      { code: '510880', name: '红利ETF（华泰柏瑞）', role: '红利拼图' },
-      { code: '513500', name: '标普500ETF（博时）', role: 'QDII拼图' },
-    ];
+          { code: '511010', name: '国债ETF（国泰）', role: '债券拼图', fee: '0.15', custody: '0.05' },
+          { code: '159934', name: '黄金ETF（易方达）', role: '黄金拼图', fee: '0.50', custody: '0.10' },
+          { code: '510880', name: '红利ETF（华泰柏瑞）', role: '红利拼图', fee: '0.50', custody: '0.10' },
+          { code: '513500', name: '标普500ETF（博时）', role: 'QDII拼图', fee: '0.60', custody: '0.20' },
+        ];
     const TIERS = [
       { key: 'conservative', ...tiersData.conservative },
       { key: 'stable', ...tiersData.stable },
@@ -354,7 +375,8 @@ const fmtPct = (v: number, d = 1) => (v >= 0 ? '+' : '') + (v * 100).toFixed(d) 
       ($('ea-sum') as HTMLElement).textContent = fmt(sumCheck);
       ($('ea-rest') as HTMLElement).textContent = fmt(Math.max(0, amount - sumCheck));
       ($('ea-result') as HTMLElement).style.display = 'block';
-      // 人话结论卡：结论先行（大白话版本，基于该档位 152 个月真实回测推演）
+            updateExtra(w, amount); // G3 分批建仓 + G4 现金流股息率
+            // 人话结论卡：结论先行（大白话版本，基于该档位 152 个月真实回测推演）
       const say = $('ea-saytext') as HTMLElement;
       if (say) {
         const bankDiff = final - bank;
@@ -368,6 +390,27 @@ const fmtPct = (v: number, d = 1) => (v >= 0 ? '+' : '') + (v * 100).toFixed(d) 
           `同一笔钱存银行(2%)只有 ${fmt(bank)}，差 ${fmt(bankDiff)}。` +
           mddSay;
       }
+    }
+    // G4 现金流视角：组合年化股息率 = 红利权重 % × 红利ETF股息率（上证红利指数 3.98% @2026-07-31，理杏仁/中证指数口径）
+    const DIV_YIELD = 0.0398;
+    function updateExtra(w, amount) {
+      const extra = $('ea-extra') as HTMLElement;
+      const batch = $('ea-batch') as HTMLElement;
+      const dy = $('ea-divyield') as HTMLElement;
+      if (!extra || !batch || !dy) return;
+      if (amount <= 0) { extra.style.display = 'none'; return; }
+      extra.style.display = 'block';
+      // G3 分批建仓：金额 ≥10万 分3批，≥3万 分2批，否则1次
+      const n = amount >= 100000 ? 3 : amount >= 30000 ? 2 : 1;
+      if (n >= 2) {
+        const per = Math.round(amount / n);
+        batch.textContent = `建议分 ${n} 批建仓（每批约 ${fmt(per)}），分批间隔 ≥2 周，平滑高位波动`;
+      } else {
+        batch.textContent = `金额适中，可一次建仓；若仍担心高位，也可自行分 2 批（每批约 ${fmt(Math.round(amount / 2))}）`;
+      }
+      // G4 组合年化股息率：红利权重占比 × 红利指数股息率
+      const yieldPct = (w[2] / 100) * DIV_YIELD;
+      dy.textContent = pct(yieldPct, 2);
     }
     $('ea-run')!.addEventListener('click', run);
 
