@@ -116,18 +116,23 @@ const fmtPct = (v: number, d = 1) => (v >= 0 ? '+' : '') + (v * 100).toFixed(d) 
     <div style="margin-bottom: var(--sp-3);">
           <button id="ea-run" class="btn btn-gold">计算配置 →</button>
         </div>
-        <div class="callout" style="margin-bottom: var(--sp-4); font-size: 13px; border-left: 3px solid #d9a441; background: rgba(217,164,65,0.06);">
-          <b>溢价提醒</b>：QDII（标普500ETF）场内价格受外汇额度与供需影响，常出现溢价。买入前可查实时溢价率（场内价 ÷ IOPV − 1），若高于 3% 说明你多付了成本，可等溢价收敛再出手。本工具按场内实时价计算份额，不含溢价风险提示之外的额外成本。
-        </div>
+        <div id="ea-premium" class="callout" style="margin-bottom: var(--sp-4); font-size: 13px; border-left: 3px solid #d9a441; background: rgba(217,164,65,0.06);">
+                  <b>溢价计算中…</b>：正在拉取 QDII 最新净值计算实时溢价率（场内价 ÷ 最新净值 − 1）。净值按最近公告日（QDII 净值滞后 1-2 个交易日），溢价为近似值。本工具按场内实时价计算份额。
+                </div>
     <div id="ea-msg" style="font-size: 13px; color: var(--text-3); margin-bottom: var(--sp-2);">权重合计 100% ✓（默认稳健档：债25/金30/红利10/QDII35）</div>
 
     <!-- 结果 -->
-        <div id="ea-result" style="display:none; margin-top: var(--sp-4); border-top: 1px solid rgba(139,94,60,0.15); padding-top: var(--sp-4);">
-          <!-- 人话结论卡：结论先行 -->
-          <div id="ea-say" style="background: var(--surface-2); border: 1px solid var(--border); border-left: 3px solid var(--gold-500); border-radius: var(--r-md); padding: var(--sp-4); margin-bottom: var(--sp-4); font-size: 15px; line-height: 1.7;">
-            <b style="color: var(--gold-600);">一句话结论：</b><span id="ea-saytext">选中档位、输入金额后，这里用一句大白话告诉你这笔钱会怎样。</span>
-            <div style="font-size: 12px; color: var(--text-3); margin-top: 6px;">按该档位 152 个月真实回测推演的大白话版本，不是预测。</div>
-          </div>
+            <div id="ea-result" style="display:none; margin-top: var(--sp-4); border-top: 1px solid rgba(139,94,60,0.15); padding-top: var(--sp-4);">
+              <!-- 一键复制（V3.2） -->
+              <div style="display:flex; justify-content:flex-end; margin-bottom: var(--sp-3);">
+                <button id="ea-copy" class="btn btn-ghost" style="font-size: 13px; padding: 8px 14px;">📋 一键复制配置结果</button>
+              </div>
+              <div id="ea-copied" style="display:none; font-size: 12px; color: var(--green); text-align:right; margin-bottom: var(--sp-2);">✓ 已复制到剪贴板</div>
+              <!-- 人话结论卡：结论先行 -->
+              <div id="ea-say" style="background: var(--surface-2); border: 1px solid var(--border); border-left: 3px solid var(--gold-500); border-radius: var(--r-md); padding: var(--sp-4); margin-bottom: var(--sp-4); font-size: 15px; line-height: 1.7;">
+                <b style="color: var(--gold-600);">一句话结论：</b><span id="ea-saytext">选中档位、输入金额后，这里用一句大白话告诉你这笔钱会怎样。</span>
+                <div style="font-size: 12px; color: var(--text-3); margin-top: 6px;">按该档位 152 个月真实回测推演的大白话版本，不是预测。</div>
+              </div>
       <div class="metric-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: var(--sp-4);">
         <div class="metric-card"><div class="label">拟投资金额</div><div id="ea-total" class="value" style="font-size:20px;">--</div></div>
         <div class="metric-card"><div class="label">实买合计（整手）</div><div id="ea-sum" class="value" style="font-size:20px;">--</div></div>
@@ -493,11 +498,93 @@ const fmtPct = (v: number, d = 1) => (v >= 0 ? '+' : '') + (v * 100).toFixed(d) 
       };
       document.body.appendChild(s);
     }
-    // 页面加载自动拉取；计算时若价格仍为参考价则再尝试一次
-    loadQuote();
-    ($('ea-run') as HTMLElement).addEventListener('click', () => {
-      const needLive = [0, 1, 2, 3].some((i) => !($(`ea-ps${i}`) as HTMLElement).textContent.includes('实时'));
-      if (needLive) loadQuote();
-    });
-  </script>
+    // V3.2 动态溢价：拉取 4 只 ETF 最新净值（天天基金 pingzhongdata，串行防全局变量覆盖）
+        const NAV_CODES = ['511010', '159934', '510880', '513500'];
+        function loadNAV(cb: (navs: Record<string, number>) => void) {
+          const navs: Record<string, number> = {};
+          let idx = 0;
+          const next = () => {
+            if (idx >= NAV_CODES.length) { cb(navs); return; }
+            const code = NAV_CODES[idx++];
+            const s = document.createElement('script');
+            s.src = `https://fund.eastmoney.com/pingzhongdata/${code}.js?_t=${Date.now()}`;
+            s.onload = () => {
+              try {
+                const w = window as any;
+                const trend = w.Data_netWorthTrend || [];
+                if (trend.length) navs[code] = trend[trend.length - 1].y;
+              } catch (e) {}
+              next();
+            };
+            s.onerror = () => next();
+            s.onabort = () => next();
+            document.body.appendChild(s);
+          };
+          next();
+        }
+        // 溢价提示条更新：QDII(513500) 场内价 vs 最新净值
+        function updatePremium(navs: Record<string, number>, price3?: number) {
+          const el = $('ea-premium') as HTMLElement;
+          if (!el) return;
+          const nav = navs['513500'];
+          const px = price3 ?? parseFloat(($('ea-p3') as HTMLInputElement).value) || 0;
+          if (!nav || !px) {
+            el.innerHTML = `<b>溢价提醒</b>：QDII 最新净值暂未获取到，暂时无法计算实时溢价。可点击「计算配置」后查看。`;
+            el.style.borderLeftColor = '#d9a441';
+            el.style.background = 'rgba(217,164,65,0.06)';
+            return;
+          }
+          const premium = px / nav - 1;
+          const isHigh = premium > 0.03;
+          el.innerHTML = isHigh
+            ? `<b style="color:#a03a28;">溢价警告</b>：标普500ETF 当前溢价 <b style="color:#a03a28;">${(premium * 100).toFixed(2)}%</b>（>3%），买入先付溢价成本，可等溢价收敛再出手。`
+            : `<b style="color:var(--green);">溢价正常</b>：标普500ETF 当前溢价 <b style="color:var(--green);">${(premium * 100).toFixed(2)}%</b>（≤3%），价格接近净值。`;
+          el.style.borderLeftColor = isHigh ? '#a03a28' : '#4A7C59';
+          el.style.background = isHigh ? 'rgba(160,58,40,0.06)' : 'rgba(74,124,89,0.06)';
+        }
+        loadNAV((navs) => { if (document.getElementById('ea-premium')) updatePremium(navs); });
+
+        // V3.2 一键复制：结果区数据 → 剪贴板纯文本
+        function copyResult() {
+          const say = ($('ea-saytext') as HTMLElement)?.textContent || '';
+          const tierName = ($('ea-tiername') as HTMLElement)?.textContent || '';
+          const rows = Array.from(document.querySelectorAll('#ea-rows tr')).map((tr) =>
+            Array.from(tr.querySelectorAll('td')).map((td) => td.textContent?.trim() || '').join(' | ')).join('\n');
+          const final = ($('ea-final') as HTMLElement)?.textContent || '';
+          const finalgain = ($('ea-finalgain') as HTMLElement)?.textContent || '';
+          const bank = ($('ea-bank') as HTMLElement)?.textContent || '';
+          const rest = ($('ea-rest') as HTMLElement)?.textContent || '';
+          const dy = ($('ea-divyield') as HTMLElement)?.textContent || '';
+          const batch = ($('ea-batch') as HTMLElement)?.textContent || '';
+          const text =
+    `【松果 ETF 组合配置】${tierName}
+    ${say}
+    — 买入明细 —
+    ${rows}
+    — 金额回套（152 个月真实回测） —
+    ${final} · ${finalgain}
+    存银行对照：${bank} · 剩余零钱：${rest}
+    — 现金流与建仓 —
+    组合年化股息率：${dy}
+    分批建仓：${batch}
+    （数据为历史回测口径，不构成投资建议）`;
+          navigator.clipboard.writeText(text).then(() => {
+            const tip = $('ea-copied') as HTMLElement;
+            if (tip) { tip.style.display = 'block'; setTimeout(() => (tip.style.display = 'none'), 2500); }
+          }).catch(() => {
+            const tip = $('ea-copied') as HTMLElement;
+            if (tip) { tip.textContent = '复制失败（浏览器限制），请手动复制'; tip.style.display = 'block'; }
+          });
+        }
+        ($('ea-copy') as HTMLElement)?.addEventListener('click', copyResult);
+
+        // 页面加载自动拉取；计算时若价格仍为参考价则再尝试一次
+        loadQuote();
+        ($('ea-run') as HTMLElement).addEventListener('click', () => {
+          const needLive = [0, 1, 2, 3].some((i) => !($(`ea-ps${i}`) as HTMLElement).textContent.includes('实时'));
+          if (needLive) loadQuote();
+          const px = parseFloat(($('ea-p3') as HTMLInputElement).value) || 0;
+          loadNAV((navs) => updatePremium(navs, px));
+        });
+      </script>
 </Layout>
