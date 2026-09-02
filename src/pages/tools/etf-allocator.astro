@@ -527,7 +527,7 @@ const fmtPct = (v: number, d = 1) => (v >= 0 ? '+' : '') + (v * 100).toFixed(d) 
           const el = $('ea-premium') as HTMLElement;
           if (!el) return;
           const nav = navs['513500'];
-          const px = price3 ?? parseFloat(($('ea-p3') as HTMLInputElement).value) || 0;
+                const px = price3 !== undefined ? price3 : (parseFloat(($('ea-p3') as HTMLInputElement).value) || 0);
           if (!nav || !px) {
             el.innerHTML = `<b>溢价提醒</b>：QDII 最新净值暂未获取到，暂时无法计算实时溢价。可点击「计算配置」后查看。`;
             el.style.borderLeftColor = '#d9a441';
