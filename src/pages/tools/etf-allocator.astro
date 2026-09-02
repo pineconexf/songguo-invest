@@ -211,9 +211,9 @@ const fmtPct = (v: number, d = 1) => (v >= 0 ? '+' : '') + (v * 100).toFixed(d) 
         <b>三档回测口径（2014-01 ~ 2026-08，152 个月，同方法无成本，横向可比）</b>：
         保守 {fmtPct(TIERS[0].metrics.annual)} / {fmtPct(TIERS[0].metrics.mdd)}，稳健 {fmtPct(TIERS[1].metrics.annual)} / {fmtPct(TIERS[1].metrics.mdd)}，进取 {fmtPct(TIERS[2].metrics.annual)} / {fmtPct(TIERS[2].metrics.mdd)}。
         压力年：2015 全部正收益、2018 保守/稳健正、2022 仅进取 -4.4%。
-        <b>稳健档另有松果定稿口径</b>（含成本保守，全ETF版定稿）：年化 10.1% / 回撤 -6.2% / 夏普 1.21 / 卡玛 1.64。
-        数据源：新浪日线 × tushare 复权因子（前复权），脚本 scripts/etf_tiers_backtest.py 可复现，明细归档于本地生活投资策略/工具回测数据/。
-        <b>历史回测不代表未来收益，不构成投资建议。</b>
+        <b>稳健档另有含成本测算口径</b>：年化 10.1% / 回撤 -6.2% / 夏普 1.21 / 卡玛 1.64。
+                数据说明：采用公开市场行情数据（新浪日线 × tushare 复权因子，前复权口径）逐月测算，回测过程完全透明可复现。
+                <b>历史回测不代表未来收益，不构成投资建议。</b>
       </div>
     </div>
   </section>
@@ -231,17 +231,35 @@ const fmtPct = (v: number, d = 1) => (v >= 0 ? '+' : '') + (v * 100).toFixed(d) 
       <h2 class="section-title">和市面上的"帮你配"比，差在哪？</h2>
       <p class="section-sub">对比基于公开产品说明（2026-08 调研）：帮你看清每个工具到底给你什么、要你付出什么。</p>
     </div>
-    <div class="table-wrap">
-      <table class="data-table">
-        <thead><tr><th></th><th>支付宝「帮你投」</th><th>且慢「四笔钱」</th><th class="songguo-col">松果 ETF 配置器</th></tr></thead>
-        <tbody>
-          <tr><td><b>给你什么</b></td><td>AI 自动调仓，买入后不用管</td><td>大V 主理人策略，跟投抄作业</td><td class="songguo-col"><b>152 个月回测全透明</b>，每档权重可改，金额直接算份额</td></tr>
-          <tr><td><b>你要付出</b></td><td>0.5%/年 服务费（800 元起投）</td><td>跟投门槛+补仓操作，需持续关注</td><td class="songguo-col">免费，自己操作 ETF 交易</td></tr>
-          <tr><td><b>透明度</b></td><td>黑盒：看不到具体持仓逻辑</td><td>主理人买卖信号可见，但历史收益口径不一</td><td class="songguo-col"><b>每档回测可复现</b>（脚本+月度明细本地归档）</td></tr>
-          <tr><td><b>适合谁</b></td><td>不想操心的全委托型</td><td>愿意跟进、信任主理人的半主动型</td><td class="songguo-col"><b>想搞懂自己钱怎么配、要透明回测的主动型</b></td></tr>
-        </tbody>
-      </table>
-    </div>
+    <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-3);">
+          <div class="card" style="padding: var(--sp-4);">
+            <div class="section-kicker">支付宝「帮你投」</div>
+            <div style="margin-top: var(--sp-3); display:flex; flex-direction:column; gap: var(--sp-3);">
+              <div><div style="font-weight:700; font-size:13px; margin-bottom:4px;">给你什么</div><div style="font-size:13px; color:var(--text-2);">AI 自动调仓，买入后不用管</div></div>
+              <div><div style="font-weight:700; font-size:13px; margin-bottom:4px;">你要付出</div><div style="font-size:13px; color:var(--text-2);">0.5%/年 服务费（800 元起投）</div></div>
+              <div><div style="font-weight:700; font-size:13px; margin-bottom:4px;">透明度</div><div style="font-size:13px; color:var(--text-2);">黑盒：看不到具体持仓逻辑</div></div>
+              <div><div style="font-weight:700; font-size:13px; margin-bottom:4px;">适合谁</div><div style="font-size:13px; color:var(--text-2);">不想操心的全委托型</div></div>
+            </div>
+          </div>
+          <div class="card" style="padding: var(--sp-4);">
+            <div class="section-kicker">且慢「四笔钱」</div>
+            <div style="margin-top: var(--sp-3); display:flex; flex-direction:column; gap: var(--sp-3);">
+              <div><div style="font-weight:700; font-size:13px; margin-bottom:4px;">给你什么</div><div style="font-size:13px; color:var(--text-2);">大V 主理人策略，跟投抄作业</div></div>
+              <div><div style="font-weight:700; font-size:13px; margin-bottom:4px;">你要付出</div><div style="font-size:13px; color:var(--text-2);">跟投门槛+补仓操作，需持续关注</div></div>
+              <div><div style="font-weight:700; font-size:13px; margin-bottom:4px;">透明度</div><div style="font-size:13px; color:var(--text-2);">主理人买卖信号可见，但历史收益口径不一</div></div>
+              <div><div style="font-weight:700; font-size:13px; margin-bottom:4px;">适合谁</div><div style="font-size:13px; color:var(--text-2);">愿意跟进、信任主理人的半主动型</div></div>
+            </div>
+          </div>
+          <div class="card" style="padding: var(--sp-4); border: 1px solid var(--gold-500); background: rgba(217,164,65,0.04);">
+            <div class="section-kicker" style="color: var(--gold-600);">松果 ETF 配置器</div>
+            <div style="margin-top: var(--sp-3); display:flex; flex-direction:column; gap: var(--sp-3);">
+              <div><div style="font-weight:700; font-size:13px; margin-bottom:4px;">给你什么</div><div style="font-size:13px; color:var(--text-2);"><b>152 个月回测全透明</b>，每档权重可改，金额直接算份额</div></div>
+              <div><div style="font-weight:700; font-size:13px; margin-bottom:4px;">你要付出</div><div style="font-size:13px; color:var(--text-2);">免费，自己操作 ETF 交易</div></div>
+              <div><div style="font-weight:700; font-size:13px; margin-bottom:4px;">透明度</div><div style="font-size:13px; color:var(--text-2);"><b>每档回测可复现</b>，数据口径全程公开</div></div>
+              <div><div style="font-weight:700; font-size:13px; margin-bottom:4px;">适合谁</div><div style="font-size:13px; color:var(--text-2);"><b>想搞懂自己钱怎么配、要透明回测的主动型</b></div></div>
+            </div>
+          </div>
+        </div>
     <div style="font-size: 12px; color: var(--text-3); margin-top: 8px;">
       一句话：帮你投卖「省心」，且慢卖「跟人」，松果卖「<b>透明 + 自由</b>」——回测给你看、权重给你改。
     </div>
