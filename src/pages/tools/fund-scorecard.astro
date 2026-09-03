@@ -335,7 +335,7 @@ import Layout from '../../layouts/Layout.astro';
       const code = $('fs-code').value.trim();
       if (!/^\d{6}$/.test(code)) { status('请输入 6 位数字基金代码。', 'warn'); return; }
       ['card-conclusion', 'card-nav', 'card-position', 'card-role', 'card-xval'].forEach((id) => $(id).style.display = 'none');
-      status(`正在加载 ${code} 数据（天天基金公开接口）…`, 'ok');
+      status(`正在加载 ${code} 数据…`, 'ok');
 
       try {
         // 1. 净值全量 + 基本信息
