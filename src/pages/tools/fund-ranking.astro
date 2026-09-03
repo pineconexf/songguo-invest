@@ -1,0 +1,187 @@
+---
+import Layout from '../../layouts/Layout.astro';
+// 松果基金排名（V3.1，2026-09-03 峰哥立项）
+// 同一个五维打分规则（收益30/回撤25/费率15/规模20/经理10），从单只体检扩展到全市场排名
+// 数据管线：tushare 抓取脚本 backend/scripts/fund_ranking_build.py（每日收盘后 cron）
+//   偏股榜=股票型、固收+榜=混合型、纯债榜=债券型（合同类型近似）
+//   过滤：场外、成立满1年、规模≥1亿、排除ETF联接
+//   费率维度用管理费+托管费近似（tushare 无申购费字段，口径已公开）
+// 合规：方法论演示，不构成投资建议
+import ranking from '../../data/fund_ranking.json';
+
+const cats = ranking.categories || [];
+const meta = ranking.meta || {};
+---
+
+<Layout
+  title="基金排名"
+  description="松果基金排名 V3.1 — 按松果五标准（收益30/回撤25/费率15/规模20/经理10）对全市场场外基金打分，三类榜单 Top 10。规则公开可复算，数据来自 tushare。免费工具，不构成投资建议。"
+>
+  <section class="hero" style="padding: 56px 48px;">
+    <div class="hero-inner">
+      <span class="eyebrow">Free Tool · 基金排名 V3.1</span>
+      <h1>
+        同一个五维规则，<br /><span class="gold">从单只体检，到全市场排名</span>
+      </h1>
+      <p class="hero-lead">
+        打分卡回答「这只基金干啥」；排名回答「这个维度下谁值得看」。三类榜单（偏股 / 固收+ / 纯债），
+        规则与打分卡完全一致——收益 30、回撤 25、费率 15、规模 20、经理 10，公开可复算。
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ 口径说明 ============ -->
+  <section class="card" style="max-width: 960px; margin: 0 auto;">
+    <div class="section-head">
+      <div class="section-kicker">口径透明</div>
+      <h2 class="section-title">榜单怎么来的，先讲清楚</h2>
+      <p class="section-sub" style="font-size:13px; line-height:1.8;">
+        数据日期：{meta.data_date || '—'} ｜ 数据源：{meta.data_source || 'tushare'} ｜ 规则：{meta.rule || '松果五标准'}
+        <br />分类口径：{meta.category_note || '—'}
+        <br />费率口径：{meta.fee_note || '—'} ｜ 筛选：{meta.filter || '成立满1年、规模≥1亿'}
+      </p>
+    </div>
+
+    <!-- Tab 切换 -->
+    <div style="display:flex; gap: var(--sp-2); margin-bottom: var(--sp-4); flex-wrap:wrap;">
+      {cats.map((c, i) => (
+        <button
+          data-cat={i}
+          class={"rank-tab btn" + (i === 0 ? " btn-gold" : "")}
+          style={i === 0 ? "" : "background:transparent; border:1px solid rgba(139,94,60,0.3); color:var(--navy-800);"}
+        >
+          {c.name}（{c.count} 只）
+        </button>
+      ))}
+    </div>
+
+    <!-- 榜单容器 -->
+    {cats.map((c, i) => (
+      <div class="rank-board" data-board={i} style={i === 0 ? "" : "display:none;"}>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>名次</th><th>代码</th><th>名称</th><th>近1年收益</th><th>最大回撤</th>
+                <th>费率<br/><span style="font-weight:400;font-size:11px;">管理+托管</span></th>
+                <th>规模<br/><span style="font-weight:400;font-size:11px;">亿元</span></th>
+                <th>经理<br/><span style="font-weight:400;font-size:11px;">任职年</span></th>
+                <th>总分</th><th>等级</th>
+              </tr>
+            </thead>
+            <tbody>
+              {c.top10.map((r, i) => (
+                <tr class={i === 0 ? "rank-top1" : ""}>
+                  <td><b>{i + 1}</b></td>
+                  <td>{r.code}</td>
+                  <td><a href={"/songguo-invest/tools/fund-scorecard/?code=" + r.code} style="color:var(--navy-900); text-decoration:none; border-bottom:1px dashed rgba(139,94,60,0.4);">{r.name}</a></td>
+                  <td style="color:{(r.r1y ?? 0) >= 0 ? 'var(--green)' : 'var(--red)'}; font-weight:600;">{(r.r1y ?? 0) >= 0 ? '+' : ''}{(r.r1y ?? 0).toFixed(1)}%</td>
+                  <td>-{(r.mdd ?? 0).toFixed(1)}%</td>
+                  <td>{(r.fee ?? 0).toFixed(2)}%</td>
+                  <td>{(r.size ?? 0).toFixed(0)}</td>
+                  <td>{(r.mgr ?? 0).toFixed(1)}</td>
+                  <td style="font-weight:700; color:{(r.total ?? 0) >= 75 ? 'var(--green)' : (r.total ?? 0) >= 60 ? 'var(--gold)' : 'var(--red)'};">{(r.total ?? 0).toFixed(1)}</td>
+                  <td>{r.grade}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p style="font-size:12px; color:var(--navy-600); margin-top: var(--sp-3);">
+          Top 1 金色高亮。点击基金名称跳转基金体检卡直接体检。完整前 50 榜单：<button class="rank-more" data-board={i} style="background:none; border:none; color:var(--gold); cursor:pointer; text-decoration:underline; font-size:12px;">展开 ↓</button>
+        </p>
+        <div class="rank-full" data-full={i} style="display:none;">
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>名次</th><th>代码</th><th>名称</th><th>近1年收益</th><th>最大回撤</th><th>费率</th><th>规模</th><th>经理</th><th>总分</th><th>等级</th>
+                </tr>
+              </thead>
+              <tbody>
+                {c.top50.slice(10).map((r, i) => (
+                  <tr>
+                    <td>{i + 11}</td>
+                    <td>{r.code}</td>
+                    <td><a href={"/songguo-invest/tools/fund-scorecard/?code=" + r.code} style="color:var(--navy-900); text-decoration:none; border-bottom:1px dashed rgba(139,94,60,0.4);">{r.name}</a></td>
+                    <td style="color:{(r.r1y ?? 0) >= 0 ? 'var(--green)' : 'var(--red)'};">{(r.r1y ?? 0) >= 0 ? '+' : ''}{(r.r1y ?? 0).toFixed(1)}%</td>
+                    <td>-{(r.mdd ?? 0).toFixed(1)}%</td>
+                    <td>{(r.fee ?? 0).toFixed(2)}%</td>
+                    <td>{(r.size ?? 0).toFixed(0)}</td>
+                    <td>{(r.mgr ?? 0).toFixed(1)}</td>
+                    <td style="font-weight:700;">{(r.total ?? 0).toFixed(1)}</td>
+                    <td>{r.grade}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    ))}
+  </section>
+
+  <!-- ============ 规则公开（与打分卡同款） ============ -->
+  <section class="card" style="max-width: 960px; margin: var(--sp-5) auto 0;">
+    <div class="section-head">
+      <div class="section-kicker">规则公开可复算</div>
+      <h2 class="section-title">五维打分怎么算的</h2>
+      <p class="section-sub">与基金体检卡同一套规则，写死在这里，任何人可核：</p>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>维度</th><th>权重</th><th>打分规则</th></tr></thead>
+        <tbody>
+          <tr><td>收益</td><td>30 分</td><td>近1年 0%→20% 线性（≥20% 满分，≤0% 0 分）</td></tr>
+          <tr><td>回撤</td><td>25 分</td><td>近1年最大回撤 ≤5% 满分，15% 0 分，中间线性</td></tr>
+          <tr><td>费率</td><td>15 分</td><td>管理费+托管费 0.1% 满分，0.6% 0 分（tushare 无申购费，以此近似）</td></tr>
+          <tr><td>规模</td><td>20 分</td><td>20-300 亿满分；&gt;300 每 5 亿扣 1 分；&lt;20 按比例（清盘风险）</td></tr>
+          <tr><td>经理</td><td>10 分</td><td>现任经理最长任职 3 年→7 年线性（≥7 年满分，策略稳定性代理）</td></tr>
+          <tr><td colspan="3" style="font-size:12px; color:var(--navy-600);">总分 ≥75 可入池 ｜ ≥60 候选 ｜ ≥45 谨慎 ｜ &lt;45 不达标</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card" style="max-width: 960px; margin: var(--sp-5) auto 0; font-size:12px; color:var(--navy-600); line-height:1.8;">
+    本工具为方法论演示，<b>不构成投资建议</b>；榜单基于公开数据按固定规则计算，高分不代表未来收益，低分不代表没有价值——规则是死的，使用是活的。数据源：tushare（http 通道）；数据更新：每日收盘后 cron 构建。
+  </section>
+</Layout>
+
+<script>
+  // Tab 切换
+  document.querySelectorAll('.rank-tab').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.rank-tab').forEach((b) => {
+        b.classList.remove('btn-gold');
+        b.style.background = 'transparent';
+        b.style.border = '1px solid rgba(139,94,60,0.3)';
+        b.style.color = 'var(--navy-800)';
+      });
+      btn.classList.add('btn-gold');
+      btn.style.background = '';
+      btn.style.border = '';
+      btn.style.color = '';
+      document.querySelectorAll('.rank-board').forEach((bd) => {
+        bd.style.display = bd.dataset.board === btn.dataset.cat ? '' : 'none';
+      });
+    });
+  });
+  // 展开前50
+  document.querySelectorAll('.rank-more').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.querySelector('[data-full="' + btn.dataset.board + '"]').style.display = '';
+      btn.style.display = 'none';
+    });
+  });
+</script>
+
+<style>
+  .rank-top1 td {
+    background: rgba(217,164,65,0.10);
+    font-weight: 600;
+  }
+  .rank-top1 td:first-child {
+    border-left: 3px solid var(--gold);
+  }
+</style>

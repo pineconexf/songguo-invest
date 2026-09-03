@@ -586,6 +586,13 @@ import Layout from '../../layouts/Layout.astro';
     }
 
     $('fs-run')?.addEventListener('click', run);
-    $('fs-code')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') run(); });
+        $('fs-code')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') run(); });
+
+        // V3.1 联动：从排名页跳转带 ?code= 参数 → 预填并自动体检
+        const urlCode = new URLSearchParams(location.search).get('code');
+        if (urlCode && /^\d{6}$/.test(urlCode)) {
+          $('fs-code').value = urlCode;
+          run();
+        }
   </script>
 </Layout>
