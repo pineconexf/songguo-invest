@@ -129,7 +129,7 @@ const meta = ranking.meta || {};
       <p class="section-sub">与基金体检卡同一套规则，写死在这里，任何人可核：</p>
     </div>
     <div class="table-wrap">
-      <table class="data-table">
+      <table class="data-table wrap-cells">
         <thead><tr><th>维度</th><th>权重</th><th>打分规则</th></tr></thead>
         <tbody>
           <tr><td>收益</td><td>30 分</td><td>近1年 0%→20% 线性（≥20% 满分，≤0% 0 分）</td></tr>
@@ -177,6 +177,13 @@ const meta = ranking.meta || {};
 </script>
 
 <style>
+  /* 长文字表格（规则说明）：允许换行，消除横向滚动条 */
+  .wrap-cells th,
+  .wrap-cells td {
+    white-space: normal;
+    text-align: left;
+    line-height: 1.6;
+  }
   .rank-top1 td {
     background: rgba(217,164,65,0.10);
     font-weight: 600;

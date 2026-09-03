@@ -138,7 +138,7 @@ import Layout from '../../layouts/Layout.astro';
             <p class="section-sub">市面上的基金评分通常是黑箱：给一个数字，不告诉你怎么算的、数据全不全、结论适不适合你。我们把这件事拆成三件，分开做：<b>数据公开可验、规则公开可算、结论留给你</b>。</p>
           </div>
           <div class="table-wrap">
-            <table class="data-table">
+            <table class="data-table wrap-cells">
               <thead><tr><th></th><th>常规做法</th><th class="songguo-col">松果基金体检卡</th></tr></thead>
               <tbody>
                 <tr><td><b>数据权</b></td><td>模型不公开，历史可看不可验</td><td class="songguo-col"><b>天天基金公开接口直读</b>：净值/收益率/同类排名/资产配置/重仓/费率/规模/经理，全部可复算</td></tr>
@@ -586,13 +586,23 @@ import Layout from '../../layouts/Layout.astro';
     }
 
     $('fs-run')?.addEventListener('click', run);
-        $('fs-code')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') run(); });
+    $('fs-code')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') run(); });
 
-        // V3.1 联动：从排名页跳转带 ?code= 参数 → 预填并自动体检
-        const urlCode = new URLSearchParams(location.search).get('code');
-        if (urlCode && /^\d{6}$/.test(urlCode)) {
-          $('fs-code').value = urlCode;
-          run();
-        }
+    // V3.1 联动：从排名页跳转带 ?code= 参数 → 预填并自动体检
+    const urlCode = new URLSearchParams(location.search).get('code');
+    if (urlCode && /^\d{6}$/.test(urlCode)) {
+      $('fs-code').value = urlCode;
+      run();
+    }
   </script>
+
+<style>
+  /* 长文字表格（特色卡）：允许换行，消除横向滚动条 */
+  .wrap-cells th,
+  .wrap-cells td {
+    white-space: normal;
+    text-align: left;
+    line-height: 1.6;
+  }
+</style>
 </Layout>
