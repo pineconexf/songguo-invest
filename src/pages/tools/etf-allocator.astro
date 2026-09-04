@@ -19,7 +19,7 @@ const PIECE_META = [
   { code: '510880', name: '红利ETF（华泰柏瑞）', role: '红利拼图', note: '上证红利，高股息现金流资产', fee: '0.50', custody: '0.10' },
   { code: '513500', name: '标普500ETF（博时）', role: 'QDII拼图', note: '全球核心权益，与 A 股相关性 0.01~0.20', fee: '0.60', custody: '0.20' },
 ];
-// 管理费/托管费为基金合同公开费率（天天基金 F10 档案，2026-09-02 核实）；上证红利指数股息率 3.98%（理杏仁/中证指数 2026-07-31）
+// 管理费/托管费为基金合同公开费率（天天基金 F10 档案，2026-09-02 核实）；上证红利指数股息率 3.98%（中证指数官方，2026-07-31）
 // 参考价：2026-08-25 收盘（新浪财经实测），实时价由腾讯行情拉取后覆盖
 const REF_PRICES = [141.302, 9.965, 3.409, 2.695];
 const TIERS = [
@@ -151,7 +151,7 @@ const fmtPct = (v: number, d = 1) => (v >= 0 ? '+' : '') + (v * 100).toFixed(d) 
               <div class="metric-card">
                 <div class="label">组合年化股息率（现金流视角）</div>
                 <div class="value" id="ea-divyield" style="font-size:16px;">--</div>
-                <div class="sub">按红利拼图权重 × 上证红利指数股息率 3.98%（2026-07-31，理杏仁/中证指数口径）估算，非分红保证。</div>
+                <div class="sub">按红利拼图权重 × 上证红利指数股息率 3.98%（2026-07-31，中证指数官方口径）估算，非分红保证。</div>
               </div>
             </div>
           </div>
@@ -224,45 +224,27 @@ const fmtPct = (v: number, d = 1) => (v >= 0 ? '+' : '') + (v * 100).toFixed(d) 
     <b>买入提示</b>：场内 ETF 按 100 份/手取整，剩余零钱可留作下次再平衡或放货币基金。
   </div>
 
-  <!-- 竞品对比：帮你投 vs 且慢 vs 松果（真实调研 2026-08） -->
+  <!-- 自身特色卡（常规做法 vs 松果，不点名） -->
   <section class="card" style="max-width: 920px; margin: var(--sp-4) auto 0;" id="vs">
     <div class="section-head">
       <div class="section-kicker">基准对比 · 同类工具</div>
-      <h2 class="section-title">和市面上的"帮你配"比，差在哪？</h2>
-      <p class="section-sub">对比基于公开产品说明（2026-08 调研）：帮你看清每个工具到底给你什么、要你付出什么。</p>
+      <h2 class="section-title">和市面上的"基金组合配置工具"对比，我们的特色是什么</h2>
+      <p class="section-sub">常见的配置服务分两类：一类全托管，你看不到内部逻辑；一类给你策略跟投，信号口径不统一。松果走第三条路：<b>规则全公开、权重你来改、回测可复现</b>。</p>
     </div>
-    <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-3);">
-          <div class="card" style="padding: var(--sp-4);">
-            <div class="section-kicker">支付宝「帮你投」</div>
-            <div style="margin-top: var(--sp-3); display:flex; flex-direction:column; gap: var(--sp-3);">
-              <div><div style="font-weight:700; font-size:13px; margin-bottom:4px;">给你什么</div><div style="font-size:13px; color:var(--text-2);">AI 自动调仓，买入后不用管</div></div>
-              <div><div style="font-weight:700; font-size:13px; margin-bottom:4px;">你要付出</div><div style="font-size:13px; color:var(--text-2);">0.5%/年 服务费（800 元起投）</div></div>
-              <div><div style="font-weight:700; font-size:13px; margin-bottom:4px;">透明度</div><div style="font-size:13px; color:var(--text-2);">黑盒：看不到具体持仓逻辑</div></div>
-              <div><div style="font-weight:700; font-size:13px; margin-bottom:4px;">适合谁</div><div style="font-size:13px; color:var(--text-2);">不想操心的全委托型</div></div>
-            </div>
-          </div>
-          <div class="card" style="padding: var(--sp-4);">
-            <div class="section-kicker">且慢「四笔钱」</div>
-            <div style="margin-top: var(--sp-3); display:flex; flex-direction:column; gap: var(--sp-3);">
-              <div><div style="font-weight:700; font-size:13px; margin-bottom:4px;">给你什么</div><div style="font-size:13px; color:var(--text-2);">大V 主理人策略，跟投抄作业</div></div>
-              <div><div style="font-weight:700; font-size:13px; margin-bottom:4px;">你要付出</div><div style="font-size:13px; color:var(--text-2);">跟投门槛+补仓操作，需持续关注</div></div>
-              <div><div style="font-weight:700; font-size:13px; margin-bottom:4px;">透明度</div><div style="font-size:13px; color:var(--text-2);">主理人买卖信号可见，但历史收益口径不一</div></div>
-              <div><div style="font-weight:700; font-size:13px; margin-bottom:4px;">适合谁</div><div style="font-size:13px; color:var(--text-2);">愿意跟进、信任主理人的半主动型</div></div>
-            </div>
-          </div>
-          <div class="card" style="padding: var(--sp-4); border: 1px solid var(--gold-500); background: rgba(217,164,65,0.04);">
-            <div class="section-kicker" style="color: var(--gold-600);">松果 ETF 配置器</div>
-            <div style="margin-top: var(--sp-3); display:flex; flex-direction:column; gap: var(--sp-3);">
-              <div><div style="font-weight:700; font-size:13px; margin-bottom:4px;">给你什么</div><div style="font-size:13px; color:var(--text-2);"><b>152 个月回测全透明</b>，每档权重可改，金额直接算份额</div></div>
-              <div><div style="font-weight:700; font-size:13px; margin-bottom:4px;">你要付出</div><div style="font-size:13px; color:var(--text-2);">免费，自己操作 ETF 交易</div></div>
-              <div><div style="font-weight:700; font-size:13px; margin-bottom:4px;">透明度</div><div style="font-size:13px; color:var(--text-2);"><b>每档回测可复现</b>，数据口径全程公开</div></div>
-              <div><div style="font-weight:700; font-size:13px; margin-bottom:4px;">适合谁</div><div style="font-size:13px; color:var(--text-2);"><b>想搞懂自己钱怎么配、要透明回测的主动型</b></div></div>
-            </div>
-          </div>
-        </div>
-    <div style="font-size: 12px; color: var(--text-3); margin-top: 8px;">
-      一句话：帮你投卖「省心」，且慢卖「跟人」，松果卖「<b>透明 + 自由</b>」——回测给你看、权重给你改。
-    </div>
+    <div class="table-wrap">
+        <table class="data-table wrap-cells">
+          <thead><tr><th></th><th>常规做法</th><th class="songguo-col">松果 ETF 配置器</th></tr></thead>
+          <tbody>
+            <tr><td><b>配置逻辑</b></td><td>托管式黑箱：买入后你看不到配比逻辑</td><td class="songguo-col"><b>四拼图结构全程可见</b>：国债 / 黄金 / 红利 / QDII 各占多少、为什么这么配，写在页面上</td></tr>
+            <tr><td><b>回测透明度</b></td><td>给历史收益曲线，口径不讲</td><td class="songguo-col"><b>152 个月逐月回测全公开</b>：每档权重可改，改完立刻重算——不是给你一条曲线让你信，是给你公式让你验</td></tr>
+            <tr><td><b>费用</b></td><td>按规模收投顾服务费，年年扣</td><td class="songguo-col"><b>免费，零附加费</b>：你只付 ETF 本身的管理托管费，费率逐只列明（官网核实）</td></tr>
+            <tr><td><b>持仓成本保护</b></td><td>买入价不管，波动自己扛</td><td class="songguo-col"><b>分批建仓方案 + 溢价率提示条</b>：一次性买还是分几批、当前是不是买贵了，工具直接提醒</td></tr>
+            <tr><td><b>结论明确度</b></td><td>给一个组合方案就结束</td><td class="songguo-col"><b>金额进、份额出</b>：输一笔钱，每只 ETF 买几手直接算好，还能一键复制配置表</td></tr>
+            <tr><td><b>适合谁</b></td><td>不想操心的全委托型 / 愿意跟进的半主动型</td><td class="songguo-col"><b>想搞懂自己钱怎么配、要透明可复现的主动型</b></td></tr>
+          </tbody>
+        </table>
+      </div>
+
   </section>
 
   <script>
@@ -414,7 +396,7 @@ const fmtPct = (v: number, d = 1) => (v >= 0 ? '+' : '') + (v * 100).toFixed(d) 
           mddSay;
       }
     }
-    // G4 现金流视角：组合年化股息率 = 红利权重 % × 红利ETF股息率（上证红利指数 3.98% @2026-07-31，理杏仁/中证指数口径）
+    // G4 现金流视角：组合年化股息率 = 红利权重 % × 红利ETF股息率（上证红利指数 3.98% @2026-07-31，中证指数官方口径）
     const DIV_YIELD = 0.0398;
     function updateExtra(w, amount) {
       const extra = $('ea-extra') as HTMLElement;
@@ -605,4 +587,14 @@ const fmtPct = (v: number, d = 1) => (v >= 0 ? '+' : '') + (v * 100).toFixed(d) 
           loadNAV((navs) => updatePremium(navs, px));
         });
       </script>
+
+<style>
+  /* 长文字表格（特色卡）：允许换行，消除横向滚动条 */
+  .wrap-cells th,
+  .wrap-cells td {
+    white-space: normal;
+    text-align: left;
+    line-height: 1.6;
+  }
+</style>
 </Layout>

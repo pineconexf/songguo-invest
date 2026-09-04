@@ -116,26 +116,24 @@ const bench = [
       本工具为方法论演示，<b>不构成投资建议</b>。投资有风险，入市需谨慎。
     </div>
 
-    <!-- 竞品对比：聚宽/米筐/果仁 vs 松果（真实调研 2026-08） -->
+    <!-- 自身特色卡（常规做法 vs 松果，不点名） -->
     <section class="card" style="max-width: 860px; margin: var(--sp-5) auto 0;">
       <div class="section-head">
         <div class="section-kicker">基准对比 · 同类工具</div>
-        <h2 class="section-title">和市面上的"回测工具"比，差在哪？</h2>
-        <p class="section-sub">对比基于各家公开功能（2026-08 调研）：专业回测平台卖"计算能力"，松果卖"判断结论"。</p>
+        <h2 class="section-title">和市面上的"回测工具"对比，我们的特色是什么</h2>
+        <p class="section-sub">专业回测工具给你强大的计算引擎和一条曲线，剩下的判断还是你自己的。松果把这件事拆开做：<b>门槛降到 4 个数字、结论直接给出、还带体系参照锚</b>。</p>
       </div>
       <div class="table-wrap">
-        <table class="data-table">
-          <thead><tr><th></th><th>聚宽 / 米筐（量化平台）</th><th>果仁网（策略回测）</th><th class="songguo-col">松果回测验证</th></tr></thead>
+        <table class="data-table wrap-cells">
+          <thead><tr><th></th><th>常规做法</th><th class="songguo-col">松果回测验证</th></tr></thead>
           <tbody>
-            <tr><td><b>给你什么</b></td><td>完整回测引擎 + 编程环境（需写代码）</td><td>策略回测 + 建模（需策略思路）</td><td class="songguo-col"><b>30 秒风险调整后对比</b>（Calmar/夏普/终值）</td></tr>
-            <tr><td><b>门槛</b></td><td>程序员向，学习成本高</td><td>需自己写策略逻辑</td><td class="songguo-col"><b>填 4 个数字即出结论</b>——年化、回撤、时长、波动率</td></tr>
-            <tr><td><b>结论明确度</b></td><td>给你曲线，自己判断</td><td>给你回测报告，自己决策</td><td class="songguo-col"><b>直接告诉你哪个策略风险调整后更优</b>，并对比松果 V35 参照锚</td></tr>
-            <tr><td><b>适合谁</b></td><td>量化研究员</td><td>有策略想法的进阶用户</td><td class="songguo-col"><b>想知道"我瞎定的比率靠不靠谱"的任何人</b></td></tr>
+            <tr><td><b>输入门槛</b></td><td>要会编程或会写策略，学习成本高</td><td class="songguo-col"><b>填 4 个数字即出结论</b>：年化、最大回撤、时长、波动率——不写一行代码</td></tr>
+            <tr><td><b>给你什么</b></td><td>一条回测曲线，好坏自己看</td><td class="songguo-col"><b>风险调整后直接分胜负</b>：Calmar / 夏普 / 终值三个口径，谁优谁劣 30 秒见分晓</td></tr>
+            <tr><td><b>参照系</b></td><td>只有你的策略孤零零一条线</td><td class="songguo-col"><b>内置松果 V35 体系参照锚</b>：你的策略放到 14 年实盘口径旁边比，高下立判</td></tr>
+            <tr><td><b>口径透明</b></td><td>指标怎么算的不展示</td><td class="songguo-col"><b>公式写在页面上</b>：每个指标怎么算的、无风险利率取多少，全部可见可复算</td></tr>
+            <tr><td><b>适合谁</b></td><td>量化研究员、有策略经验的进阶用户</td><td class="songguo-col"><b>想知道"我这个比率靠不靠谱"的任何人</b></td></tr>
           </tbody>
         </table>
-      </div>
-      <div style="font-size: 12px; color: var(--text-3); margin-top: 8px;">
-        一句话：聚宽/果仁卖「回测能力」，松果卖「<b>判断结论</b>」——你的比率行不行，30 秒告诉你，且跟体系锚对比。
       </div>
     </section>
 
@@ -202,4 +200,14 @@ const bench = [
     }
     document.getElementById('bc-run')?.addEventListener('click', run);
   </script>
+
+<style>
+  /* 长文字表格（特色卡）：允许换行，消除横向滚动条 */
+  .wrap-cells th,
+  .wrap-cells td {
+    white-space: normal;
+    text-align: left;
+    line-height: 1.6;
+  }
+</style>
 </Layout>
