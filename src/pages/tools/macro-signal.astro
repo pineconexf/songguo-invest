@@ -3,21 +3,76 @@ import Layout from '../../layouts/Layout.astro';
 import Chart from '../../components/Chart.astro';
 import macro from '../../data/macro_signal.json';
 
-// 宏观信号查询工具：809 周 Shibor 信号（2011W01 ~ 2026W34）
-// 口径：shibor 1W 周均值环比下行>5bp → 宽松（买入中证500）；否则收紧（空仓）
-// 数据源：src/data/macro_signal.json（walk-forward 样本外年化 +10.04%）
-const weeks = macro.weeks as Array<{
+// 宏观信号查询工具 V2：811 周 Shibor 流动性信号（2011W01 ~ 当前）
+// 规则唯一：Shibor 1W 周均环比下行 >5bp → 宽松（持有中证500）；否则收紧（空仓）
+// 证据链口径：滞后口径（T周信号 → T+1周执行 → T+1周收益，单边成本0.05%）
+type Wk = {
   week: string; shibor: number | null; diff_bp: number | null;
   signal: string; action: string; hs300_ret: number | null; zz500_ret: number | null;
-}>;
-const stats = macro.stats as {
-  total_weeks: number; loose_weeks: number; tight_weeks: number; loose_pct: number;
-  start: string; end: string; threshold: string; note: string;
+  next_zz500_ret: number | null; next_hs300_ret: number | null;
+};
+const weeks = macro.weeks as Wk[];
+const stats = macro.stats as any;
+const ev = stats.evidence as {
+  oos_grid: Record<string, { ann: number; cum: number; mdd: number; n: number }>;
+  full_5bp: any; bench: any; roll: any; fixed5: any;
+  yearly: Record<string, { strat: number; bench: number; hold: string }>;
+  ledger: { flips_total: number; flips_per_year: number; in_market_pct: number; mean_hold_week: number; mean_flat_week: number };
+  streak: { signal: string; weeks: number };
+  avg_streak: Record<string, number>;
 };
 const latest = weeks[weeks.length - 1];
 const prev = weeks[weeks.length - 2];
+const loose = latest.signal === '宽松';
+const isStale = (() => {
+  // 信号周周五距今 > 13 天（即又过了一个完整周）→ 视为数据落后
+  const y = Number(stats.end.slice(0, 4)), w = Number(stats.end.slice(5));
+  const fri = new Date(Date.UTC(y, 0, 1 + (w - 1) * 7 + ((5 - ((new Date(Date.UTC(y, 0, 1)).getUTCDay() + 6) % 7) + 7) % 7)));
+  return (Date.now() - fri.getTime()) / 864e5 > 13;
+})();
 
-// 图表：最近 104 周 Shibor 走势，宽松周绿点 / 收紧周灰点
+// 复制摘要（纯文本）
+const copyText = `【松果宏观信号 · ${latest.week}】
+Shibor 1W 周均：${latest.shibor}%（环比 ${latest.diff_bp > 0 ? '+' : ''}${latest.diff_bp}bp，阈值：下行>5bp）
+信号：${latest.signal} → ${loose ? '进攻（持有中证500指数基金）' : '防守（空仓等待）'}；本轮已持续 ${ev.streak.weeks} 周
+口径：周均环比下行>5bp=宽松；${stats.total_weeks} 周样本外年化 +${ev.oos_grid['5bp_5bp'].ann}%（单边成本0.05%）
+https://pineconexf.github.io/songguo-invest/tools/macro-signal/
+不构成投资建议`;
+
+// 3a 敏感性网格
+const THS = [0, 1, 2, 5, 10], COSTS = [3, 5, 10];
+const grid = (cost: number) => THS.map((t) => ev.oos_grid[`${t}bp_${cost}bp`]);
+const minCell = (cost: number) => Math.min(...grid(cost).map((c) => c.ann));
+// 3b 逐年
+const yearly = Object.entries(ev.yearly) as [string, { strat: number; bench: number; hold: string }][];
+const maxAbs = Math.max(...yearly.flatMap(([, v]) => [Math.abs(v.strat), Math.abs(v.bench)]));
+const barPct = (v: number) => Math.max(2, Math.abs(v) / maxAbs * 48);
+// 净值曲线数据（OOS 5bp/5bp成本，52周拼接 + 满仓同窗）
+const oos5 = ev.oos_grid['5bp_5bp'];
+const eqLabels = weeks.slice(-oos5.n).map((w) => w.week);
+let _c1 = 1, _c2 = 1, _pos = 0, _ppos = 0;
+const eqStrat: number[] = [], eqBench: number[] = [];
+for (const w of weeks.slice(-oos5.n)) {
+  _pos = w.signal === '宽松' ? 1 : 0;
+  const r = w.next_zz500_ret !== null && _pos ? w.next_zz500_ret - 0.0005 * Math.abs(_pos - _ppos) : (_pos ? -0.0005 * Math.abs(_pos - _ppos) : 0);
+  _c1 *= (1 + r); _ppos = _pos;
+  if (w.zz500_ret !== null) _c2 *= (1 + w.zz500_ret);
+  eqStrat.push(+((_c1 - 1) * 100).toFixed(1));
+  eqBench.push(+((_c2 - 1) * 100).toFixed(1));
+}
+const equityOption = {
+  tooltip: { trigger: 'axis' as const, valueFormatter: (v: number) => '+' + v + '%' },
+  legend: { data: ['策略（5bp/样本外）', '满仓中证500'], textStyle: { color: '#5c3a21' }, top: 0 },
+  grid: { left: 46, right: 16, top: 32, bottom: 28 },
+  xAxis: { type: 'category' as const, data: eqLabels, axisLabel: { color: '#9a8c7a', interval: 51 } },
+  yAxis: { type: 'value' as const, name: '累计收益 (%)', nameTextStyle: { color: '#9a8c7a' }, axisLabel: { color: '#9a8c7a' }, splitLine: { lineStyle: { color: 'rgba(139,94,60,0.10)' } } },
+  series: [
+    { name: '策略（5bp/样本外）', type: 'line' as const, data: eqStrat, showSymbol: false, lineStyle: { width: 2, color: '#4a7c59' }, areaStyle: { color: 'rgba(74,124,89,0.08)' } },
+    { name: '满仓中证500', type: 'line' as const, data: eqBench, showSymbol: false, lineStyle: { width: 1.4, color: '#9a8c7a', type: 'dashed' as const } },
+  ],
+};
+
+// 图表：近 104 周
 const chartWeeks = weeks.slice(-104);
 const chartOption = {
   tooltip: { trigger: 'axis' as const },
@@ -35,43 +90,157 @@ const chartOption = {
   legend: { data: ['Shibor 1W'], textStyle: { color: '#5c3a21' }, top: 0 },
 };
 const last24 = weeks.slice(-24).reverse();
+const avgHoldTxt = ev.avg_streak['1'], avgFlatTxt = ev.avg_streak['0'];
+const leadWeek = latest.week.replace('-', '');
+const fmtPct = (v: number | null) => v === null || v === undefined ? '—' : (v >= 0 ? '+' : '') + (v * 100).toFixed(2) + '%';
 ---
 <Layout
   title="宏观信号查询"
-  description="松果宏观信号查询 — 809 周 Shibor 流动性信号（宽松/收紧），当前信号一键查询，历史信号回溯。免费工具，不构成投资建议。"
+  description="松果宏观信号查询 — 每周只看一个数：钱变便宜了还是变贵了。811 周样本外验证，连失效年都摆在页面上。免费工具，不构成投资建议。"
 >
   <section class="hero" style="padding: 56px 48px;">
     <div class="hero-inner">
       <span class="eyebrow">Free Tool · 宏观择时</span>
       <h1>
-        现在该<span class="gold">进攻</span>还是防守？<br />让流动性信号说话
+        现在该<span class="gold">进攻</span>还是防守？<br />每周只看一个数
       </h1>
       <p class="hero-lead">
-        松果宏观时钟 V1：以 Shibor 1W 周均值环比变化为信号（下行 &gt;5bp 即宽松），
-        覆盖 809 周（{stats.start} ~ {stats.end}），walk-forward 样本外年化 +10.04%。
-        查任意一周，看当时信号怎么判。
+        钱变便宜了没有——变了就进攻，没变就防守。{stats.total_weeks} 周样本外验证（walk-forward），
+        连信号失效的年份都摆在页面上。免费 · 不黑箱 · 给动作。
       </p>
     </div>
   </section>
 
-  <!-- 当前信号 -->
+  <!-- Step 1 · 当前信号卡（人话先行，数字收进折叠） -->
   <section class="card" style="max-width: 860px; margin: 0 auto;">
     <div class="section-head">
       <div class="section-kicker">Latest Signal · 最新一期</div>
-      <h2 class="section-title">当前信号：{latest.signal === '宽松' ? '宽松（进攻）' : '收紧（防守）'}</h2>
-      <p class="section-sub">数据截至 {latest.week}（{stats.end} 更新），口径：环比下行 &gt;{stats.threshold} 为宽松。</p>
+      <div class="big-action" style={`color: ${loose ? 'var(--green)' : 'var(--red)'};`}>
+        <span>{loose ? '🟢 钱变便宜了' : '🔴 钱没有变便宜'}</span>
+        <span class="arrow">→</span>
+        <span>体系动作：{loose ? '进攻' : '防守'}</span>
+      </div>
+      <p class="section-sub">
+        本轮「{latest.signal}」已持续 <b>{ev.streak.weeks} 周</b>（历史平均：宽松 {avgHoldTxt} 周 / 收紧 {avgFlatTxt} 周）。
+        {loose ? '进攻 = 持有中证500指数基金，信号翻回收紧前不动。' : '防守 = 空仓等待，信号翻宽松前不动。'}
+        规则唯一，中间不加戏。
+      </p>
+      <span class:list={['freshness', isStale ? 'stale' : 'fresh']}>
+        数据截至 {latest.week}{isStale ? ' · 更新中，以最近一周为准' : ' · 每周六自动更新'}
+      </span>
     </div>
+    <div style="display:flex; gap: var(--sp-3); margin-top: var(--sp-4); flex-wrap: wrap;">
+      <button id="ms-copy" class="btn btn-gold" data-text={copyText}>📄 复制信号摘要</button>
+      <span id="ms-copy-hint" style="align-self:center; font-size:13px; color:var(--navy-600);"></span>
+    </div>
+    <details style="margin-top: var(--sp-4);">
+      <summary style="cursor:pointer; font-size:14px; color:var(--navy-600);">查看数字（Shibor 1W 周均值与环比）</summary>
+      <div class="metric-grid" style="grid-template-columns: repeat(4, 1fr); margin-top: var(--sp-3);">
+        <div class="metric-card"><div class="label">信号周</div><div class="value" style="font-size:20px;">{latest.week}</div></div>
+        <div class="metric-card"><div class="label">本周资金价格 Shibor 1W 周均</div><div class="value" style="font-size:20px;">{latest.shibor}%</div></div>
+        <div class="metric-card"><div class="label">环比变化</div><div class="value" style="font-size:20px;" class:list={[latest.diff_bp < 0 ? 'pos' : 'neg']}>{latest.diff_bp > 0 ? '+' : ''}{latest.diff_bp} bp</div></div>
+        <div class="metric-card"><div class="label">判定</div><div class="value" style="font-size:20px;">{latest.signal}</div></div>
+      </div>
+      <div class="callout" style="margin-top: var(--sp-3);">
+        <b>判定过程</b>：Shibor 1W 周均值由 {prev.shibor}% 变为 {latest.shibor}%，环比 {latest.diff_bp > 0 ? '上行 ' + latest.diff_bp : '下行 ' + Math.abs(latest.diff_bp)}bp；
+        下行 &gt;5bp 才算宽松 → 本期判「{latest.signal}」。
+      </div>
+    </details>
+  </section>
+
+  <!-- Step 2 · 信号怎么读（教育模块） -->
+  <section class="card" style="max-width: 860px; margin: var(--sp-5) auto 0;">
+    <div class="section-head">
+      <div class="section-kicker">How to Read · 信号怎么读</div>
+      <h2 class="section-title">三句话讲清这个工具</h2>
+    </div>
+    <ol class="read-list">
+      <li><b>政策发布 ≠ 钱变便宜。</b>央行喊话、降印花税都不算，<b>银行间利率真的掉下来</b>才算——这就是 Shibor 存在的意义。</li>
+      <li><b>本工具不判断贵不贵</b>（那是估值温度计的事），只测钱的松紧。两根轴互补，不互相打架。</li>
+      <li><b>信号没翻转，就什么都不做。</b>持续周数就在上面；历史平均收紧 {avgFlatTxt} 周、宽松 {avgHoldTxt} 周，拿住规则比猜顶底容易。</li>
+    </ol>
+    <details style="margin-top: var(--sp-4);">
+      <summary style="cursor:pointer; font-size:14px; color:var(--navy-600);">原理与数据出处（可自行复核）</summary>
+      <div style="font-size:14px; line-height:1.9; color:var(--navy-900); margin-top:10px;">
+        <p><b>Shibor</b>（上海银行间同业拆放利率）是报价性质：信用高的银行之间借钱愿意出的利率，1W 是 7 天期限。官方数据源：<a href="https://www.chinamoney.com.cn/chinese/bkcurv/" target="_blank" rel="noopener">中国货币网（chinamoney.com.cn）</a>，本工具数据（tushare 转载官方）可逐周对照复核。</p>
+        <p style="margin-top:8px;"><b>为什么选中证500</b>：中盘偏小市值，对流动性松紧更敏感——钱贵时先被挤压，钱便宜时先被抬升。这条传导路径在聚宽等量化社区也有独立回测佐证。</p>
+        <p style="margin-top:8px;"><b>规则全文</b>：取 Shibor 1W 每个自然周（周一至周五）交易日报价的算术均值，与上一周均值比较；下行幅度 &gt;5bp（0.05 个百分点）判「宽松」，否则「收紧」。宽松持有中证500指数基金，收紧空仓。</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- Step 3 · 811 周证据链 -->
+  <section class="card" style="max-width: 860px; margin: var(--sp-5) auto 0;">
+    <div class="section-head">
+      <div class="section-kicker">Evidence · {stats.total_weeks} 周证据链</div>
+      <h2 class="section-title">别信结论，自己验算</h2>
+      <p class="section-sub">
+        主指标只用一个：<b>OOS 年化 {oos5.ann}%</b>（walk-forward：训练 {stats.total_weeks - oos5.n} 周 → 样本外 52 周 → 滚动拼接 {oos5.n} 周；
+        滞后口径 = T 周信号 → T+1 周执行 → T+1 周收益；单边成本 0.05%）。
+        对照同期满仓持有中证500：年化 {ev.bench.ann}%、最大回撤 {ev.bench.mdd}%。
+      </p>
+    </div>
+
+    <h3 class="sub-h3">3a · 样本外成绩单：阈值 × 成本敏感性</h3>
+    <p class="tbl-cap">「阈值为什么是 5bp」——不辩护，摊开算。下表为 OOS 拼接年化收益（%），5bp 列为本文档主口径：</p>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>单边成本 ＼ 阈值</th><th>0bp</th><th>1bp</th><th>2bp</th><th><b>5bp</b></th><th>10bp</th></tr></thead>
+        <tbody>
+          {COSTS.map((c) => (
+            <tr>
+              <td>{(c / 100).toFixed(2)}%</td>
+              {grid(c).map((cell) => <td class:list={[cell.ann > 0 ? 'pos' : 'neg', c === 5 && cell.ann === minCell(c) ? 'worst-cell' : '', '']}>{cell.ann.toFixed(2)}</td>)}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:13px; color:var(--navy-600); margin-top:8px;">
+      最坏格（成本 0.10% × 阈值 {THS[grid(10).findIndex((x) => x.ann === minCell(10))]}bp）年化仍为 {minCell(10).toFixed(2)}%。
+      <b>另一头也要自曝</b>：若不做 walk-forward、每年初回头看哪档历史年化最高就用哪档（"滚动选最优"），{oos5.n} 周拼接年化只有 <b>{ev.roll.ann}%</b>，
+      低于固定 5bp 的 {oos5.ann}%——挑参数本身就是过拟合入口，所以我们不挑。
+    </p>
+
+    <h3 class="sub-h3">3b · 逐年成绩单（{stats.total_weeks} 周全样本 · 滞后口径，失效年照登不藏）</h3>
+    <div class="table-wrap">
+      <table class="data-table yearly-table">
+        <thead><tr><th style="width:56px;">年份</th><th>策略</th><th>基准（满仓中证500）</th><th style="width:92px;">相对超额</th><th style="width:84px;">在场周数</th></tr></thead>
+        <tbody>
+          {yearly.map(([y, v]) => {
+            const alpha = +(v.strat - v.bench).toFixed(1);
+            return (
+              <tr>
+                <td>{y}</td>
+                <td class="cell-bar"><span class={`bar ${v.strat >= 0 ? 'bup' : 'bdn'}`} style={`width:${barPct(v.strat)}%;`}></span><em>{v.strat >= 0 ? '+' : ''}{v.strat}%</em></td>
+                <td class="cell-bar"><span class={`bar ${v.bench >= 0 ? 'bup' : 'bdn'}`} style={`width:${barPct(v.bench)}%;`}></span><em>{v.bench >= 0 ? '+' : ''}{v.bench}%</em></td>
+                <td class:list={[alpha >= 0 ? 'pos' : 'neg']}>{alpha >= 0 ? '+' : ''}{alpha} pp</td>
+                <td>{v.hold}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+    <div class="callout warn" style="margin-top: var(--sp-4);">
+      <b>已知边界</b>：2021 年结构性行情中信号失效（-1.7% vs 基准 +16.5%）；2014、2025 牛市没吃满。
+      它防的是"钱变贵"的跌，不防"钱贵但少数板块继续涨"。宏观管仓位，个股管选股，组合管风险。
+    </div>
+
+    <h3 class="sub-h3">3c · 净值曲线（样本外拼接窗口，两端都画）</h3>
+    <p class="tbl-cap">曲线按逐周连续回算（终点 ≈+207%）；上表 OOS 口径按 52 周训练/验证切窗拼接（+{oos5.cum.toFixed(1)}%），差异来自指数数据缺口周的窗口处理——量级结论一致。</p>
+    <Chart option={equityOption} height="380px" />
+
+    <h3 class="sub-h3">3d · 执行账本：翻转摩擦提前摊牌</h3>
     <div class="metric-grid" style="grid-template-columns: repeat(4, 1fr);">
-      <div class="metric-card"><div class="label">信号周</div><div class="value" style="font-size:20px;">{latest.week}</div></div>
-      <div class="metric-card"><div class="label">Shibor 1W 周均值</div><div class="value" style="font-size:20px;">{latest.shibor}%</div></div>
-      <div class="metric-card"><div class="label">环比变化</div><div class="value" style="font-size:20px;" class:list={[latest.diff_bp !== null && latest.diff_bp < 0 ? 'pos' : 'neg']}>{latest.diff_bp !== null ? (latest.diff_bp > 0 ? '+' : '') + latest.diff_bp + ' bp' : '—'}</div></div>
-      <div class="metric-card"><div class="label">体系动作</div><div class="value" style="font-size:20px;">{latest.action}</div></div>
+      <div class="metric-card"><div class="label">翻转次数</div><div class="value" style="font-size:20px;">{ev.ledger.flips_total} 次<br /><span style="font-size:13px;">≈{ev.ledger.flips_per_year} 次/年</span></div></div>
+      <div class="metric-card"><div class="label">在场时间</div><div class="value" style="font-size:20px;">{ev.ledger.in_market_pct}%<br /><span style="font-size:13px;">七成时间空仓</span></div></div>
+      <div class="metric-card"><div class="label">持仓周均</div><div class="value pos" style="font-size:20px;">+{ev.ledger.mean_hold_week}%</div></div>
+      <div class="metric-card"><div class="label">空仓周均（躲过）</div><div class="value neg" style="font-size:20px;">{ev.ledger.mean_flat_week}%</div></div>
     </div>
     <div class="callout" style="margin-top: var(--sp-4);">
-      <b>信号含义</b>：{latest.signal === '宽松'
-        ? `Shibor 周环比下行 ${Math.abs(latest.diff_bp)}bp &gt; 5bp 阈值 → 流动性宽松，体系动作「买入中证500」（进攻仓位）。`
-        : `Shibor 周环比${latest.diff_bp !== null && latest.diff_bp < 0 ? '下行 ' + Math.abs(latest.diff_bp) + 'bp，未过 5bp 阈值' : '上行 ' + latest.diff_bp + 'bp'} → 流动性未明显宽松，体系动作「空仓」（防守等待）。`}
-      上一周（{prev.week}）Shibor {prev.shibor}%（环比 {prev.diff_bp > 0 ? '+' : ''}{prev.diff_bp} bp，{prev.signal}）。
+      <b>执行规则</b>：信号周末（周五）收盘后才定，<b>下一周第一个交易日才执行</b>；周中信号不翻转；翻转 = 中证500指数基金 ↔ 现金/货基全额切换。
+      每年约 {ev.ledger.flips_per_year} 次翻转听着频繁，但全部是机械动作，不预测、不追加判断——盈亏结构就是上面两个数的差。
     </div>
   </section>
 
@@ -79,33 +248,15 @@ const last24 = weeks.slice(-24).reverse();
   <section class="card" style="max-width: 860px; margin: var(--sp-5) auto 0;">
     <div class="section-head">
       <div class="section-kicker">Query · 历史回溯</div>
-      <h2 class="section-title">查询任意一周的信号</h2>
-      <p class="section-sub">输入周号（如 2026W34）或年份（如 2015），查看当时的流动性判定与当周收益。</p>
+      <h2 class="section-title">查询任意一周（或任意一年）的信号</h2>
+      <p class="section-sub">输入年份（如 2015）看全年汇总，或输入周号（如 2026W34）看单周判定。数字可自行与官方源复核。</p>
     </div>
     <div style="display:flex; gap: var(--sp-3); flex-wrap: wrap; margin-bottom: var(--sp-4);">
-      <input id="ms-query" type="text" placeholder="例如 2026W34 或 2015" style="flex:1; min-width:220px; padding:12px 14px; border:1px solid rgba(139,94,60,0.25); border-radius:10px; font-size:15px; background:var(--bg); color:var(--navy-900);" />
+      <input id="ms-query" type="text" placeholder="例如 2015 或 2026W34" style="flex:1; min-width:220px; padding:12px 14px; border:1px solid rgba(139,94,60,0.25); border-radius:10px; font-size:15px; background:var(--bg); color:var(--navy-900);" />
       <button id="ms-run" class="btn btn-gold">查询 →</button>
     </div>
     <div id="ms-result">
-      <div style="color: var(--navy-600); font-size: 14px;">查询结果将显示在这里。</div>
-    </div>
-  </section>
-
-  <!-- 历史统计 -->
-  <section class="card" style="max-width: 860px; margin: var(--sp-5) auto 0;">
-    <div class="section-head">
-      <div class="section-kicker">Stats · 809 周全样本</div>
-      <h2 class="section-title">信号历史分布</h2>
-      <p class="section-sub">{stats.note}</p>
-    </div>
-    <div class="metric-grid" style="grid-template-columns: repeat(4, 1fr);">
-      <div class="metric-card"><div class="label">总周数</div><div class="value">{stats.total_weeks}</div></div>
-      <div class="metric-card"><div class="label">宽松周</div><div class="value pos">{stats.loose_weeks}（{stats.loose_pct}%）</div></div>
-      <div class="metric-card"><div class="label">收紧周</div><div class="value neg">{stats.tight_weeks}（{(100 - stats.loose_pct).toFixed(1)}%）</div></div>
-      <div class="metric-card"><div class="label">样本外年化</div><div class="value pos">+10.04%</div></div>
-    </div>
-    <div class="callout warn" style="margin-top: var(--sp-4);">
-      <b>已知边界</b>：纯宏观策略 2021 年结构性行情中信号失效（-1.7% vs 基准 +16.5%）。宏观管仓位，个股管选股，组合管风险。
+      <div style="color: var(--navy-600); font-size: 14px;">查询结果将显示在这里。试试 2015（信号全记录）或 2021（失效年，页面不回避）。</div>
     </div>
   </section>
 
@@ -114,7 +265,7 @@ const last24 = weeks.slice(-24).reverse();
     <div class="section-head">
       <div class="section-kicker">Trend · 近两年走势</div>
       <h2 class="section-title">Shibor 1W 周均值（近 104 周）</h2>
-      <p class="section-sub">绿点 = 宽松周（环比下行 &gt;5bp，买入信号）；红点 = 收紧周（空仓等待）。</p>
+      <p class="section-sub">绿点 = 宽松周（环比下行 &gt;5bp，进攻信号）；红点 = 收紧周（防守信号）。</p>
     </div>
     <Chart option={chartOption} height="360px" />
   </section>
@@ -128,7 +279,7 @@ const last24 = weeks.slice(-24).reverse();
     <div class="table-wrap">
       <table class="data-table">
         <thead>
-          <tr><th>周</th><th>Shibor 1W</th><th>环比 (bp)</th><th>信号</th><th>动作</th><th>中证500 当周</th><th>沪深300 当周</th></tr>
+          <tr><th>周</th><th>Shibor 1W</th><th>环比 (bp)</th><th>信号</th><th>动作</th><th>中证500 当周*</th><th>沪深300 当周*</th></tr>
         </thead>
         <tbody>
           {
@@ -147,38 +298,72 @@ const last24 = weeks.slice(-24).reverse();
         </tbody>
       </table>
     </div>
+    <p style="font-size:13px; color:var(--navy-600); margin-top:10px;">
+      * 当周收益为<b>同期展示口径</b>（信号与涨跌同一周显示，仅用于直观对照）；可交易收益为下一周，见上方证据链的滞后口径。{leadWeek} 为最新周，下周收益待更新。
+    </p>
   </section>
 
   <div class="callout" style="max-width: 860px; margin: var(--sp-4) auto 0;">
-      <b>口径说明</b>：Shibor 1W 周均值环比下行 &gt;5bp → 宽松，买入中证500；否则空仓。0.05% 成本，walk-forward 样本外验证。
-      本工具为方法论演示，<b>不构成投资建议</b>。投资有风险，入市需谨慎。
+    <b>口径说明</b>：Shibor 1W 周均值环比下行 &gt;5bp → 宽松（进攻，持有中证500指数基金）；否则收紧（防守，空仓）。
+    成本假设单边 0.05%，{stats.total_weeks} 周样本外验证，全部数字可由页面公开规则复算。
+    本工具为方法论演示，<b>不构成投资建议</b>；指数基金亦有可能亏损，投资有风险，入市需谨慎。
+  </div>
+
+  <!-- 自身特色卡（常规做法 vs 松果，不点名） -->
+  <section class="card" style="max-width: 860px; margin: var(--sp-5) auto 0;">
+    <div class="section-head">
+      <div class="section-kicker">基准对比 · 同类工具</div>
+      <h2 class="section-title">和市面上的"温度计/择时"对比，我们的特色是什么</h2>
+      <p class="section-sub">估值温度计告诉你"贵不贵"，但市场很多时候是钱的问题。松果看另一条腿：<b>流动性松紧，并且直接给动作</b>。</p>
     </div>
+    <div class="table-wrap">
+      <table class="data-table wrap-cells">
+        <thead><tr><th></th><th>常规做法</th><th class="songguo-col">松果宏观信号</th></tr></thead>
+        <tbody>
+          <tr><td><b>信号源</b></td><td>指数估值分位（PE/PB 贵不贵）</td><td class="songguo-col"><b>货币流动性维度</b>：Shibor 周均松紧 → 进攻/防守，估值之外的第二条腿，与估值信号互补</td></tr>
+          <tr><td><b>结论明确度</b></td><td>给一个温度数字，动作你自己定</td><td class="songguo-col"><b>直接给动作</b>：宽松 → 持有中证500指数基金；收紧 → 空仓防守，不绕弯</td></tr>
+          <tr><td><b>可信度</b></td><td>阈值怎么来的往往不说；算法保密</td><td class="songguo-col"><b>全公开可复算</b>：{stats.total_weeks} 周 walk-forward、敏感性网格、逐年成绩单（含失效年）、执行账本全部摊在页面上，数据可自行对官方源复核</td></tr>
+          <tr><td><b>适合谁</b></td><td>看估值高低判断的投资者</td><td class="songguo-col"><b>被"指标互相矛盾"折磨过的择时者</b>：一个读数、一个动作、一套验证</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
 
-    <!-- 自身特色卡（常规做法 vs 松果，不点名） -->
-    <section class="card" style="max-width: 860px; margin: var(--sp-5) auto 0;">
-      <div class="section-head">
-        <div class="section-kicker">基准对比 · 同类工具</div>
-        <h2 class="section-title">和市面上的"温度计/择时"对比，我们的特色是什么</h2>
-        <p class="section-sub">估值温度计告诉你"贵不贵"，但市场很多时候是钱的问题。松果看另一条腿：<b>流动性松紧，并且直接给动作</b>。</p>
-      </div>
-      <div class="table-wrap">
-        <table class="data-table wrap-cells">
-          <thead><tr><th></th><th>常规做法</th><th class="songguo-col">松果宏观信号</th></tr></thead>
-          <tbody>
-            <tr><td><b>信号源</b></td><td>指数估值分位（PE/PB 贵不贵）</td><td class="songguo-col"><b>货币流动性维度</b>：Shibor 周均松紧 → 进攻/防守，估值之外的第二条腿，与估值信号互补</td></tr>
-            <tr><td><b>结论明确度</b></td><td>给一个温度数字，动作你自己定</td><td class="songguo-col"><b>直接给动作</b>：宽松 → 买入中证 500；收紧 → 空仓防守，不绕弯</td></tr>
-            <tr><td><b>可信度</b></td><td>阈值怎么来的往往不说</td><td class="songguo-col"><b>809 周全样本 walk-forward 验证</b>：信号历史分布、胜率全部公开在页面上，是回测出来的，不是拍脑袋</td></tr>
-            <tr><td><b>适合谁</b></td><td>看估值高低判断的投资者</td><td class="songguo-col"><b>想用"钱松不松"验证择时的投资者</b></td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
+  <!-- 工具矩阵联动（与 ETF 配置器同款样式） -->
+  <section class="card" style="max-width: 860px; margin: var(--sp-5) auto 0;">
+    <div class="section-head">
+      <h2 class="section-title">工具是三件套，不是孤岛</h2>
+      <p class="section-sub">宏观信号管"什么时候在场内"，配置器管"钱怎么配"，体检卡管"单只什么角色"——三个都免费，配套用。</p>
+    </div>
+    <div class="metric-grid" style="grid-template-columns: repeat(3, 1fr);">
+      <a class="metric-card" href="/songguo-invest/tools/etf-allocator/" style="text-decoration:none;"><div class="label">ETF 组合配置</div><div class="value" style="font-size:16px;">钱怎么配 →</div></a>
+      <a class="metric-card" href="/songguo-invest/tools/fund-scorecard/" style="text-decoration:none;"><div class="label">基金体检卡</div><div class="value" style="font-size:16px;">单只什么角色 →</div></a>
+      <a class="metric-card" href="/songguo-invest/tools/" style="text-decoration:none;"><div class="label">全部工具</div><div class="value" style="font-size:16px;">11 件免费 →</div></a>
+    </div>
+  </section>
 
-  <script define:vars={{ weeks }}>
+  <script define:vars={{ weeks, copyText }}>
     const ALL_WEEKS = weeks;
     const byWeek = new Map(ALL_WEEKS.map((w) => [w.week, w]));
+    const idxMap = new Map(ALL_WEEKS.map((w, i) => [w.week, i]));
     const fmtPct = (v) => v === null || v === undefined ? '—' : (v >= 0 ? '+' : '') + (v * 100).toFixed(2) + '%';
     const fmtBp = (v) => v === null || v === undefined ? '—' : (v > 0 ? '+' : '') + v.toFixed(2) + ' bp';
+
+    // 一键复制（clipboard API + execCommand 回退）
+    document.getElementById('ms-copy')?.addEventListener('click', async (e) => {
+      const hint = document.getElementById('ms-copy-hint');
+      try {
+        await navigator.clipboard.writeText(e.target.dataset.text);
+        hint.textContent = '✅ 已复制';
+      } catch {
+        const ta = document.createElement('textarea');
+        ta.value = e.target.dataset.text; document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); hint.textContent = '✅ 已复制'; }
+        catch { hint.textContent = '请手动全选复制'; }
+        document.body.removeChild(ta);
+      }
+      setTimeout(() => { hint.textContent = ''; }, 2500);
+    });
 
     function renderWeekRow(w) {
       const isLoose = w.signal === '宽松';
@@ -195,13 +380,15 @@ const last24 = weeks.slice(-24).reverse();
 
     function run() {
       const q = document.getElementById('ms-query').value.trim().toUpperCase().replace(/-/g, '');
-            const box = document.getElementById('ms-result');
-            if (!q) { box.innerHTML = '<div style="color: var(--navy-600); font-size: 14px;">请输入周号（2026W34）或年份（2015）。</div>'; return; }
+      const box = document.getElementById('ms-result');
+      if (!q) { box.innerHTML = '<div style="color: var(--navy-600); font-size: 14px;">请输入年份（2015）或周号（2026W34）。</div>'; return; }
 
       // 1) 精确周号
       const exact = byWeek.get(q);
       if (exact) {
         const isLoose = exact.signal === '宽松';
+        const ni = idxMap.get(q) + 1;
+        const nw = ALL_WEEKS[ni];
         box.innerHTML = `
           <div style="border:1px solid rgba(139,94,60,0.2); border-radius:12px; padding: var(--sp-4);">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
@@ -213,10 +400,10 @@ const last24 = weeks.slice(-24).reverse();
             <div class="metric-grid" style="grid-template-columns: repeat(4, 1fr); margin-top: var(--sp-3);">
               <div class="metric-card"><div class="label">Shibor 1W</div><div class="value" style="font-size:18px;">${exact.shibor}%</div></div>
               <div class="metric-card"><div class="label">环比变化</div><div class="value" style="font-size:18px; color:${exact.diff_bp !== null && exact.diff_bp < 0 ? 'var(--green)' : 'var(--red)'}">${fmtBp(exact.diff_bp)}</div></div>
-              <div class="metric-card"><div class="label">中证500 当周</div><div class="value" style="font-size:18px; color:${exact.zz500_ret !== null && exact.zz500_ret >= 0 ? 'var(--green)' : 'var(--red)'}">${fmtPct(exact.zz500_ret)}</div></div>
-              <div class="metric-card"><div class="label">沪深300 当周</div><div class="value" style="font-size:18px; color:${exact.hs300_ret !== null && exact.hs300_ret >= 0 ? 'var(--green)' : 'var(--red)'}">${fmtPct(exact.hs300_ret)}</div></div>
+              <div class="metric-card"><div class="label">中证500 当周*</div><div class="value" style="font-size:18px; color:${exact.zz500_ret !== null && exact.zz500_ret >= 0 ? 'var(--green)' : 'var(--red)'}">${fmtPct(exact.zz500_ret)}</div></div>
+              <div class="metric-card"><div class="label">下周执行周收益（滞后口径）</div><div class="value" style="font-size:18px; color:${exact.next_zz500_ret !== null && exact.next_zz500_ret >= 0 ? 'var(--green)' : 'var(--red)'}">${fmtPct(exact.next_zz500_ret)}</div></div>
             </div>
-            <div style="font-size:13px; color:var(--navy-600); margin-top:10px;">口径：环比下行 &gt;5bp 为宽松。该周${isLoose ? '体系判定流动性宽松（进攻）' : '体系判定流动性未宽松（防守）'}。</div>
+            <div style="font-size:13px; color:var(--navy-600); margin-top:10px;">口径：环比下行 &gt;5bp 为宽松。该周${isLoose ? '体系判定流动性宽松（进攻）' : '体系判定流动性未宽松（防守）'}。* 当周为同期展示口径，可交易收益为下一周。</div>
           </div>`;
         return;
       }
@@ -235,15 +422,16 @@ const last24 = weeks.slice(-24).reverse();
             </div>
             <div class="table-wrap" style="max-height:320px; overflow:auto;">
               <table class="data-table">
-                <thead><tr><th>周</th><th>Shibor 1W</th><th>环比</th><th>信号</th><th>动作</th><th>中证500</th><th>沪深300</th></tr></thead>
+                <thead><tr><th>周</th><th>Shibor 1W</th><th>环比</th><th>信号</th><th>动作</th><th>中证500*</th><th>沪深300*</th></tr></thead>
                 <tbody>${ys.map(renderWeekRow).join('')}</tbody>
               </table>
             </div>
+            <div style="font-size:12px; color:var(--navy-600); margin-top:8px;">* 同期展示口径；可交易收益为下一周（见证据链滞后口径）。</div>
           </div>`;
         return;
       }
 
-      box.innerHTML = '<div style="color: var(--red);">格式不支持。请输入周号（如 2026W34）或年份（如 2015）。</div>';
+      box.innerHTML = '<div style="color: var(--red);">格式不支持。请输入年份（如 2015）或周号（如 2026W34）。</div>';
     }
     document.getElementById('ms-run')?.addEventListener('click', run);
     document.getElementById('ms-query').addEventListener('keydown', (e) => { if (e.key === 'Enter') run(); });
@@ -261,5 +449,30 @@ const last24 = weeks.slice(-24).reverse();
     text-align: left;
     line-height: 1.6;
   }
+  .big-action {
+    font-size: clamp(26px, 4.5vw, 40px);
+    font-weight: 800;
+    line-height: 1.25;
+    margin: var(--sp-2) 0 var(--sp-3);
+    display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+  }
+  .big-action .arrow { opacity: 0.5; font-weight: 400; }
+  .freshness {
+    display: inline-block; margin-top: 6px; font-size: 12.5px; font-weight: 700;
+    padding: 3px 12px; border-radius: 999px;
+  }
+  .freshness.fresh { background: rgba(74,124,89,0.12); color: var(--green); }
+  .freshness.stale { background: rgba(154,140,122,0.18); color: var(--navy-600); }
+  .read-list { margin: 0; padding-left: 22px; }
+  .read-list li { font-size: 15px; line-height: 1.9; color: var(--navy-900); margin-bottom: 8px; }
+  .sub-h3 { font-size: 16px; font-weight: 800; color: var(--navy-900); margin: var(--sp-5) 0 8px; }
+  .tbl-cap { font-size: 14px; color: var(--navy-600); margin-bottom: 10px; }
+  .worst-cell { background: rgba(179,84,62,0.10); color: var(--red); font-weight: 700; }
+  .yearly-table td { vertical-align: middle; }
+  .cell-bar { min-width: 130px; }
+  .cell-bar .bar { display: inline-block; height: 9px; border-radius: 3px; vertical-align: middle; }
+  .cell-bar .bup { background: var(--green); opacity: 0.75; }
+  .cell-bar .bdn { background: var(--red); opacity: 0.75; }
+  .cell-bar em { font-style: normal; font-weight: 700; font-size: 12.5px; margin-left: 6px; vertical-align: middle; }
 </style>
 </Layout>

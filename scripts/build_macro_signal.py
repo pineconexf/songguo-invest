@@ -141,7 +141,7 @@ for th in [0, 1, 2, 5, 10]:
         j = []; t0 = 156
         while t0 + 52 <= len(iw):
             j += bt(st, cost, t0, t0 + 52); t0 += 52
-        oos[f'{th}bp_{int(cost*1e4)}bp'] = perf(j)
+        oos[f'{th}bp_{int(round(cost*1e4))}bp'] = perf(j)
 evid['oos_grid'] = oos
 # 全样本固定 5bp（含成本）
 evid['full_5bp'] = perf(bt(s5, 0.0005, 2, len(iw)))
@@ -166,8 +166,47 @@ evid['ledger'] = dict(flips_total=flips, flips_per_year=round(flips / (len(iw)/5
                       in_market_pct=round(len(hold_ws)/(len(hold_ws)+len(flat_ws))*100, 1),
                       mean_hold_week=round(sum(hold_ws)/len(hold_ws)*100, 3),
                       mean_flat_week=round(sum(flat_ws)/len(flat_ws)*100, 3))
-# 本轮计数
+# 5c 滚动选阈值对照：每年初用截至上年全部历史选年化最优阈值，次年执行该阈值；对照固定5bp
+def sig_at(th, idx):  # 第 idx 周(iw序)的信号 = 上周末环比是否 < -th
+    return 1 if (idx >= 2 and (sh[iw[idx]] - sh[iw[idx-1]]) * 100 < -th) else 0
+yearly_th = {}
+for y in [str(v) for v in range(2014, int(iw[-1][:4]) + 1)]:
+    if y == '2014':
+        yearly_th[y] = 5; continue
+    hi = max(i for i, w in enumerate(iw) if w[:4] < y)  # 上年最后一周索引
+    best, bth = None, 5
+    for t in [0, 1, 2, 5, 10]:
+        a = perf(bt(sigs(t), 0.0005, 2, hi))['ann']
+        if best is None or a > best:
+            best, bth = a, t
+    yearly_th[y] = bth
+roll = []; roll_rs = []
+for i in range(2, len(iw)):
+    y = iw[i][:4]
+    if y < '2014':
+        continue
+    th = yearly_th.get(y)
+    if th is None:
+        continue
+    pos = sig_at(th, i - 1)
+    ppos = roll[-1] if roll else 0
+    roll.append(pos)
+    roll_rs.append(zz500_r.get(iw[i], 0) * pos - 0.0005 * abs(pos - ppos))
+evid['roll'] = dict(ann=perf(roll_rs)['ann'], cum=perf(roll_rs)['cum'], mdd=perf(roll_rs)['mdd'], picks=yearly_th)
+evid['fixed5'] = perf(bt(s5, 0.0005, iw.index([w for w in iw if w[:4] == '2014'][0]), len(iw)))
+# 本轮计数 + 同信号历史平均持续周数
 evid['streak'] = dict(signal=_streak_sig, weeks=_streak)
+_runs, _prev, _cur = [], None, 0
+for i in range(2, len(iw)):
+    s = s5.get(iw[i-1], 0)
+    if s == _prev:
+        _cur += 1
+    else:
+        if _prev is not None:
+            _runs.append((_prev, _cur))
+        _prev, _cur = s, 1
+_runs.append((_prev, _cur))
+evid['avg_streak'] = {str(k): round(sum(r[1] for r in _runs if r[0] == k) / max(1, sum(1 for r in _runs if r[0] == k)), 1) for k in (0, 1)}
 stats['evidence'] = evid
 
 out = {'stats': stats, 'weeks': weeks}
