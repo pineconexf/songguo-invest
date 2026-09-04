@@ -3,7 +3,7 @@ import Layout from '../../layouts/Layout.astro';
 ---
 <Layout
   title="复利计算器"
-  description="松果复利计算器 — 输入本金、年化收益率、年限，计算复利终值。免费工具，不构成投资建议。"
+  description="松果复利计算器 — 输入本金、年化收益率、年限，计算复利终值，并与单利对比看清时间的力量。免费工具，不构成投资建议。"
 >
   <section class="hero" style="padding: 56px 48px;">
     <div class="hero-inner">
@@ -13,7 +13,7 @@ import Layout from '../../layouts/Layout.astro';
       </h1>
       <p class="hero-lead">
         年化 32.96%（V35 基础版，14 年含成本口径）14 年能变多少？换成 10%、15% 又差多少？
-        输入数字，立刻看见时间的力量。
+        输入数字，立刻看见时间的力量——以及"利息再生利息"比单利多攒多少钱。
       </p>
     </div>
   </section>
@@ -49,9 +49,12 @@ import Layout from '../../layouts/Layout.astro';
           <div style="font-size:13px; color: var(--navy-600);">期末总资产</div>
           <div id="c-meta" style="font-size:14px; color: var(--navy-700); margin-top: 10px;">--</div>
         </div>
+        <div id="c-compare" style="margin-top: var(--sp-4); font-size:14px; color: var(--navy-800); line-height:1.8; background: rgba(217,164,65,0.08); border-radius:10px; padding: var(--sp-3); display:none;"></div>
+        <!-- 复利 vs 单利 资产增长曲线 -->
+        <div id="c-chart" style="width:100%; height:300px; margin-top: var(--sp-4); display:none;"></div>
         <div class="callout" style="margin-top: var(--sp-4);">
           <b>对照</b>：同期沪深300 年化约 3.97%。若 10 年本金 10 万、每年追加 1 万，按 3.97% 复利期末约 19.6 万——
-          与按体系执行（示例年化 24.30%）的差距，就是"体系化稳健投资"的价值。数据为历史回测，不构成投资建议。
+          与按体系执行（示例年化 32.96%，V35 含成本口径）的差距，就是"体系化稳健投资"的价值。数据为历史回测，不构成投资建议。
         </div>
       </div>
     </section>
@@ -96,6 +99,14 @@ import Layout from '../../layouts/Layout.astro';
     </section>
 
   <script>
+    import * as echarts from 'echarts/core';
+    import { LineChart } from 'echarts/charts';
+    import { GridComponent, TooltipComponent, LegendComponent } from 'echarts/components';
+    import { CanvasRenderer } from 'echarts/renderers';
+    echarts.use([LineChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer]);
+    let compoundChart: any = null;
+    window.addEventListener('resize', () => compoundChart?.resize());
+
     function run() {
       const $ = (id: string) => document.getElementById(id) as HTMLInputElement;
       const p = parseFloat($('c-principal').value) || 0;
@@ -106,11 +117,45 @@ import Layout from '../../layouts/Layout.astro';
       let total = p * Math.pow(1 + r, n);
       if (a > 0) { for (let i = 1; i <= n; i++) total += a * Math.pow(1 + r, n - i); }
       const profit = total - p - a * n;
+      // 单利终值（无再投资）：本金单利 + 追加本金仅累计，不产生收益滚动
+      const singleTotal = p * (1 + r * n) + (a > 0 ? a * n : 0);
+      const diff = total - singleTotal;
       const fmt = (v: number) => v >= 10000 ? (v / 10000).toFixed(1) + ' 万' : v.toFixed(0) + ' 元';
       ($('c-final') as HTMLElement).textContent = fmt(total);
       ($('c-meta') as HTMLElement).textContent =
         `本金 ${fmt(p)} + 追加 ${a * n >= 10000 ? fmt(a * n) : (a * n) + ' 元'}，` +
         `总投入 ${fmt(p + a * n)}，收益 ${fmt(profit)}（年化 ${(r * 100).toFixed(1)}%，${n} 年）`;
+
+      // 复利 vs 单利：把"利息再生利息"讲成一句话
+      const compare = document.getElementById('c-compare') as HTMLElement;
+      compare.innerHTML =
+        `<b>复利 vs 单利</b>：同样 ${n} 年、${fmt(p + a * n)} 投入，如果收益不滚动（单利），期末只有 <b>${fmt(singleTotal)}</b>；` +
+        `收益再投入（复利），期末 <b>${fmt(total)}</b>——差异 <b>+${fmt(diff)}</b>，这就是"利息再生利息"。<br>` +
+        `<span style="font-size:12px; color:var(--navy-600);">单利=本金×(1+年化×年限)，无再投资；复利=每年收益再投入。下方实线复利、虚线单利，两条线越拉越大。</span>`;
+      compare.style.display = 'block';
+
+      // 资产增长曲线（逐年，单利 vs 复利）
+      const years = Array.from({ length: n }, (_, i) => i + 1);
+      const simpleSeries = years.map((y) => p * (1 + r * y) + a * y);
+      const compoundSeries: number[] = [];
+      let cur = p;
+      for (let y = 1; y <= n; y++) { cur = cur * (1 + r) + a; compoundSeries.push(cur); }
+      const chartEl = document.getElementById('c-chart') as HTMLElement;
+      const chartOpt = {
+        tooltip: { trigger: 'axis' },
+        legend: { top: 0, data: ['复利', '单利'], textStyle: { color: '#5c3a21' } },
+        grid: { left: 64, right: 16, top: 36, bottom: 30 },
+        xAxis: { type: 'category', data: years.map((y) => `${y}年`), axisLabel: { color: '#8a7a66' } },
+        yAxis: { type: 'value', axisLabel: { color: '#8a7a66', formatter: (v: number) => (v >= 10000 ? (v / 10000).toFixed(0) + '万' : v) }, splitLine: { lineStyle: { color: 'rgba(139,94,60,0.10)' } } },
+        series: [
+          { name: '复利', type: 'line', smooth: true, data: compoundSeries, itemStyle: { color: '#d9a441' }, lineStyle: { width: 2.5, color: '#d9a441' }, areaStyle: { opacity: 0.12, color: '#d9a441' } },
+          { name: '单利', type: 'line', smooth: true, data: simpleSeries, itemStyle: { color: '#8a7a66' }, lineStyle: { width: 2, color: '#8a7a66', type: 'dashed' } },
+        ],
+      };
+      if (!compoundChart) compoundChart = echarts.init(chartEl);
+      compoundChart.setOption(chartOpt, true);
+      chartEl.style.display = 'block';
+
       ($('c-result') as HTMLElement).style.display = 'block';
     }
     document.getElementById('c-run')?.addEventListener('click', run);

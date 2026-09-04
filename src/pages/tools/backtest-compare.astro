@@ -158,7 +158,10 @@ const bench = [
         const final10 = Math.pow(1 + ar / 100, n) * 100000;
         return { calmar, sharpe, final10, n };
       };
-      const a = calc(arA, mddA, yA, vA), b = calc(arB, mddB, yB, vB);
+      // 公平对比：终值统一按较短的样本期年限（min），确保两策略同周期可比
+      const nA = yA > 0 ? yA : 10, nB = yB > 0 ? yB : 10;
+      const commonN = Math.min(nA, nB);
+      const a = calc(arA, mddA, commonN, vA), b = calc(arB, mddB, commonN, vB);
       const fmtNum = (v: number, d = 2) => v.toFixed(d);
       const fmtWan = (v: number) => (v / 10000).toFixed(1) + ' 万';
       const bold = (v: string, cond: boolean) => cond ? `<b style="color:var(--green);">${v}</b>` : v;
@@ -166,7 +169,7 @@ const bench = [
       const rows: Array<[string, string, string, string]> = [
         ['年化收益率', `+${arA}%`, `+${arB}%`, '+32.96%'],
         ['最大回撤', `-${mddA}%`, `-${mddB}%`, '-22.66%'],
-        ['Calmar（年化/回撤）', fmtNum(a.calmar), fmtNum(b.calmar), '1.07'],
+        ['Calmar（年化/回撤）', fmtNum(a.calmar), fmtNum(b.calmar), '1.45'],
       ];
       let html = rows.map((r, i) => {
         if (i === 2) return `<tr><td>${r[0]}</td><td>${bold(r[1], a.calmar > b.calmar)}</td><td>${bold(r[2], b.calmar > a.calmar)}</td><td>${r[3]}</td></tr>`;
@@ -175,7 +178,7 @@ const bench = [
       if (a.sharpe !== null || b.sharpe !== null) {
         html += `<tr><td>夏普（简化，无风险2%）</td><td>${a.sharpe !== null ? fmtNum(a.sharpe) : '—'}</td><td>${b.sharpe !== null ? fmtNum(b.sharpe) : '—'}</td><td>—</td></tr>`;
       }
-      html += `<tr><td>10 万本金 × ${a.n} 年复利终值</td><td>${fmtWan(a.final10)}</td><td>${fmtWan(b.final10)}</td><td>—</td></tr>`;
+      html += `<tr><td>10 万本金 × 统一 ${commonN} 年（较短样本期）复利终值</td><td>${fmtWan(a.final10)}</td><td>${fmtWan(b.final10)}</td><td>—</td></tr>`;
       ($('bc-rows') as HTMLElement).innerHTML = html;
 
       // 结论

@@ -26,7 +26,7 @@ import Layout from '../../layouts/Layout.astro';
     <div class="section-head">
       <div class="section-kicker">Valuator · 三维画像</div>
       <h2 class="section-title">输入基本面指标</h2>
-      <p class="section-sub">数值来自你看到的财报/行情（PE·PB·ROE·股息率），或券商 App 直接查。</p>
+      <p class="section-sub">数值来自你看到的财报/行情。A 股在券商 App 个股页「主要财务指标」可直接查到 PE·PB·ROE·股息率，港股/美股在同名板块或财报摘要。</p>
     </div>
 
     <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap: var(--sp-4); margin-bottom: var(--sp-4);">
@@ -71,8 +71,8 @@ import Layout from '../../layouts/Layout.astro';
   </section>
 
   <div class="callout" style="max-width: 760px; margin: var(--sp-4) auto 0;">
-      <b>维度口径</b>：质量（ROE）——近 3 年 ROE 能否持续 &gt;8%（V27.2 收紧信号）；估值（PB/PE）——
-      PB 与 PE 组合分档（V30 分位思路的简化版）；股息（增强项）——&gt;3% 视为有现金回报托底。
+      <b>维度口径</b>：质量（ROE，权重40%）——ROE≥8% 达标（V27.2 收紧信号）；估值（PB/PE，权重45%）——
+      PB 与 PE 组合分档（V30 分位思路的简化版）；股息（权重15%）——≥3% 视为有现金回报托底。三维统一 0-100 分加权。
       完整体系见 <a href="/songguo-invest/methodology/">四层体系架构</a>。
     </div>
 
@@ -105,7 +105,7 @@ import Layout from '../../layouts/Layout.astro';
       if (!(pe >= 0)) miss.push('PE'); if (!(pb >= 0)) miss.push('PB'); if (!(roe >= 0)) miss.push('ROE');
       if (miss.length) { alert('请填写：' + miss.join('、')); return; }
 
-      // —— 三维评分（0-100）——
+      // —— 三维评分（0-100）统一百分制：质量40% + 估值45% + 股息15% ——
       // 质量分：ROE >=15 满分，8% 门槛 60 分，每降 1 分减 4 分，最低 0
       const q = Math.max(0, Math.min(100, roe >= 15 ? 100 : 60 + (roe - 8) * 4));
       // 估值分：PB<=1.5 且 PE<=15 → 100；PB<=3 且 PE<=25 → 75；PB<=5 且 PE<=40 → 50；否则 20
@@ -113,9 +113,9 @@ import Layout from '../../layouts/Layout.astro';
       if (pb <= 1.5 && pe <= 15) v = 100;
       else if (pb <= 3 && pe <= 25) v = 75;
       else if (pb <= 5 && pe <= 40) v = 50;
-      // 股息增强：>=3% +8，>=5% +12
-      const d = dy >= 5 ? 12 : dy >= 3 ? 8 : dy > 0 ? 4 : 0;
-      const total = Math.round(q * 0.4 + v * 0.45 + d + (dy > 0 ? 4 : 0) * 0); // 质量40% 估值45% 股息直接加分
+      // 股息分（百分制）：>=5% 满分，>=3% 良好，>=1% 及格，有但低 25 分，无则 0
+      const d = dy >= 5 ? 100 : dy >= 3 ? 75 : dy >= 1 ? 50 : dy > 0 ? 25 : 0;
+      const total = Math.round(q * 0.40 + v * 0.45 + d * 0.15); // 质量40% 估值45% 股息15%
 
       // —— 档位 ——
       let grade = '偏贵', word = '估值高于体系舒适区，需等待更好的价格或更强的质量';
@@ -132,7 +132,7 @@ import Layout from '../../layouts/Layout.astro';
       const bars = [
         { name: '质量（ROE）', val: Math.round(q), hint: `ROE ${roe}%${roe >= 15 ? ' · 优秀' : roe >= 8 ? ' · 达标' : ' · 低于门槛'}` },
         { name: '估值（PB/PE）', val: Math.round(v), hint: `PB ${pb} / PE ${pe} · ${pb <= 3 && pe <= 25 ? '合理带' : '偏高带'}` },
-        { name: '股息增强', val: Math.min(100, Math.round(d * 8.33)), hint: dy > 0 ? `股息率 ${dy}% · ${dy >= 3 ? '有托底' : '偏低'}` : '未填写' },
+        { name: '股息增强', val: d, hint: dy > 0 ? `股息率 ${dy}% · ${dy >= 3 ? '有托底' : '偏低'}` : '未填写' },
       ];
       ($('v-bars') as HTMLElement).innerHTML = bars.map((b) => `
         <div>
