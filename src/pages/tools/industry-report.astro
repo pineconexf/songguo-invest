@@ -48,7 +48,7 @@ const mrep = industry.monthly_report;
     <div class="section-head">
       <div class="section-kicker">Radar · 本周行业雷达（第 26 期）</div>
       <h2 class="section-title">本周高热度赛道 TOP 5</h2>
-      <p class="section-sub">来源：松果每周行业雷达（2026-08-24 周），覆盖 8/18-8/24 政策催化 + 科技突破 + 行业景气。</p>
+      <p class="section-sub">来源：{industry.source}</p>
     </div>
     <div class="table-wrap">
       <table class="data-table">
@@ -71,7 +71,7 @@ const mrep = industry.monthly_report;
   <section class="card">
     <div class="section-head">
       <div class="section-kicker">Events · 触发事件</div>
-      <h2 class="section-title">本周触发事件（5 条）</h2>
+      <h2 class="section-title">本周触发事件（{ev.length} 条）</h2>
     </div>
     <div class="steps">
       {ev.map((e, i) => (

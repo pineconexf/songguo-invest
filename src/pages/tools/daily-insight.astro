@@ -35,10 +35,10 @@ const latest = weeks[weeks.length - 1];
       <b>一句话</b>：{d.headline}
     </div>
     <div class="metric-grid" style="margin-top: 14px;">
-      <div class="metric-card"><div class="label">上证指数</div><div class="value">{d.market[0].close}</div><div class="sub">+0.67% · 8589 亿</div></div>
-      <div class="metric-card"><div class="label">深证成指</div><div class="value">{d.market[1].close}</div><div class="sub">+0.45% · 9730 亿</div></div>
-      <div class="metric-card"><div class="label">中证500</div><div class="value">{d.market[4].close}</div><div class="sub">+0.87%（中小盘强）</div></div>
-      <div class="metric-card"><div class="label">沪深300</div><div class="value">{d.market[3].close}</div><div class="sub">+0.22% · 4804 亿</div></div>
+      <div class="metric-card"><div class="label">上证指数</div><div class="value">{d.market[0].close}</div><div class="sub">{d.market[0].chg} · {d.market[0].vol}</div></div>
+      <div class="metric-card"><div class="label">深证成指</div><div class="value">{d.market[1].close}</div><div class="sub">{d.market[1].chg} · {d.market[1].vol}</div></div>
+      <div class="metric-card"><div class="label">中证500</div><div class="value">{d.market[4].close}</div><div class="sub">{d.market[4].chg}（中小盘强）</div></div>
+      <div class="metric-card"><div class="label">沪深300</div><div class="value">{d.market[3].close}</div><div class="sub">{d.market[3].chg} · {d.market[3].vol}</div></div>
     </div>
     <p class="section-sub" style="margin-top: 12px;">{d.turnover_note}</p>
   </section>
