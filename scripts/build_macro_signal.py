@@ -66,6 +66,9 @@ for i, (week, val) in enumerate(shibor):
     else:
         signal = '起始'
         action = '等待'
+    # 滞后口径：T 信号 → T+1 周收益（可交易）；同期口径保留并标注
+    nxt_zz = zz500_r.get(shibor[i+1][0]) if i + 1 < len(shibor) else None
+    nxt_hs = hs300_r.get(shibor[i+1][0]) if i + 1 < len(shibor) else None
     weeks.append({
         'week': week,
         'shibor': round(val, 4),
@@ -74,7 +77,17 @@ for i, (week, val) in enumerate(shibor):
         'action': action,
         'hs300_ret': hs300_r.get(week),
         'zz500_ret': zz500_r.get(week),
+        'next_zz500_ret': nxt_zz,
+        'next_hs300_ret': nxt_hs,
     })
+
+# 本轮持续计数（从末周向前数信号相同的连续周）
+_streak, _streak_sig = 0, weeks[-1]['signal']
+for w in reversed(weeks):
+    if w['signal'] in (_streak_sig, '起始'):
+        _streak += 1
+    else:
+        break
 
 # 4. 统计
 loose = sum(1 for w in weeks if w['signal'] == '宽松')
@@ -91,6 +104,71 @@ stats = {
     'threshold': '5bp',
     'note': 'shibor 1W 周均值环比下行>5bp → 宽松买入中证500；否则空仓。walk-forward 样本外年化 +10.04%',
 }
+
+# ---------- 5. 证据链计算（滞后口径，全部可由本脚本复算） ----------
+sh = dict(shibor)
+iw = sorted(set(sh) & set(zz500_r))  # 与 walkforward_macro.py 同窗口
+def sigs(th):
+    s = {}
+    for i, wk in enumerate(iw):
+        s[wk] = 1 if (i > 0 and (sh[wk] - sh[iw[i-1]]) * 100 < -th) else 0
+    return s
+def bt(sig, cost, a, b):
+    rets = []
+    for i in range(a, b):
+        if i == 0:
+            continue
+        pos, ppos = sig.get(iw[i-1], 0), sig.get(iw[i-2], 0)
+        r = zz500_r.get(iw[i], 0) * pos
+        if cost:
+            r -= cost * abs(pos - ppos)
+        rets.append(r)
+    return rets
+def perf(rs):
+    c = pk = 1.0; m = 0.0
+    for x in rs:
+        c *= (1 + x); pk = max(pk, c); m = min(m, c/pk - 1)
+    y = len(rs) / 52
+    return dict(ann=round((c**(1/y)-1)*100, 2), cum=round((c-1)*100, 1), mdd=round(m*100, 1), n=len(rs))
+
+s5 = sigs(5)
+evid = {}
+# 5a 拼接 OOS（训练窗 156 周起，步长 52）+ 阈值×成本敏感性网格
+oos = {}
+for th in [0, 1, 2, 5, 10]:
+    st = sigs(th)
+    for cost in [0.0003, 0.0005, 0.001]:
+        j = []; t0 = 156
+        while t0 + 52 <= len(iw):
+            j += bt(st, cost, t0, t0 + 52); t0 += 52
+        oos[f'{th}bp_{int(cost*1e4)}bp'] = perf(j)
+evid['oos_grid'] = oos
+# 全样本固定 5bp（含成本）
+evid['full_5bp'] = perf(bt(s5, 0.0005, 2, len(iw)))
+# 基准满仓
+evid['bench'] = perf([zz500_r[w] for w in iw[1:]])
+# 5b 逐年（滞后+0.05%成本）
+yr = {}
+for i in range(2, len(iw)):
+    pos, ppos = s5.get(iw[i-1], 0), s5.get(iw[i-2], 0)
+    r = zz500_r.get(iw[i], 0) * pos
+    if pos != ppos:
+        r -= 0.0005
+    y = iw[i][:4]
+    d = yr.setdefault(y, {'s': 1.0, 'b': 1.0, 'hold': 0, 'n': 0})
+    d['s'] *= (1 + r); d['b'] *= (1 + zz500_r.get(iw[i], 0)); d['hold'] += pos; d['n'] += 1
+evid['yearly'] = {y: dict(strat=round((d['s']-1)*100, 1), bench=round((d['b']-1)*100, 1), hold=f"{d['hold']}/{d['n']}") for y, d in sorted(yr.items())}
+# 5d 执行账本
+flips = sum(1 for i in range(2, len(iw)) if s5[iw[i-1]] != s5[iw[i-2]])
+hold_ws = [zz500_r[w] for w in iw[1:] if s5.get(iw[iw.index(w)-1], 0)] if False else [zz500_r[iw[i]] for i in range(2, len(iw)) if s5.get(iw[i-1], 0)]
+flat_ws = [zz500_r[iw[i]] for i in range(2, len(iw)) if not s5.get(iw[i-1], 0)]
+evid['ledger'] = dict(flips_total=flips, flips_per_year=round(flips / (len(iw)/52), 1),
+                      in_market_pct=round(len(hold_ws)/(len(hold_ws)+len(flat_ws))*100, 1),
+                      mean_hold_week=round(sum(hold_ws)/len(hold_ws)*100, 3),
+                      mean_flat_week=round(sum(flat_ws)/len(flat_ws)*100, 3))
+# 本轮计数
+evid['streak'] = dict(signal=_streak_sig, weeks=_streak)
+stats['evidence'] = evid
 
 out = {'stats': stats, 'weeks': weeks}
 
