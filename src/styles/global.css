@@ -233,6 +233,10 @@ button {
     flex-wrap: wrap;
     gap: 8px;
   }
+  #fb-submit {
+    min-height: 44px;
+    font-size: 13px;
+  }
 }
 
 .nav-links::-webkit-scrollbar {
