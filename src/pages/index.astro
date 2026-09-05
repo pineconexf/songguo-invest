@@ -74,6 +74,35 @@ const navOption = {
     <img src="/songguo-invest/mascot.png" alt="松果投资实验室吉祥物" class="hero-mascot" />
   </section>
 
+  <!-- ============ 新手 · 三步上手 ============ -->
+  <section class="card reveal">
+    <div class="section-head">
+      <div class="section-kicker">Start Here · 从这三步开始</div>
+      <h2 class="section-title">新手别慌，三步就能上路</h2>
+      <p class="section-sub">不用先搞懂全部。跟着这三步走，你就能把整套体系用起来。</p>
+    </div>
+    <div class="link-cards" style="grid-template-columns: repeat(3, 1fr);">
+      <a href="/songguo-invest/strategies/#standard" class="link-card">
+        <div class="master-school" style="color: var(--green, #4A7C59);">第 1 步</div>
+        <h3>选你的版本</h3>
+        <p>要么用下面「5 问快速适配」帮你选，要么直接看 S/P/M 三档挑一个。</p>
+        <div class="master-desc" style="font-size: 13px; margin-top: 10px;">去选版本 ↓</div>
+      </a>
+      <a href="/songguo-invest/tools/" class="link-card">
+        <div class="master-school" style="color: #c87f2e;">第 2 步</div>
+        <h3>查你的标的</h3>
+        <p>把你想买的股票或基金丢进免费工具：个股体检 / 估值 / 基金体检卡。</p>
+        <div class="master-desc" style="font-size: 13px; margin-top: 10px;">去查标的 →</div>
+      </a>
+      <a href="/songguo-invest/tools/daily-insight/" class="link-card">
+        <div class="master-school" style="color: #a03a28;">第 3 步</div>
+        <h3>跟进每日解读</h3>
+        <p>每天 3 分钟看市场全景 + 信号速查，在信息洪流里抓住关键。</p>
+        <div class="master-desc" style="font-size: 13px; margin-top: 10px;">看今日解读 →</div>
+      </a>
+    </div>
+  </section>
+
   <!-- ============ 第2幕 · 版本选择：我该用哪个 ============ -->
   <section class="card" id="versions">
     <div class="section-head">
@@ -114,6 +143,16 @@ const navOption = {
         </div>
         <div class="master-desc" style="font-size: 13px; margin-top: 10px;">看杠杆映射 →</div>
       </a>
+    </div>
+    <div id="quickfit-card" style="margin-top: 24px; padding: var(--sp-4); background: var(--bg-soft, #FAF6EF); border: 1px solid var(--border); border-radius: 12px;">
+      <div class="section-kicker">Quick Fit · 快速适配</div>
+      <h3 style="margin: 4px 0 0; font-size: 20px;">不知道选哪个？答 5 问，我帮你选</h3>
+      <p style="font-size: 14px; color: var(--muted-foreground, #777); margin: 8px 0 0;">每题 3～4 个选项，点完看结果。第 1 步和下面第 2 幕是同一件事的两种做法。</p>
+      <div id="quickfit" style="display: flex; flex-direction: column; gap: 14px; margin-top: var(--sp-3);"></div>
+      <div style="margin-top: var(--sp-4); display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+        <button id="qf-run" class="btn btn-gold" style="border:none;cursor:pointer;">看看我适合哪个版本</button>
+        <div id="qf-result" class="callout" style="display:none; margin:0;"></div>
+      </div>
     </div>
   </section>
 
@@ -296,5 +335,35 @@ const navOption = {
   <script>
     import '../scripts/charts.ts';
     import '../scripts/scroll-narrative.ts';
+  </script>
+  <script is:inline>
+    const QF = [
+      { q: '这笔钱，你能放多久不动？', o: [['6 个月以内', 1], ['6 个月～2 年', 2], ['3 年以上', 3]] },
+      { q: '最大能接受这笔钱缩水多少？', o: [['10% 以内', 1], ['25% 以内', 2], ['40% 以内', 3], ['超过 40% 也能扛', 4]] },
+      { q: '你平时会定期看账户、调整仓位吗？', o: [['基本不看', 1], ['每月看一次', 2], ['乐意定期管理', 3]] },
+      { q: '这笔钱是你的主要积蓄，还是闲钱？', o: [['主要积蓄', 1], ['一半一半', 2], ['闲钱为主', 3]] },
+      { q: '你更信「跟着纪律买」，还是「靠自己感觉」？', o: [['更信自己感觉', 1], ['说不好', 2], ['认同纪律', 3]] },
+    ];
+    const qfBox = document.getElementById('quickfit');
+    if (qfBox) {
+      qfBox.innerHTML = QF.map((item, qi) =>
+        '<div><div style="font-weight:600;margin-bottom:6px;">Q' + (qi + 1) + ' · ' + item.q + '</div><div style="display:flex;flex-wrap:wrap;gap:8px;">' +
+        item.o.map((o) =>
+          '<label style="cursor:pointer;border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:13px;"><input type="radio" name="qf' + qi + '" value="' + o[1] + '"> ' + o[0] + '</label>'
+        ).join('') + '</div></div>'
+      ).join('');
+      document.getElementById('qf-run').onclick = () => {
+        let sum = 0, done = 0;
+        QF.forEach((_, qi) => { const el = document.querySelector('input[name="qf' + qi + '"]:checked'); if (el) { sum += +el.value; done++; } });
+        if (done < 5) { alert('请把 5 题都答完哦'); return; }
+        const res = document.getElementById('qf-result');
+        let v = '', href = '', why = '';
+        if (sum <= 7) { v = 'Standard 稳健'; href = '/songguo-invest/strategies/#standard'; why = '你这笔钱偏急用、回撤承受力也克制——标准版防守打底 + 少量进攻，按月调仓、少操心。'; }
+        else if (sum <= 12) { v = 'Pro 增强'; href = '/songguo-invest/strategies/#pro'; why = '你能接受中等回撤、也愿意每月看一次——Pro 版攻守均衡、回撤砍半，是多数人的甜点位。'; }
+        else { v = 'Max 进取'; href = '/songguo-invest/strategies/#max'; why = '你扛得住大回撤、用的是闲钱、还认纪律——Max 版进攻加杠杆 + 期权对冲，只给这一类人。'; }
+        res.style.display = 'block';
+        res.innerHTML = '<b>你的适配版本：' + v + '</b>　' + why + '<div style="margin-top:10px;"><a href="' + href + '" class="btn btn-gold">去看看 ' + v + ' →</a></div>';
+      };
+    }
   </script>
 </Layout>
