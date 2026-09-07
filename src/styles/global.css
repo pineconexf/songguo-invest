@@ -188,6 +188,37 @@ button {
   .hero-mascot { display: none; }
 }
 
+/* 右区：松果 IP + slogan（左文右图方案，2026-09-07 全站相似 hero 统一） */
+.hero-aside {
+  position: absolute;
+  right: 64px;
+  top: 50%;
+  transform: translateY(-50%);
+  text-align: center;
+  z-index: 1;
+  pointer-events: none;
+}
+.hero-aside img {
+  width: 216px;
+  height: 216px;
+  border-radius: 50%;
+  border: 3px solid rgba(200, 162, 75, 0.5);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+  object-fit: cover;
+  background: #faf6ef;
+}
+.hero-aside .slogan {
+  margin-top: 14px;
+  color: var(--gold-400);
+  font-size: 13.5px;
+  letter-spacing: 0.05em;
+  line-height: 1.6;
+  max-width: 240px;
+}
+@media (max-width: 960px) {
+  .hero-aside { display: none; }
+}
+
 .brand .gold {
   color: var(--gold-400);
 }
