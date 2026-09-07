@@ -5,7 +5,7 @@ const versions = [
   {
     name: 'V1 常规版',
     type: '稳健配置',
-    desc: 'Shibor 信号 × 中证500：流动性宽松时持有，收紧时空仓。固定 5bp 阈值，walk-forward 样本外验证。',
+    desc: 'Shibor 信号 × 中证500：流动性宽松时持有，收紧时空仓。固定 5bp 阈值，前向验证（样本外）。',
     stats: [
       { label: '样本外年化', value: '+10.04%' },
       { label: '最大回撤', value: '-27.8%' },
@@ -18,7 +18,7 @@ const versions = [
 ---
 <Layout
   title="宏观研究"
-  description="松果宏观时钟 — Shibor 流动性信号 walk-forward 样本外验证，V1 常规版。"
+  description="松果宏观时钟 — Shibor 流动性信号前向验证（样本外），V1 常规版。"
 >
   <!-- Hero -->
   <section class="hero" style="padding: 56px 48px;">
@@ -70,7 +70,7 @@ const versions = [
       <div class="section-kicker">V1 Strategy</div>
       <h2 class="section-title">V1 常规版（定案策略）</h2>
       <p class="section-sub">
-        Shibor 信号 × 中证500：流动性宽松时持有，收紧时空仓。固定 5bp 阈值，walk-forward 样本外验证。
+        Shibor 信号 × 中证500：流动性宽松时持有，收紧时空仓。固定 5bp 阈值，前向验证（样本外）验证。
       </p>
     </div>
     {
@@ -97,7 +97,7 @@ const versions = [
   <section class="card">
     <div class="section-head">
       <div class="section-kicker">Year By Year</div>
-      <h2 class="section-title">walk-forward 样本外逐年表现</h2>
+      <h2 class="section-title">前向验证 · 样本外逐年表现</h2>
       <p class="section-sub">
         2014-2026 共 624 周（12 个独立验证年），3 年训练窗选阈 → 下 1 年样本外滚动。中证500、固定 5bp、0.05% 成本。
       </p>

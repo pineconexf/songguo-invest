@@ -47,7 +47,7 @@ const minCell = (cost: number) => Math.min(...grid(cost).map((c) => c.ann));
 const yearly = Object.entries(ev.yearly) as [string, { strat: number; bench: number; hold: string }][];
 const maxAbs = Math.max(...yearly.flatMap(([, v]) => [Math.abs(v.strat), Math.abs(v.bench)]));
 const barPct = (v: number) => Math.max(2, Math.abs(v) / maxAbs * 48);
-// 净值曲线数据（OOS 5bp/5bp成本，52周拼接 + 满仓同窗）
+// 净值曲线数据（样本外 5bp/5bp成本，52周拼接 + 满仓同窗）
 const oos5 = ev.oos_grid['5bp_5bp'];
 const eqLabels = weeks.slice(-oos5.n).map((w) => w.week);
 let _c1 = 1, _c2 = 1, _pos = 0, _ppos = 0;
@@ -74,20 +74,36 @@ const equityOption = {
 
 // 图表：近 104 周
 const chartWeeks = weeks.slice(-104);
+// 中证500 区间涨幅归一（同起点 1.0），对照 Shibor 松紧看指数带动（仅对照，不构成因果）
+let _zzacc = 1.0;
+const zzCum = chartWeeks.map((w) => {
+  if (w.zz500_ret !== null) _zzacc *= (1 + w.zz500_ret);
+  return +(_zzacc - 1).toFixed(3);
+});
 const chartOption = {
   tooltip: { trigger: 'axis' as const },
-  grid: { left: 44, right: 16, top: 30, bottom: 28 },
+  grid: { left: 44, right: 44, top: 30, bottom: 28 },
   xAxis: { type: 'category' as const, data: chartWeeks.map((w) => w.week), axisLabel: { interval: 11, color: '#9a8c7a', fontSize: 11 } },
-  yAxis: { type: 'value' as const, name: 'Shibor 1W 周均值 (%)', nameTextStyle: { color: '#9a8c7a' }, axisLabel: { color: '#9a8c7a' }, splitLine: { lineStyle: { color: 'rgba(139,94,60,0.10)' } } },
-  series: [{
-    name: 'Shibor 1W', type: 'line' as const, smooth: true, showSymbol: true, symbolSize: 5,
-    lineStyle: { width: 1.6, color: '#d9a441' },
-    data: chartWeeks.map((w) => ({
-      value: w.shibor,
-      itemStyle: { color: w.signal === '宽松' ? '#4a7c59' : (w.signal === '收紧' ? '#b3543e' : '#9a8c7a') },
-    })),
-  }],
-  legend: { data: ['Shibor 1W'], textStyle: { color: '#5c3a21' }, top: 0 },
+  yAxis: [
+    { type: 'value' as const, name: 'Shibor 1W 周均 (%)', nameTextStyle: { color: '#9a8c7a' }, axisLabel: { color: '#9a8c7a' }, splitLine: { lineStyle: { color: 'rgba(139,94,60,0.10)' } } },
+    { type: 'value' as const, name: '中证500 区间涨幅 (%)', nameTextStyle: { color: '#4a7c59' }, axisLabel: { color: '#9a8c7a' }, splitLine: { show: false }, scale: true },
+  ],
+  series: [
+    {
+      name: 'Shibor 1W', type: 'line' as const, smooth: true, showSymbol: true, symbolSize: 5,
+      lineStyle: { width: 1.6, color: '#d9a441' },
+      data: chartWeeks.map((w) => ({
+        value: w.shibor,
+        itemStyle: { color: w.signal === '宽松' ? '#4a7c59' : (w.signal === '收紧' ? '#b3543e' : '#9a8c7a') },
+      })),
+    },
+    {
+      name: '中证500（区间涨幅）', type: 'line' as const, yAxisIndex: 1, smooth: false, showSymbol: false,
+      lineStyle: { width: 1.4, color: '#5c3a21', type: 'dashed' as const },
+      data: zzCum,
+    },
+  ],
+  legend: { data: ['Shibor 1W', '中证500（区间涨幅）'], textStyle: { color: '#5c3a21' }, top: 0 },
 };
 const last24 = weeks.slice(-24).reverse();
 const avgHoldTxt = ev.avg_streak['1'], avgFlatTxt = ev.avg_streak['0'];
@@ -105,7 +121,7 @@ const fmtPct = (v: number | null) => v === null || v === undefined ? '—' : (v 
         现在该<span class="gold">进攻</span>还是防守？<br />每周只看一个数
       </h1>
       <p class="hero-lead">
-        钱变便宜了没有——变了就进攻，没变就防守。{stats.total_weeks} 周样本外验证（walk-forward），
+        钱变便宜了没有——变了就进攻，没变就防守。{stats.total_weeks} 周样本外验证（前向验证：先用历史定规则，在没见过的数据上滚动验证），
         连信号失效的年份都摆在页面上。免费 · 不黑箱 · 给动作。
       </p>
     </div>
@@ -123,8 +139,8 @@ const fmtPct = (v: number | null) => v === null || v === undefined ? '—' : (v 
       <p class="section-sub">
         本轮「{latest.signal}」已持续 <b>{ev.streak.weeks} 周</b>（历史平均：宽松 {avgHoldTxt} 周 / 收紧 {avgFlatTxt} 周）。
         {loose ? '进攻 = 持有中证500指数基金，信号翻回收紧前不动。' : '防守 = 空仓等待，信号翻宽松前不动。'}
-        规则唯一，中间不加戏。
-      </p>
+                规则唯一，中间不加戏。<span style="font-size:12.5px; color:var(--navy-600); display:block; margin-top:4px;">※ 空仓 ≠ 钱消失，而是停在货币基金/现金里吃利息，信号翻转才动用。</span>
+              </p>
       <span class:list={['freshness', isStale ? 'stale' : 'fresh']}>
         数据截至 {latest.week}{isStale ? ' · 更新中，以最近一周为准' : ' · 每周六自动更新'}
       </span>
@@ -175,14 +191,15 @@ const fmtPct = (v: number | null) => v === null || v === undefined ? '—' : (v 
       <div class="section-kicker">Evidence · {stats.total_weeks} 周证据链</div>
       <h2 class="section-title">别信结论，自己验算</h2>
       <p class="section-sub">
-        主指标只用一个：<b>OOS 年化 {oos5.ann}%</b>（walk-forward：训练 {stats.total_weeks - oos5.n} 周 → 样本外 52 周 → 滚动拼接 {oos5.n} 周；
-        滞后口径 = T 周信号 → T+1 周执行 → T+1 周收益；单边成本 0.05%）。
+        主指标只用一个：<b>样本外年化 {oos5.ann}%</b>（前向验证：用前 {stats.total_weeks - oos5.n} 周历史定规则，在未参与训练的 52 周验证，再各段滚动拼接）；
+                滞后口径 = T 周信号 → T+1 周执行 → T+1 周收益；单边成本 0.05%。
+                <span style="font-size:12.5px; color:var(--navy-600); display:block; margin-top:4px;">※ 0.05% 单边成本 = 中证500 ETF 佣金万1-3 + ETF 免印花税 + 冲击约 2bp，取上界保守值；只在信号翻转周产生。</span>
         对照同期满仓持有中证500：年化 {ev.bench.ann}%、最大回撤 {ev.bench.mdd}%。
       </p>
     </div>
 
     <h3 class="sub-h3">3a · 样本外成绩单：阈值 × 成本敏感性</h3>
-    <p class="tbl-cap">「阈值为什么是 5bp」——不辩护，摊开算。下表为 OOS 拼接年化收益（%），5bp 列为本文档主口径：</p>
+    <p class="tbl-cap">「阈值为什么是 5bp」——不辩护，摊开算。下表为样本外拼接年化收益（%），5bp 列为本文档主口径：</p>
     <div class="table-wrap">
       <table class="data-table">
         <thead><tr><th>单边成本 ＼ 阈值</th><th>0bp</th><th>1bp</th><th>2bp</th><th><b>5bp</b></th><th>10bp</th></tr></thead>
@@ -198,7 +215,7 @@ const fmtPct = (v: number | null) => v === null || v === undefined ? '—' : (v 
     </div>
     <p style="font-size:13px; color:var(--navy-600); margin-top:8px;">
       最坏格（成本 0.10% × 阈值 {THS[grid(10).findIndex((x) => x.ann === minCell(10))]}bp）年化仍为 {minCell(10).toFixed(2)}%。
-      <b>另一头也要自曝</b>：若不做 walk-forward、每年初回头看哪档历史年化最高就用哪档（"滚动选最优"），{oos5.n} 周拼接年化只有 <b>{ev.roll.ann}%</b>，
+      <b>另一头也要自曝</b>：若不做前向验证、每年初回头看哪档历史年化最高就用哪档（"滚动选最优"），{oos5.n} 周拼接年化只有 <b>{ev.roll.ann}%</b>，
       低于固定 5bp 的 {oos5.ann}%——挑参数本身就是过拟合入口，所以我们不挑。
     </p>
 
@@ -228,7 +245,7 @@ const fmtPct = (v: number | null) => v === null || v === undefined ? '—' : (v 
     </div>
 
     <h3 class="sub-h3">3c · 净值曲线（样本外拼接窗口，两端都画）</h3>
-    <p class="tbl-cap">曲线按逐周连续回算（终点 ≈+207%）；上表 OOS 口径按 52 周训练/验证切窗拼接（+{oos5.cum.toFixed(1)}%），差异来自指数数据缺口周的窗口处理——量级结论一致。</p>
+    <p class="tbl-cap">曲线按逐周连续回算（终点 ≈+207%）；上表样本外口径按 52 周训练/验证切窗拼接（+{oos5.cum.toFixed(1)}%），差异来自指数数据缺口周的窗口处理——量级结论一致。</p>
     <Chart option={equityOption} height="380px" />
 
     <h3 class="sub-h3">3d · 执行账本：翻转摩擦提前摊牌</h3>
@@ -264,8 +281,9 @@ const fmtPct = (v: number | null) => v === null || v === undefined ? '—' : (v 
   <section class="card" style="max-width: 860px; margin: var(--sp-5) auto 0;">
     <div class="section-head">
       <div class="section-kicker">Trend · 近两年走势</div>
-      <h2 class="section-title">Shibor 1W 周均值（近 104 周）</h2>
-      <p class="section-sub">绿点 = 宽松周（环比下行 &gt;5bp，进攻信号）；红点 = 收紧周（防守信号）。</p>
+      <h2 class="section-title">Shibor 1W 周均值（近 104 周）叠加中证500</h2>
+            <p class="section-sub">左轴 Shibor 1W 周均；右轴中证500 区间涨幅（同起点归一）——叠加只为对照「钱变便宜 ↔ 指数涨跌」，不构成因果/预测。</p>
+            <p class="section-sub" style="margin-top:6px;">绿点 = 宽松周（环比下行 &gt;5bp，进攻信号）；红点 = 收紧周（防守信号）。</p>
     </div>
     <Chart option={chartOption} height="360px" />
   </section>
@@ -305,7 +323,7 @@ const fmtPct = (v: number | null) => v === null || v === undefined ? '—' : (v 
 
   <div class="callout" style="max-width: 860px; margin: var(--sp-4) auto 0;">
     <b>口径说明</b>：Shibor 1W 周均值环比下行 &gt;5bp → 宽松（进攻，持有中证500指数基金）；否则收紧（防守，空仓）。
-    成本假设单边 0.05%，{stats.total_weeks} 周样本外验证，全部数字可由页面公开规则复算。
+    成本假设单边 0.05%（中证500ETF佣金万1-3+免印花税+冲击约2bp的上界，信号翻转周才产生），{stats.total_weeks} 周样本外验证，全部数字可由页面公开规则复算。
     本工具为方法论演示，<b>不构成投资建议</b>；指数基金亦有可能亏损，投资有风险，入市需谨慎。
   </div>
 
@@ -322,7 +340,7 @@ const fmtPct = (v: number | null) => v === null || v === undefined ? '—' : (v 
         <tbody>
           <tr><td><b>信号源</b></td><td>指数估值分位（PE/PB 贵不贵）</td><td class="songguo-col"><b>货币流动性维度</b>：Shibor 周均松紧 → 进攻/防守，估值之外的第二条腿，与估值信号互补</td></tr>
           <tr><td><b>结论明确度</b></td><td>给一个温度数字，动作你自己定</td><td class="songguo-col"><b>直接给动作</b>：宽松 → 持有中证500指数基金；收紧 → 空仓防守，不绕弯</td></tr>
-          <tr><td><b>可信度</b></td><td>阈值怎么来的往往不说；算法保密</td><td class="songguo-col"><b>全公开可复算</b>：{stats.total_weeks} 周 walk-forward、敏感性网格、逐年成绩单（含失效年）、执行账本全部摊在页面上，数据可自行对官方源复核</td></tr>
+          <tr><td><b>可信度</b></td><td>阈值怎么来的往往不说；算法保密</td><td class="songguo-col"><b>全公开可复算</b>：{stats.total_weeks} 周前向验证、敏感性网格、逐年成绩单（含失效年）、执行账本全部摊在页面上，数据可自行对官方源复核</td></tr>
           <tr><td><b>适合谁</b></td><td>看估值高低判断的投资者</td><td class="songguo-col"><b>被"指标互相矛盾"折磨过的择时者</b>：一个读数、一个动作、一套验证</td></tr>
         </tbody>
       </table>
