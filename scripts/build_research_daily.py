@@ -11,7 +11,8 @@
   headline/signal_summary -> 真实数字 + 松果体系规则模板(中小盘强弱/成交/Shibor信号)
   viewpoints           -> 松果体系固定判断模板(宏观管仓位·个股管选股)，无需每日人写
   signals[1..3] 组合月度 -> 月度口径快照，由月度更新维护，不随每日重算(标注月份)
-  focus(政策/产业热点)   -> 本轮保留最近一期并标注；后续接每日雷达自动刷新(见 README 备注)
+  focus(政策/产业热点)   -> 清单级：从信源池当日A股源(财联社/华尔街见闻/格隆汇/雪球/36氪)规则筛
+                        政策/产业热点，来源可溯不编造；无当日新料则沿用最近一期并如实标注
 
 用法: python scripts/build_research_daily.py
 输出: src/data/research_daily.json（latest 更新到最近已收盘交易日）
@@ -130,16 +131,18 @@ def main():
         {'topic': '防守组合', 'point': '债/金/红利/QDII 四拼图无需因单日波动调整，季度审视即可。'},
     ]
 
-    # 6) focus（本轮保留最近一期并标注，待每日雷达接入自动刷新）
-    old = json.load(open(OUT, encoding='utf-8'))
-    focus = old['latest'].get('focus', [])
-    for f in focus:
-        f['note_asof'] = 'focus 政策产业热点——最近一期快照，待每日雷达接入后每日刷新'
+    # 6) focus（清单级：信源池当日 A 股源规则筛选，来源可溯，不编造）
+    try:
+        old = json.load(open(OUT, encoding='utf-8'))
+        last_focus = old['latest'].get('focus', [])
+    except Exception:
+        last_focus = []
+    focus = build_focus(last_focus)
 
     new = {
         'version': '1.1',
         'source': f'松果每日解读管线自动生成 · 数据截至 {td[:4]}-{td[4:6]}-{td[6:]} 收盘（tushare 当日真实行情）',
-        'update_note': '本数据由松果每日解读管线自动生成（数据+信号每日收盘后自动更新）；focus 政策热点评后续接每日雷达每日刷新。网页展示最新一期。',
+        'update_note': '本数据由松果每日解读管线自动生成（数据+信号每日收盘后自动更新）；focus 今日关注从信源池当日A股源(财联社/华尔街见闻/格隆汇/雪球/36氪)规则筛选、来源可溯；无当日新料则沿用最近一期并如实标注。网页展示最新一期。',
         'latest': {
             'date': td,
             'market_date': f'{td[:4]}-{td[4:6]}-{td[6:]}',
@@ -159,6 +162,71 @@ def main():
     os.replace(tmp, OUT)
     print(f'✅ 已更新 {OUT}')
     print(json.dumps(new['latest'], ensure_ascii=False, indent=1)[:800])
+
+def build_focus(last_focus):
+    """清单级 focus：从信源池当日 A 股财经源规则筛政策/产业热点。
+    返回 [{title, point, source, link, note_asof}]，最多 4 条。
+    真实性边界：只筛不造——title/point 取自真实源条目标题/摘要；无当日新料则沿用上一期并如实标注。
+    """
+    from datetime import datetime
+    LATEST = r'D:\studynotes\00_体系\信源池\rss_cache\latest.json'
+    FIN = ('财联社电报', '华尔街见闻快讯', '格隆汇', '雪球热帖', '36氪快讯')
+    POL = ['央行','证监会','国务院','发改委','财政部','工信部','国常会','政策','降准','降息','利率','LPR','专项债',
+           '新规','监管','试点','规划','审议','改革','印发','发布','通知','关税','PMI','社融','信贷','汇率',
+           '北向','增量','稳增长','扩内需','提振','万亿','批文','核准','注册制','再融资','分红','A股','港股','中概']
+    IND = ['新能源','光伏','储能','锂电','半导体','芯片','算力','机器人','化工','新材料','医药','创新药','生物',
+           '汽车','消费','白酒','地产','证券','银行','保险','军工','物流','航运','航空','电力','煤炭','钢铁','有色',
+           '电子','软件','数据','并购','重组','IPO','增持','回购','解禁','减持','订单','中标','预增','财报','美股']
+
+    def parse_date(s):
+        core = (s or '').split('GMT')[0].split('+')[0].strip()
+        try:
+            return datetime.strptime(core, '%a, %d %b %Y %H:%M:%S')
+        except Exception:
+            return None
+
+    try:
+        pool = json.load(open(LATEST, encoding='utf-8')).get('items', [])
+    except Exception:
+        pool = []
+
+    cands = []
+    for x in pool:
+        if x.get('source') not in FIN:
+            continue
+        dt = parse_date(x.get('date'))
+        if not dt:
+            continue
+        if (datetime.now() - dt).total_seconds() > 72 * 3600:
+            continue
+        t = f"{x.get('title','')} {x.get('summary','')}"
+        n_pol = sum(1 for k in POL if k in t)
+        n_ind = sum(1 for k in IND if k in t)
+        if n_pol or n_ind:
+            cands.append((n_pol, n_ind, x))
+
+    if not cands:
+        for f in last_focus:
+            f['note_asof'] = '当日信源池未筛出新增政策/产业热点，沿用最近一期（每日16:00复筛）'
+        return last_focus
+
+    cands.sort(key=lambda c: (c[0], c[1]), reverse=True)
+    focus = []
+    for n_pol, n_ind, x in cands[:4]:
+        title = x.get('title', '').strip() or '（无标题条目）'
+        summary = (x.get('summary') or '').strip()
+        point = (summary[:60] if n_pol and summary and len(summary) > 8
+                 else title if len(title) <= 44 else title[:44] + '…')
+        link = x.get('link') or ''
+        focus.append({
+            'title': title,
+            'point': point,
+            'source': x.get('source', ''),
+            'link': link,
+            'note_asof': '每日16:00由信源池当日A股源自动筛选，来源可溯',
+        })
+    return focus
+
 
 def Shibor_desc(diff_bp):
     if diff_bp is None:
