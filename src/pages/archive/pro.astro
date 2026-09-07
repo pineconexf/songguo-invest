@@ -33,11 +33,6 @@ rows.forEach((r) => { if (r.dd != null && r.dd < worst) worst = r.dd; });
         以下为推荐组合 {Object.keys(rec.weights).map((k) => `${k.replace('投资策略', '').replace('(场外组合)', '')} ${(rec.weights[k] * 100).toFixed(0)}%`).join(' + ')} 的逐月表现。
       </p>
     </div>
-  
-    <div class="hero-aside">
-      <img src="/songguo-invest/mascot.png" alt="松果投资实验室吉祥物" />
-      <p class="slogan">让普通投资者也能像机构那样享受体系化的稳健投资</p>
-    </div>
   </section>
 
   <section class="card">
