@@ -216,10 +216,27 @@ def build_focus(last_focus):
         title = x.get('title', '').strip() or '（无标题条目）'
         summary = (x.get('summary') or '').strip()
         import re as _re
-        # 清洗 RSS 摘要可能带的 HTML 标签并规范化空白，输出完整解说（不再硬截 60 字）
+        # 清洗 RSS 摘要可能带的 HTML 标签并规范化空白
         summary_clean = _re.sub(r'<[^>]+>', ' ', summary)
         summary_clean = _re.sub(r'\s+', ' ', summary_clean).strip()
-        point = (summary_clean if n_pol and summary_clean and len(summary_clean) > 8
+        # 解说限制在约两排字内（≤92字符），尽量按完整句收尾、不残句
+        def clip(s, limit=92):
+            if len(s) <= limit:
+                return s.strip()
+            buf, segs = '', _re.split(r'(?<=[。！？；])', s)
+            for seg in segs:
+                if len(buf) + len(seg) > limit and buf:
+                    break
+                buf += seg
+            if buf.strip():
+                return buf.strip()
+            cut = s[:limit]
+            for mark in ('。', '！', '？', '，', '；', '、', ' '):
+                k = cut.rfind(mark)
+                if k > max(10, limit * 3 // 5):
+                    return cut[:k + 1].strip()
+            return cut + '…'
+        point = (clip(summary_clean) if n_pol and summary_clean and len(summary_clean) > 8
                  else title if len(title) <= 44 else title[:44] + '…')
         link = x.get('link') or ''
         focus.append({
