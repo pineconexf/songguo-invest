@@ -216,9 +216,11 @@ def build_focus(last_focus):
         title = x.get('title', '').strip() or '（无标题条目）'
         summary = (x.get('summary') or '').strip()
         import re as _re
-        # 清洗 RSS 摘要可能带的 HTML 标签并规范化空白
-        summary_clean = _re.sub(r'<[^>]+>', ' ', summary)
-        summary_clean = _re.sub(r'\s+', ' ', summary_clean).strip()
+        # 取正文中最长段落（剔除"进化/发行价为…第三高"等短导语/标签前缀段）作为解说源，
+        # 确保解说从真正事件句起、与标题同一主题、逻辑连贯
+        paras = [_re.sub(r'<[^>]+>', ' ', p) for p in _re.split(r'\n+', summary)]
+        paras = [_re.sub(r'\s+', ' ', p).strip() for p in paras if p.strip()]
+        summary_clean = max(paras, key=len) if paras else summary.strip()
         # 解说限制在约两排字内（≤92字符），尽量按完整句收尾、不残句
         def clip(s, limit=92):
             if len(s) <= limit:
