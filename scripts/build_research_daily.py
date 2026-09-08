@@ -216,6 +216,10 @@ def build_focus(last_focus):
         title = x.get('title', '').strip() or '（无标题条目）'
         summary = (x.get('summary') or '').strip()
         import re as _re
+        # 通用规则：规整信源摘要中的明显错别字（只改确定性错字、不臆改事实；不确定的保留原样）
+        # 《信息通信行业》等词若被摘成同音错字需按此表纠正，凡出现的新错字先加入此表再规整
+        for _bad, _good in (('证监会皮肤', '证监会批准'),):
+            summary = summary.replace(_bad, _good)
         # 取正文中最长段落（剔除"进化/发行价为…第三高"等短导语/标签前缀段）作为解说源，
         # 确保解说从真正事件句起、与标题同一主题、逻辑连贯
         paras = [_re.sub(r'<[^>]+>', ' ', p) for p in _re.split(r'\n+', summary)]
