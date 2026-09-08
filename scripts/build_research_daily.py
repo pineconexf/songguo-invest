@@ -215,7 +215,11 @@ def build_focus(last_focus):
     for n_pol, n_ind, x in cands[:4]:
         title = x.get('title', '').strip() or '（无标题条目）'
         summary = (x.get('summary') or '').strip()
-        point = (summary[:60] if n_pol and summary and len(summary) > 8
+        import re as _re
+        # 清洗 RSS 摘要可能带的 HTML 标签并规范化空白，输出完整解说（不再硬截 60 字）
+        summary_clean = _re.sub(r'<[^>]+>', ' ', summary)
+        summary_clean = _re.sub(r'\s+', ' ', summary_clean).strip()
+        point = (summary_clean if n_pol and summary_clean and len(summary_clean) > 8
                  else title if len(title) <= 44 else title[:44] + '…')
         link = x.get('link') or ''
         focus.append({
