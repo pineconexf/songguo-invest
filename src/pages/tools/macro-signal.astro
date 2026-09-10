@@ -164,6 +164,46 @@ const fmtPct = (v: number | null) => v === null || v === undefined ? '—' : (v 
     </details>
   </section>
 
+  <!-- Step 1b · 我的仓位 × 信号 → 该做什么（规则翻译，非新决策） -->
+  <section class="card" style="max-width: 860px; margin: var(--sp-5) auto 0;">
+    <div class="section-head">
+      <div class="section-kicker">Holdings × Signal · 仓位与信号怎么对</div>
+      <h2 class="section-title">你现在几成仓，信号说了算不算？</h2>
+      <p class="section-sub">
+        体系只定「目标状态」（宽松=满仓进攻、收紧=空仓防守），<b>怎么走（一次性或分批）是你自己的纪律，本页不替你决定</b>。
+        下表只在把「我的现状」翻译成「按规则该往哪走」，不加戏、不预测。
+      </p>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr><th>我的现状 ＼ 当前信号</th><th>🟢 宽松（体系动作：进攻·满仓）</th><th>🔴 收紧（体系动作：防守·空仓）</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>已持仓（含满仓）</b></td>
+            <td class="pos">✅ 符合体系目标，继续持有，信号翻回收紧前不动。</td>
+            <td>⚠️ 体系要求减至空仓；下一周第一个交易日执行，<span style="font-size:13px; color:var(--navy-600);">减仓节奏（一次/分批）是你自己的纪律</span>。</td>
+          </tr>
+          <tr>
+            <td><b>半仓</b></td>
+            <td>体系终点是满仓进攻 → 往目标<b>补</b>；补得快慢由你纪律定，方向唯一。</td>
+            <td>体系终点是空仓防守 → 往目标<b>减</b>；同样，节奏你定，方向不猜。</td>
+          </tr>
+          <tr>
+            <td><b>空仓</b></td>
+            <td>体系终点是满仓进攻 → 按你纪律<br />建仓中证500指数基金（本页不荐个股/不催建仓）。</td>
+            <td class="pos">✅ 符合体系目标，继续持币等待，信号翻宽松前不动。</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout" style="margin-top: var(--sp-3);">
+      <b>一句话</b>：信号翻宽松 → 目标是「进场」，别在车里犹豫要不要下车；信号收紧 → 目标是「离场」，别在场内问还能不能扛。
+      规则唯一的价值就是帮你把这些<b>反复横跳的念头</b>收进一个机械动作。仓位多少、何时执行，均属你个人决策，本工具不构成投资建议。
+    </div>
+  </section>
+
   <!-- Step 2 · 信号怎么读（教育模块） -->
   <section class="card" style="max-width: 860px; margin: var(--sp-5) auto 0;">
     <div class="section-head">
