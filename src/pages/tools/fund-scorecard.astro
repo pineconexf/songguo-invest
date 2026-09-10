@@ -31,14 +31,17 @@ import Layout from '../../layouts/Layout.astro';
 
   <section class="card" style="max-width: 920px; margin: 0 auto;">
     <div class="section-head">
-      <div class="section-kicker">Step 1 · 输入基金代码</div>
-      <h2 class="section-title">输入基金代码</h2>
-      <p class="section-sub">支持 6 位基金代码（如 002351 易方达裕祥回报）。数据实时取自天天基金公开接口，无后端、不存任何输入。</p>
+      <div class="section-kicker">Step 1 · 输入基金代码或经理名</div>
+      <h2 class="section-title">输入基金代码，或直接输经理名</h2>
+      <p class="section-sub">支持 6 位基金代码（如 002351 易方达裕祥回报）；记不住代码就输基金经理姓名（如 刘彦春），从下拉里选。数据实时取自天天基金公开接口，无后端、不存任何输入。</p>
     </div>
 
     <div style="display:flex; gap: var(--sp-3); align-items:center; flex-wrap:wrap; margin-bottom: var(--sp-4);">
-      <input id="fs-code" type="text" maxlength="6" placeholder="输入 6 位基金代码，如 002351"
-        style="flex:1; min-width:220px; padding:12px 14px; border:1px solid rgba(139,94,60,0.25); border-radius:10px; font-size:15px; background:var(--bg); color:var(--navy-900);" />
+      <div style="flex:1; min-width:220px; position:relative;">
+        <input id="fs-code" type="text" maxlength="12" placeholder="基金代码（6 位）或基金经理姓名" autocomplete="off"
+          style="width:100%; box-sizing:border-box; padding:12px 14px; border:1px solid rgba(139,94,60,0.25); border-radius:10px; font-size:15px; background:var(--bg); color:var(--navy-900);" />
+        <div id="fs-suggest" style="display:none; position:absolute; z-index:30; top:calc(100% + 4px); left:0; right:0; max-height:280px; overflow-y:auto; background:var(--bg); border:1px solid rgba(139,94,60,0.3); border-radius:10px; box-shadow:0 6px 18px rgba(74,46,26,0.15);"></div>
+      </div>
       <button id="fs-run" class="btn btn-gold">开始体检 →</button>
     </div>
 
@@ -159,6 +162,8 @@ import Layout from '../../layouts/Layout.astro';
   </section>
 
   <script>
+    import fundManagers from '../../data/fund_managers.json';
+
     // ---------- 工具函数 ----------
     async function loadScript(src, charset) {
       return new Promise((resolve, reject) => {
@@ -572,7 +577,95 @@ import Layout from '../../layouts/Layout.astro';
     }
 
     $('fs-run')?.addEventListener('click', run);
-    $('fs-code')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') run(); });
+    $('fs-code')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        // 有联想高亮 → Enter 先选中，不直接 run（中文经理名 run 必报错）
+        if (_sugItems.length && _sugIdx >= 0 && $('fs-suggest').style.display !== 'none') {
+          e.preventDefault(); pickSuggest(_sugItems[_sugIdx]); return;
+        }
+        hideSuggest(); run(); return;
+      }
+      suggestKeydown(e);
+    });
+
+    // ---------- 经理名联想（本地 JSON，零跨域）----------
+    // 数据结构: { managers: { "刘彦春": { mgrId, company, funds: [{code,name},...] }, ... } }
+    const MGRS = (fundManagers && fundManagers.managers) || {};
+    let _sugItems = [], _sugIdx = -1;
+
+    function hideSuggest() { _sugIdx = -1; const d = $('fs-suggest'); if (d) { d.style.display = 'none'; d.innerHTML = ''; } }
+
+    function buildSuggest(q) {
+      q = q.trim();
+      if (!q || /^\d{6}$/.test(q)) return [];
+      const items = [];
+      // 1) 经理名命中 → 其全部在管基金
+      for (const [name, m] of Object.entries(MGRS)) {
+        if (name.includes(q)) {
+          for (const f of (m.funds || [])) {
+            items.push({ code: f.code, label: `${f.name}`, tag: `经理 ${name}`, sub: m.company || '' });
+          }
+        }
+      }
+      // 2) 基金名命中（输入像基金关键词时）
+      if (items.length === 0 && q.length >= 2) {
+        for (const [name, m] of Object.entries(MGRS)) {
+          for (const f of (m.funds || [])) {
+            if (f.name.includes(q)) items.push({ code: f.code, label: f.name, tag: `经理 ${name}`, sub: m.company || '' });
+          }
+        }
+      }
+      // 去重（A/C 份额各保留，代码不同本就是不同产品）+ 限量
+      const seen = new Set();
+      return items.filter((it) => !seen.has(it.code) && seen.add(it.code)).slice(0, 20);
+    }
+
+    function renderSuggest() {
+      const d = $('fs-suggest');
+      if (!d) return;
+      if (_sugItems.length === 0) { hideSuggest(); return; }
+      d.innerHTML = _sugItems.map((it, i) =>
+        `<div class="fs-sug-item${i === _sugIdx ? ' on' : ''}" data-i="${i}"
+          style="padding:10px 14px; font-size:14px; cursor:pointer; display:flex; gap:10px; align-items:baseline; border-bottom:1px solid rgba(139,94,60,0.08);">
+          <b style="color:var(--navy-900); min-width:60px;">${it.code}</b>
+          <span style="flex:1; color:var(--navy-700);">${it.label}</span>
+          <span style="font-size:12px; color:var(--gold); white-space:nowrap;">${it.tag}</span>
+        </div>`).join('') +
+        `<div style="padding:8px 14px; font-size:11.5px; color:var(--navy-600);">按回车或点击，用所选代码体检（数据截至 ${fundManagers.updated || '—'}）</div>`;
+      d.style.display = '';
+      d.querySelectorAll('.fs-sug-item').forEach((el) => {
+        el.addEventListener('mousedown', (e) => {  // mousedown 早于 input blur
+          e.preventDefault();
+          pickSuggest(_sugItems[+el.dataset.i]);
+        });
+      });
+    }
+
+    function pickSuggest(it) {
+      if (!it) return;
+      $('fs-code').value = it.code;
+      hideSuggest();
+      run();
+    }
+
+    function suggestKeydown(e) {
+      if (_sugItems.length === 0 || $('fs-suggest').style.display === 'none') return;
+      if (e.key === 'ArrowDown') { e.preventDefault(); _sugIdx = (_sugIdx + 1) % _sugItems.length; renderSuggest(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); _sugIdx = _sugIdx <= 0 ? _sugItems.length - 1 : _sugIdx - 1; renderSuggest(); }
+      else if (e.key === 'Escape') { hideSuggest(); }
+    }
+
+    $('fs-code')?.addEventListener('input', () => {
+      const q = $('fs-code').value.trim();
+      if (/^\d*$/.test(q) && q.length <= 6 && !isNaN(parseInt(q)) && (q.length === 0 || /^\d+$/.test(q))) {
+        // 纯数字输入（代码）→ 不弹联想
+        hideSuggest(); return;
+      }
+      _sugItems = buildSuggest(q);
+      _sugIdx = _sugItems.length ? 0 : -1;
+      renderSuggest();
+    });
+    $('fs-code')?.addEventListener('blur', () => setTimeout(hideSuggest, 150));
 
     // V3.1 联动：从排名页跳转带 ?code= 参数 → 预填并自动体检
     const urlCode = new URLSearchParams(location.search).get('code');
