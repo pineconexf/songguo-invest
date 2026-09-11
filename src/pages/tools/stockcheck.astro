@@ -127,10 +127,7 @@ import Layout from '../../layouts/Layout.astro';
 
   <script>
     // API 地址（本地优先模式）：localhost/127.0.0.1 → 本地后端；其他 → 线上中转（后置）
-    const API_BASE =
-      location.hostname === '127.0.0.1' || location.hostname === 'localhost'
-        ? 'http://127.0.0.1:8080'
-        : 'http://45.194.22.118:8080';
+    const API_BASE = location.origin; // 同源请求，GH Pages → pinecone-lab.cn 走相对路径，不混合内容拦截
 
     function setV(name: string, v: string) {
       const el = document.getElementById(name) as HTMLElement;
