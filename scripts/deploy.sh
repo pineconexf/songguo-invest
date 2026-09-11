@@ -13,6 +13,16 @@ fi
 echo "① 构建..."
 npm run build
 
+# 兜底：工作区若有未提交的已跟踪改动，git checkout gh-pages 会因「would be overwritten」直接失败，
+# 导致部署静默不达（数据不更新）。这里临时 stash（非破坏性，untracked 不动），部署完回 main 再恢复。
+STASHED=0
+if [ -n "$(git status --porcelain -uno)" ]; then
+  echo "⚠ 检测到未提交改动，临时 stash 后继续（部署完自动恢复）："
+  git status --porcelain -uno | head -20
+  STASH_NAME="deploy-auto-$(date +%s)"
+  git stash push -q -m "$STASH_NAME" && STASHED=1
+fi
+
 TMP="$LOCALAPPDATA/Temp/sg_dist_deploy"
 mkdir -p "$TMP" && rm -rf "$TMP"/* && cp -r dist/* "$TMP"/
 echo "② dist 暂存完成: $(ls "$TMP" | wc -l) 项"
@@ -27,5 +37,8 @@ git add index.html _astro about archive backtest favicon.ico favicon.png favicon
 git commit -q -m "deploy: $(date +%Y%m%d-%H%M) 构建产物"
 git push origin gh-pages 2>&1 | tail -1
 git checkout -q main
+if [ "$STASHED" = "1" ]; then
+  git stash pop -q && echo "✓ 已恢复部署前的未提交改动" || echo "⚠ stash 恢复失败，请手动 git stash list 处理"
+fi
 git push origin main 2>&1 | tail -1
 echo "✅ 部署完成: https://pineconexf.github.io/songguo-invest/"
