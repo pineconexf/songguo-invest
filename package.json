@@ -10,7 +10,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "data": "python scripts/build_strategy_data.py",
+    "data": "python scripts/upgrade_v35v36.py",
     "sync": "python scripts/sync_site_data.py --build"
   },
   "dependencies": {

@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 """
 松果投资实验室 · V35/V36 站点数据升级脚本（2026-08-29）
-V35 = V34 重跑零误差（33.36%/-22.66%/Calmar 1.472/累计 599.39x，无杠杆基础版；含202608后32.76%）
-V36 = V33 重跑零误差（42.43%/MinMax 校验 41.47%/-33.65%/Calmar 0.82，1.5x 杠杆版）
+V35 = V34 重跑零误差（32.96%/-22.66%/Calmar 1.454/累计 59.32x，无杠杆基础版）
+V36 = V33 重跑零误差（42.62%/-33.65%/Calmar 1.267/累计 162.21x，1.5x 杠杆版）
 
 职责：
 1. strategy.json：meta.nav.drawdown.yearly.monthly_compare 全部从 V34/V33 键升级为 V35/V36
@@ -38,7 +38,7 @@ def read_csv(path):
     with io.open(path, encoding="utf-8-sig") as f:
         return list(csv.DictReader(f))
 
-def nav_series(rows, key="adj_ret", start="201204", end="202608"):
+def nav_series(rows, key="adj_ret", start="201204", end="202607"):
     months, nav = [], []
     cur = 1.0
     for r in rows:
@@ -93,9 +93,9 @@ assert m35 == m36, f"V35/V36 月份不一致: {len(m35)} vs {len(m36)}"
 
 met35, dd35 = calc_metrics(nav35)
 met36, dd36 = calc_metrics(nav36)
-assert abs(met35["annual_return"] - 32.76) < 0.01, f"V35 年化校验失败: {met35['annual_return']}"
+assert abs(met35["annual_return"] - 32.96) < 0.01, f"V35 年化校验失败: {met35['annual_return']}"
 assert abs(met35["mdd"] - (-22.66)) < 0.05, f"V35 MDD 校验失败: {met35['mdd']}"
-assert abs(met36["annual_return"] - 41.47) < 0.01, f"V36 年化校验失败: {met36['annual_return']}"
+assert abs(met36["annual_return"] - 42.62) < 0.01, f"V36 年化校验失败: {met36['annual_return']}"
 assert abs(met36["mdd"] - (-33.65)) < 0.05, f"V36 MDD 校验失败: {met36['mdd']}"
 print("✅ V35/V36 定稿零误差复现校验通过")
 print(f"   V35: {met35['annual_return']}% / {met35['mdd']}% / Calmar {met35['calmar']} / 累计 {met35['cumulative']:.0f}%")
@@ -149,7 +149,7 @@ data = {
         "v35": met35,
         "v36": met36,
         "hs300": {k: (round(v, 2) if isinstance(v, float) else v) for k, v in met_hs.items()},
-        "note": "数据为14年历史回测（2012.04-2026.08，173个月），含成本口径（佣金万2.5+印花税0.05%）。V35=基础版（V31+帕伯莱红旗审查，无杠杆）；V36=杠杆版（V32+红旗审查，1.5x融资，内部研究用）。红旗审查有效性主要在2016-2026数据完整期验证。历史回测不代表未来收益。",
+        "note": "数据为14年历史回测（2012.04-2026.07，172个月），含成本口径（佣金万2.5+印花税0.05%）。V35=基础版（V31+帕伯莱红旗审查，无杠杆）；V36=杠杆版（V32+红旗审查，1.5x融资，内部研究用）。红旗审查有效性主要在2016-2026数据完整期验证。历史回测不代表未来收益。",
         "window": {"start": m35[0], "end": m35[-1], "months": len(m35)},
     },
     "nav": {
@@ -251,13 +251,13 @@ stock_data = {
     "version": "V35",
     "name": "股票投资策略 V35（帕伯莱红旗审查·基础版）",
     "official": {
-        "window": "201204~202608", "months": 173,
+        "window": "201204~202607", "months": 172,
         "annual": met35["annual_return"], "mdd": met35["mdd"],
         "calmar": met35["calmar"], "cum": round(met35["cumulative"] / 100, 1),
     },
-    "window_126": {
-            "start": "201603", "end": "202608", "months": 126,
-        "annual": 27.91, "mdd": -16.78, "calmar": 1.663, "cum": 13.25,
+    "window_125": {
+        "start": "201603", "end": "202607", "months": 125,
+        "annual": 27.99, "mdd": -16.78, "calmar": 1.669, "cum": 13.08,
     },
     "months": [{ "ym": r["ym"].strip(), "ret": round(float(r["adj_ret"]) - 1, 6) } for r in v35_rows],
 }
@@ -267,13 +267,13 @@ print("✅ v35_stock.json 已生成")
 # ---------- 7. version_standard.json ----------
 vs = {
     "version": "Standard",
-    "window": {"start": "201603", "end": "202608", "months": 126},
+    "window": {"start": "201603", "end": "202607", "months": 125},
     "caliber": "几何年化/最大回撤/Calmar；指数策略为 shibor 5bp×中证500 严格滞后含0.05%切换成本；V35 含成本（帕伯莱红旗审查）；ETF/基金为实际组合净值序列；基金 2025-03 缺月几何插值",
     "strategies": {
         "index": {"label": "指数策略(中证500择时)", "annual": 6.714, "mdd": -23.855, "calmar": 0.281, "sharpe": 0.453, "cum": 1.968, "vol": 17.444},
         "etf": {"label": "ETF投资策略(四拼图)", "annual": 10.408, "mdd": -6.151, "calmar": 1.692, "sharpe": 1.505, "cum": 2.805, "vol": 6.758},
         "fund": {"label": "基金投资策略(场外组合)", "annual": 9.649, "mdd": -5.038, "calmar": 1.915, "sharpe": 1.688, "cum": 2.611, "vol": 5.57},
-        "stock": {"label": "股票投资策略(V35)", "annual": 27.91, "mdd": -16.78, "calmar": 1.663, "sharpe": 0.98, "cum": 13.25, "vol": 25.32},
+        "stock": {"label": "股票投资策略(V35)", "annual": 27.99, "mdd": -16.78, "calmar": 1.668, "sharpe": 1.12, "cum": 13.08, "vol": 24.742},
     },
     "note": "Standard=三类资产四策略独立使用。防守组合（ETF/基金）相关性 0.95 二选一；进攻=股票 V35（红旗审查）；择时=指数（Shibor×中证500）。",
 }

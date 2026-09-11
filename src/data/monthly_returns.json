@@ -998,5 +998,13 @@
   "fund": 0.7729,
   "stock": 1.3018,
   "combo_calmar_opt": 0.0868
+ },
+ {
+  "ym": "202608",
+  "index": 0.0,
+  "etf": 4.0027,
+  "fund": 2.5828,
+  "stock": -4.0276,
+  "combo_calmar_opt": 0.4834
  }
 ]
