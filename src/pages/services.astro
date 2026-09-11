@@ -1,8 +1,17 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import articles from '../data/articles_recent.json';
+import dailyData from '../data/research_daily.json';
+import industryData from '../data/research_industry.json';
 
 const sorted = articles.sort((a, b) => b.date.localeCompare(a.date));
+
+// 三个栏目的动态最新信息（全部读真实数据源，不写死示范值）
+const d = dailyData.latest;
+const radarSrc: string = industryData.source || '';
+const radarMatch = radarSrc.match(/第\s*(\d+)\s*期（(\d{4}-\d{2}-\d{2})）/);
+const radarLabel = radarMatch ? `第 ${radarMatch[1]} 期 · ${radarMatch[2]}` : '每周五更新';
+const mrep = industryData.monthly_report;
 ---
 <Layout
   title="服务"
@@ -29,21 +38,21 @@ const sorted = articles.sort((a, b) => b.date.localeCompare(a.date));
       <p class="section-sub">网站是体系，内容是把体系讲给你听——关注「松果商业笔记」，体系观点持续更新。</p>
     </div>
     <div class="link-cards" style="grid-template-columns: repeat(3, 1fr);">
-      <div class="link-card" style="cursor: default;">
+      <a class="link-card" href="/songguo-invest/tools/daily-insight/">
         <h3><span class="gold">每日资讯解读</span></h3>
         <p>宏观/行业/个股信号当日解读，帮你在信息洪流里抓住关键变化。</p>
-        <div style="font-size:12px; color:var(--navy-600); margin-top:8px;">每交易日更新 · 示范：8/26 已发布</div>
-      </div>
-      <div class="link-card" style="cursor: default;">
+        <div style="font-size:12px; color:var(--navy-600); margin-top:8px;">最新：{d.market_date} · 每交易日更新 →</div>
+      </a>
+      <a class="link-card" href="/songguo-invest/tools/industry-report/">
         <h3><span class="gold">每周行业雷达</span></h3>
         <p>7 天政策催化 + 科技突破 + 行业景气度周报，与策略体系同源。</p>
-        <div style="font-size:12px; color:var(--navy-600); margin-top:8px;">每周五更新 · 示范：第 26 期已发布</div>
-      </div>
-      <div class="link-card" style="cursor: default;">
+        <div style="font-size:12px; color:var(--navy-600); margin-top:8px;">最新：{radarLabel} · 每周五更新 →</div>
+      </a>
+      <a class="link-card" href="/songguo-invest/strategies/monthly/">
         <h3><span class="gold">策略月报</span></h3>
         <p>三类资产/组合当月表现复盘 + 下月操作要点，回测测试数据同步公开。</p>
-        <div style="font-size:12px; color:var(--navy-600); margin-top:8px;">每月初更新 · 示范：2026 年 7 月版已发布</div>
-      </div>
+        <div style="font-size:12px; color:var(--navy-600); margin-top:8px;">最新：{mrep.period}版 · 每月初更新 →</div>
+      </a>
     </div>
   </section>
 
