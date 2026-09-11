@@ -7,6 +7,9 @@ const hot = industry.hot_sectors;
 const ev = industry.events;
 const warn = industry.warnings;
 const mrep = industry.monthly_report;
+// 雷达期号从 source 动态提取（雷达产线独立更新）
+const radarMatch = (industry.source || '').match(/第\s*(\d+)\s*期/);
+const radarIssue = radarMatch ? `第 ${radarMatch[1]} 期` : '最新一期';
 ---
 <Layout
   title="行业研究报告"
@@ -46,7 +49,7 @@ const mrep = industry.monthly_report;
   <!-- 热点赛道 -->
   <section class="card">
     <div class="section-head">
-      <div class="section-kicker">Radar · 本周行业雷达（第 26 期）</div>
+      <div class="section-kicker">Radar · 本周行业雷达（{radarIssue}）</div>
       <h2 class="section-title">本周高热度赛道 TOP 5</h2>
       <p class="section-sub">来源：{industry.source}</p>
     </div>
@@ -92,13 +95,13 @@ const mrep = industry.monthly_report;
   <!-- 月度要点 -->
   <section class="card">
     <div class="section-head">
-      <div class="section-kicker">Monthly · 策略月报（2026 年 7 月）</div>
-      <h2 class="section-title">7 月市场与体系表现</h2>
+      <div class="section-kicker">Monthly · 策略月报（{mrep.period}）</div>
+      <h2 class="section-title">{mrep.period}市场与体系表现</h2>
       <p class="section-sub">{mrep.market}</p>
     </div>
     <div class="table-wrap">
       <table class="data-table">
-        <thead><tr><th>资产/策略</th><th>7 月</th><th>YTD</th><th>历史最大回撤</th><th>定位</th></tr></thead>
+        <thead><tr><th>资产/策略</th><th>当月</th><th>YTD</th><th>历史最大回撤</th><th>定位</th></tr></thead>
         <tbody>
           {mrep.assets.map((a) => (
             <tr>
