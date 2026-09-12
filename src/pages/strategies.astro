@@ -11,7 +11,7 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
 ---
 <Layout
   title="策略体系"
-  description="松果投资策略体系 — Standard 三类资产 / Pro 最优组合 / Max 纯股票V35，统一窗口 2016.03-2026.08 真实回测，全部回测数据可测试查询。"
+  description="松果投资策略体系 — Standard 单策略三选一 / Pro 纯股票V35 / Max 最优组合，统一窗口 2016.03-2026.08 真实回测，全部回测数据可测试查询。"
 >
   <!-- Hero -->
   <section class="hero" style="padding: 56px 48px;">
@@ -21,8 +21,9 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
         一个体系<br /><span class="gold">三个版本</span>
       </h1>
       <p class="hero-lead">
-        <b>S · Standard</b> 三类资产打底，<b>P · Pro</b> 用数据找出最优组合，
-        <b>M · Max</b> 纯股票满仓（V35）。
+        <b>S · Standard</b> 最保守：三类策略（防守/进攻/择时）各自独立、三选一使用，零门槛。
+        <b>P · Pro</b> 单一进攻：V35 纯股票满仓，收益最高、风险也最大。
+        <b>M · Max</b> 最优组合：四策略网格扫描选出最佳配比，弱相关互补，Calmar 最高。
         全部回测统一窗口 <b>{vStd.window.start}–{vStd.window.end}（{vStd.window.months} 个月）</b>，每个时点的回撤都能测试查到。
       </p>
     </div>
@@ -35,21 +36,21 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
         <div class="version-chip-tag" style="background: linear-gradient(135deg, var(--green,#4A7C59), #6da07e);">S</div>
         <div>
           <div class="version-chip-name">Standard 版</div>
-          <div class="version-chip-desc">三类资产 · 稳健</div>
+          <div class="version-chip-desc">三选一 · 最保守</div>
         </div>
       </a>
       <a href="#pro" class="version-chip">
         <div class="version-chip-tag" style="background: linear-gradient(135deg, #c87f2e, var(--gold-500));">P</div>
         <div>
           <div class="version-chip-name">Pro 版</div>
-          <div class="version-chip-desc">最优组合 · 增强</div>
+          <div class="version-chip-desc">纯股票 · 满仓V35</div>
         </div>
       </a>
       <a href="#max" class="version-chip">
         <div class="version-chip-tag" style="background: linear-gradient(135deg, #a03a28, #c85a3e);">M</div>
         <div>
           <div class="version-chip-name">Max 版</div>
-          <div class="version-chip-desc">纯股票 · 满仓V35</div>
+          <div class="version-chip-desc">最优组合 · 四策略</div>
         </div>
       </a>
     </div>
@@ -58,10 +59,10 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
   <!-- ========== S · Standard ========== -->
   <section class="card" id="standard">
     <div class="section-head">
-      <div class="section-kicker">S · Standard · 三类资产</div>
+      <div class="section-kicker">S · Standard · 单策略三选一（最保守）</div>
       <h2 class="section-title">Standard 版</h2>
       <p class="section-sub">
-        体系的底层：三类资产——防守组合（ETF/基金是同一组合的场内场外两个壳，二选一即可）、进攻选股（V35 红旗审查 + 空仓保险）、宏观择时（指数保险）。
+        体系最简单、最保守的入口：防守（ETF/基金）、进攻（V35）、择时（Shibor）各自独立，<b>三选一使用</b>，零门槛、不加杠杆、不搞复杂组合。
         以下指标统一窗口 <b>{vStd.window.start}–{vStd.window.end}</b>，几何年化、月度再平衡、含成本。
       </p>
     </div>
@@ -152,12 +153,36 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
       </div>
     </div>
 
-    <!-- 三类资产对比 -->
+    <!-- 核心指标 -->
+    <div class="metric-grid" style="grid-template-columns: repeat(4, 1fr);">
+      <div class="metric-card">
+        <div class="label">防守 · ETF壳</div>
+        <div class="value">{fmt(s.etf.annual)}</div>
+        <div class="sub">回撤 {fmt(s.etf.mdd)} · Calmar {s.etf.calmar.toFixed(2)}</div>
+      </div>
+      <div class="metric-card">
+        <div class="label">防守 · 基金壳</div>
+        <div class="value">{fmt(s.fund.annual)}</div>
+        <div class="sub">回撤 {fmt(s.fund.mdd)} · Calmar {s.fund.calmar.toFixed(2)}</div>
+      </div>
+      <div class="metric-card">
+        <div class="label">进攻 · 股票V35</div>
+        <div class="value">{fmt(s.stock.annual)}</div>
+        <div class="sub">回撤 {fmt(s.stock.mdd)} · Calmar {s.stock.calmar.toFixed(2)}</div>
+      </div>
+      <div class="metric-card">
+        <div class="label">择时 · 宏观信号</div>
+        <div class="value">{fmt(s.index.annual)}</div>
+        <div class="sub">回撤 {fmt(s.index.mdd)} · Calmar {s.index.calmar.toFixed(2)}</div>
+      </div>
+    </div>
+
+    <!-- 三类资产与基准对照 -->
     <div class="table-wrap" style="margin-top: 28px;">
       <table class="data-table">
         <thead>
         <tr>
-          <th>资产</th>
+          <th>策略</th>
           <th>角色</th>
           <th>年化</th>
           <th>最大回撤</th>
@@ -169,7 +194,7 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
       <tbody>
         <tr>
           <td><b>① 防守 · ETF 壳</b></td>
-          <td>压舱石</td>
+          <td>压舱石（场内）</td>
           <td class="up">{fmt(s.etf.annual)}</td>
           <td class="down">{fmt(s.etf.mdd)}</td>
           <td>{s.etf.sharpe.toFixed(2)}</td>
@@ -178,7 +203,7 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
         </tr>
         <tr>
           <td><b>① 防守 · 基金壳</b></td>
-          <td>压舱石（二选一）</td>
+          <td>压舱石（场外·二选一）</td>
           <td class="up">{fmt(s.fund.annual)}</td>
           <td class="down">{fmt(s.fund.mdd)}</td>
           <td>{s.fund.sharpe.toFixed(2)}</td>
@@ -186,8 +211,8 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
           <td>{fmt((s.fund.cum - 1) * 100, 1)}</td>
         </tr>
         <tr>
-          <td><b>② 进攻选股</b></td>
-          <td>收益引擎</td>
+          <td><b>② 进攻 · 股票 V35</b></td>
+          <td>收益引擎（含空仓保险）</td>
           <td class="up">{fmt(s.stock.annual)}</td>
           <td class="down">{fmt(s.stock.mdd)}</td>
           <td>{s.stock.sharpe.toFixed(2)}</td>
@@ -203,6 +228,24 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
           <td>{s.index.calmar.toFixed(2)}</td>
           <td>{fmt((s.index.cum - 1) * 100, 1)}</td>
         </tr>
+        <tr style="background: rgba(217,164,65,0.05);">
+          <td><b>对照 · 沪深300</b></td>
+          <td>大盘基准</td>
+          <td>+4.06%</td>
+          <td class="down">-40.56%</td>
+          <td>0.22</td>
+          <td>0.10</td>
+          <td>+77.4%</td>
+        </tr>
+        <tr style="background: rgba(217,164,65,0.05);">
+          <td><b>对照 · 中证500</b></td>
+          <td>中小盘基准</td>
+          <td>+3.41%</td>
+          <td class="down">-36.96%</td>
+          <td>0.19</td>
+          <td>0.09</td>
+          <td>+42.2%</td>
+        </tr>
       </tbody>
       </table>
     </div>
@@ -215,37 +258,73 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
   <!-- ========== P · Pro ========== -->
   <section class="card" id="pro">
     <div class="section-head">
-      <div class="section-kicker">P · Pro · 混合组合</div>
+      <div class="section-kicker">P · Pro · 纯股票满仓V35（进攻）</div>
       <h2 class="section-title">Pro 版</h2>
       <p class="section-sub">
-        用网格扫描（{vPro.grid.step}% 步长，{vPro.grid.pairs} 个两两 + {vPro.grid.triples} 个三资产 + {vPro.grid.full} 个全资产组合，共 <b>{vPro.grid.pairs + vPro.grid.triples + vPro.grid.full} 个组合</b>）
-        在全历史（{vStd.window.start}–{vStd.window.end}）上逐一回测，选出收益-回测最优解。
+        单一进攻引擎：满仓V35纯股票策略，FCF/EV Top4 + 帕伯莱红旗审查 + 空仓保险（HS300月跌超8%转债金）。
+        不做资产分散，追求最高超额收益。适合能承受中等回撤、追求进攻弹性的投资者。
+        统一窗口 <b>{vStd.window.start}–{vStd.window.end}</b>。
       </p>
     </div>
 
-    <!-- 推荐组合 -->
-    <div class="section-head" style="margin-top: 8px;">
-      <div class="section-kicker" style="color: var(--gold-600);">RECOMMENDED · 数据选出</div>
-      <h3 class="asset-title" style="font-size: 19px;">推荐组合：{Object.keys(rec.weights).map((k) => `${k.replace('投资策略', '')} ${(rec.weights[k] * 100).toFixed(0)}%`).join(' + ')}</h3>
-      <p class="asset-desc">{rec.rationale}</p>
-    </div>
-    <div class="metric-grid" style="grid-template-columns: repeat(4, 1fr);">
+    <!-- V35 核心数据指标 -->
+    <div class="metric-grid" style="grid-template-columns: repeat(4, 1fr); margin-top: 16px;">
       <div class="metric-card">
-        <div class="label">年化收益</div>
-        <div class="value">{fmt(rec.metrics.annual)}</div>
+        <div class="label">年化收益（126月窗）</div>
+        <div class="value">{fmt(s.stock.annual)}</div>
+        <div class="sub">173月全周期为 +32.76%</div>
       </div>
       <div class="metric-card">
         <div class="label">最大回撤</div>
-        <div class="value" style="color: #a03a28;">{fmt(rec.metrics.mdd)}</div>
+        <div class="value" style="color: #a03a28;">{fmt(s.stock.mdd)}</div>
+        <div class="sub">含空仓保险风控</div>
       </div>
       <div class="metric-card">
         <div class="label">夏普比率</div>
-        <div class="value">{rec.metrics.sharpe.toFixed(2)}</div>
+        <div class="value">{s.stock.sharpe.toFixed(2)}</div>
       </div>
       <div class="metric-card">
         <div class="label">Calmar</div>
-        <div class="value">{rec.metrics.calmar.toFixed(2)}</div>
+        <div class="value">{s.stock.calmar.toFixed(2)}</div>
       </div>
+    </div>
+
+    <!-- 对照基准 -->
+    <div class="table-wrap" style="margin-top: 24px;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>对照系</th>
+            <th>年化收益（126月）</th>
+            <th>最大回撤</th>
+            <th>Calmar</th>
+            <th>定位</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>Pro · V35 纯股票</b></td>
+            <td class="up">{fmt(s.stock.annual)}</td>
+            <td class="down">{fmt(s.stock.mdd)}</td>
+            <td><b>{s.stock.calmar.toFixed(2)}</b></td>
+            <td>单一进攻引擎（含空仓保险）</td>
+          </tr>
+          <tr>
+            <td><b>沪深300（同期）</b></td>
+            <td>+4.06%</td>
+            <td class="down">-40.56%</td>
+            <td>0.10</td>
+            <td>大盘权重基准</td>
+          </tr>
+          <tr>
+            <td><b>中证500（同期）</b></td>
+            <td>+3.41%</td>
+            <td class="down">-36.96%</td>
+            <td>0.09</td>
+            <td>中小盘成长基准</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
     <!-- 有效前沿 -->
@@ -314,36 +393,76 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
   <!-- ========== M · Max ========== -->
   <section class="card" id="max">
     <div class="section-head">
-      <div class="section-kicker">M · Max · 纯股票策略</div>
+      <div class="section-kicker">M · Max · 四策略最优组合（集大成）</div>
       <h2 class="section-title">Max 版</h2>
       <p class="section-sub">
-        Max = <b>纯股票策略版</b>：不做资产分散、不加融资杠杆、不做期权对冲，<b>满仓单一股票策略（V35）</b>。
-        它是三条版本线中年化最高的一条，代价是风险最集中——用组合管理纪律（止损线、信号空仓、现金留存）替代分散化。
+        Max = <b>四策略最优组合版</b>：前面两个版本策略的集大成。
+        防守打底（基金/ETF）+ 进攻引擎（股票V35）+ 宏观保险（择时），网格扫描寻找最优解。
+        弱相关资产互补，在控制回撤的同时兼顾高收益，Calmar 最优。
       </p>
     </div>
 
-    <!-- 核心结论 -->
+    <!-- 推荐组合 -->
+    <div class="section-head" style="margin-top: 8px;">
+      <div class="section-kicker" style="color: var(--gold-600);">OPTIMAL COMBO · 网格扫描最优解</div>
+      <h3 class="asset-title" style="font-size: 19px;">推荐组合：{Object.keys(rec.weights).map((k) => `${k.replace('投资策略', '')} ${(rec.weights[k] * 100).toFixed(0)}%`).join(' + ')}</h3>
+      <p class="asset-desc">{rec.rationale}</p>
+    </div>
     <div class="metric-grid" style="grid-template-columns: repeat(4, 1fr);">
       <div class="metric-card">
-        <div class="label">V35 年化（{vMax.window.label}）</div>
-                <div class="value" style="font-size: 22px;">{fmt(vMax.pure_stock.annual)}</div>
-                <div class="sub">{vMax.pure_stock.desc}</div>
+        <div class="label">组合年化</div>
+        <div class="value">{fmt(rec.metrics.annual)}</div>
       </div>
       <div class="metric-card">
         <div class="label">最大回撤</div>
-                <div class="value" style="font-size: 22px; color: #a03a28;">{fmt(vMax.pure_stock.mdd)}</div>
-                <div class="sub">满仓单一策略 · 无分散化缓冲</div>
+        <div class="value" style="color: #a03a28;">{fmt(rec.metrics.mdd)}</div>
+      </div>
+      <div class="metric-card">
+        <div class="label">夏普比率</div>
+        <div class="value">{rec.metrics.sharpe.toFixed(2)}</div>
       </div>
       <div class="metric-card">
         <div class="label">Calmar</div>
-                <div class="value" style="font-size: 22px;">{vMax.pure_stock.calmar.toFixed(3)}</div>
-                <div class="sub">{vMax.window_126.label}为 {vMax.window_126.calmar.toFixed(3)}</div>
+        <div class="value">{rec.metrics.calmar.toFixed(2)}</div>
       </div>
-      <div class="metric-card">
-        <div class="label">对照 {vMax.benchmark.name}</div>
-        <div class="value" style="font-size: 22px;">{fmt(vMax.benchmark.annual)}</div>
-        <div class="sub">回撤 {fmt(vMax.benchmark.mdd)} · Calmar {vMax.benchmark.calmar.toFixed(2)}</div>
-      </div>
+    </div>
+
+    <!-- 对照基准 -->
+    <div class="table-wrap" style="margin-top: 24px;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>对照系</th>
+            <th>年化收益</th>
+            <th>最大回撤</th>
+            <th>Calmar</th>
+            <th>定位</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>Max 最优组合</b></td>
+            <td class="up">{fmt(rec.metrics.annual)}</td>
+            <td class="down">{fmt(rec.metrics.mdd)}</td>
+            <td><b>{rec.metrics.calmar.toFixed(2)}</b></td>
+            <td>四策略集大成最优解</td>
+          </tr>
+          <tr>
+            <td><b>沪深300（同期）</b></td>
+            <td>+4.06%</td>
+            <td class="down">-40.56%</td>
+            <td>0.10</td>
+            <td>大盘权重基准</td>
+          </tr>
+          <tr>
+            <td><b>中证500（同期）</b></td>
+            <td>+3.41%</td>
+            <td class="down">-36.96%</td>
+            <td>0.09</td>
+            <td>中小盘成长基准</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
     <!-- 被否决的两条进取路径 -->

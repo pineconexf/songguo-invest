@@ -50,7 +50,7 @@ const navOption = {
 -->
 <Layout
   title="首页"
-  description="松果投资实验室 — 一个体系三个版本：Standard 三类资产 / Pro 最优组合 / Max 纯股票V35。统一窗口 126 个月真实回测，回测测试数据全公开。"
+  description="松果投资实验室 — 一个体系三个版本：Standard 单策略三选一 / Pro 纯股票V35 / Max 最优组合。统一窗口 126 个月真实回测，回测测试数据全公开。"
 >
 
   <!-- ============ 第1幕 · 钩子 ============ -->
@@ -62,7 +62,7 @@ const navOption = {
       </h1>
       <p class="hero-lead reveal">
         我们把专业机构的投资逻辑，做成了 <b>Standard / Pro / Max</b> 三个版本——
-        从稳健的防守组合，到进击的个股选股，再到纯股票满仓策略。
+        从最保守的单策略三选一，到进击的V35纯股票满仓，再到四策略网格扫描的最优组合。
         全部用 <b>126 个月真实回测</b>验证给你看。
       </p>
       <p class="slogan reveal">让普通投资者也能像机构那样享受体系化的稳健投资</p>
@@ -114,9 +114,9 @@ const navOption = {
     </div>
     <div class="link-cards" style="grid-template-columns: repeat(3, 1fr);">
       <a href="/songguo-invest/strategies/#standard" class="link-card">
-        <div class="master-school" style="color: var(--green, #4A7C59);">S · Standard · 稳健</div>
+        <div class="master-school" style="color: var(--green, #4A7C59);">S · Standard · 最保守</div>
         <h3>Standard 版</h3>
-        <p>防守 + 进攻 + 择时三类资产，按月调仓，适合大多数投资者。</p>
+        <p>三类策略三选一独立使用，零门槛、不加杠杆、不搞复杂组合。防守/进攻/择时各自跑。</p>
         <div class="metric-grid" style="grid-template-columns: repeat(2, 1fr); margin: 14px 0 0; gap: 8px;">
           <div class="metric-card" style="padding: 10px 8px;"><div class="label">防守年化</div><div class="value" style="font-size: 17px;">{fmt(s.fund.annual)}</div></div>
           <div class="metric-card" style="padding: 10px 8px;"><div class="label">防守回撤</div><div class="value" style="font-size: 17px; color: #a03a28;">{fmt(s.fund.mdd)}</div></div>
@@ -124,22 +124,22 @@ const navOption = {
         <div class="master-desc" style="font-size: 13px; margin-top: 10px;">看看三类资产 →</div>
       </a>
       <a href="/songguo-invest/strategies/#pro" class="link-card">
-        <div class="master-school" style="color: #c87f2e;">P · Pro · 增强</div>
+        <div class="master-school" style="color: #c87f2e;">P · Pro · 纯股票进攻</div>
         <h3>Pro 版</h3>
-        <p>网格扫描 222 个组合选出的最优配比：防守打底 + 进攻增厚，回撤砍半。</p>
+        <p>V35 纯股票满仓，FCF/EV 量化选股 + 红旗审查 + 空仓保险。不做分散，追求最高超额收益。</p>
         <div class="metric-grid" style="grid-template-columns: repeat(2, 1fr); margin: 14px 0 0; gap: 8px;">
-          <div class="metric-card" style="padding: 10px 8px;"><div class="label">组合年化</div><div class="value" style="font-size: 17px;">{fmt(vProMetric?.annual ?? 15.40)}</div></div>
-          <div class="metric-card" style="padding: 10px 8px;"><div class="label">组合回撤</div><div class="value" style="font-size: 17px; color: #a03a28;">{fmt(vProMetric?.mdd ?? -6.19)}</div></div>
+          <div class="metric-card" style="padding: 10px 8px;"><div class="label">V35 年化</div><div class="value" style="font-size: 17px;">{fmt(s.stock.annual)}</div></div>
+          <div class="metric-card" style="padding: 10px 8px;"><div class="label">最大回撤</div><div class="value" style="font-size: 17px; color: #a03a28;">{fmt(s.stock.mdd)}</div></div>
         </div>
         <div class="master-desc" style="font-size: 13px; margin-top: 10px;">看推荐组合 →</div>
       </a>
       <a href="/songguo-invest/strategies/#max" class="link-card">
-        <div class="master-school" style="color: #a03a28;">M · Max · 纯股票</div>
+        <div class="master-school" style="color: #a03a28;">M · Max · 最优组合</div>
         <h3>Max 版</h3>
-        <p>满仓单一股票策略（V35），不做分散、不加杠杆。收益最高、风险最集中。</p>
+        <p>四策略网格扫描最优解：防守+进攻+择时弱相关互补，Calmar 最高，兼顾收益与回撤控制。</p>
         <div class="metric-grid" style="grid-template-columns: repeat(2, 1fr); margin: 14px 0 0; gap: 8px;">
-          <div class="metric-card" style="padding: 10px 8px;"><div class="label">V35 年化</div><div class="value" style="font-size: 17px;">+32.76%</div></div>
-          <div class="metric-card" style="padding: 10px 8px;"><div class="label">最大回撤</div><div class="value" style="font-size: 17px; color: #a03a28;">-22.66%</div></div>
+          <div class="metric-card" style="padding: 10px 8px;"><div class="label">组合年化</div><div class="value" style="font-size: 17px;">+15.40%</div></div>
+          <div class="metric-card" style="padding: 10px 8px;"><div class="label">最大回撤</div><div class="value" style="font-size: 17px; color: #a03a28;">-6.19%</div></div>
         </div>
         <div class="master-desc" style="font-size: 13px; margin-top: 10px;">看纯股票策略 →</div>
       </a>
@@ -242,7 +242,7 @@ const navOption = {
       <a href="/songguo-invest/strategies/" class="layer">
         <span class="layer-index">S→M</span>
         <span class="layer-name">三版本演进</span>
-        <span class="layer-desc">Standard 三类资产 → Pro 数据选最优组合 → Max 纯股票满仓（V35，无杠杆无期权）。</span>
+        <span class="layer-desc">Standard 单策略三选一（最保守） → Pro V35纯股票满仓（进攻） → Max 四策略最优组合（集大成）。</span>
         <span class="layer-tag">S / P / M</span>
       </a>
     </div>
@@ -358,9 +358,9 @@ const navOption = {
         if (done < 5) { alert('请把 5 题都答完哦'); return; }
         const res = document.getElementById('qf-result');
         let v = '', href = '', why = '';
-        if (sum <= 7) { v = 'Standard 稳健'; href = '/songguo-invest/strategies/#standard'; why = '你这笔钱偏急用、回撤承受力也克制——标准版防守打底 + 少量进攻，按月调仓、少操心。'; }
-        else if (sum <= 12) { v = 'Pro 增强'; href = '/songguo-invest/strategies/#pro'; why = '你能接受中等回撤、也愿意每月看一次——Pro 版攻守均衡、回撤砍半，是多数人的甜点位。'; }
-        else { v = 'Max 纯股票'; href = '/songguo-invest/strategies/#max'; why = '你扛得住大回撤、用的是闲钱、还认纪律——Max 版纯股票满仓V35，收益最高、风险最集中，只给这一类人。'; }
+        if (sum <= 7) { v = 'Standard 最保守'; href = '/songguo-invest/strategies/#standard'; why = '你这笔钱偏急用、回撤承受力极度克制——标准版单策略三选一（防守/进攻/择时独立使用），零门槛、少操心。'; }
+        else if (sum <= 12) { v = 'Max 最优组合'; href = '/songguo-invest/strategies/#max'; why = '你能接受中等回撤、想要长期最优性价比——Max 版四策略弱相关组合、回撤砍半，是大多数人的甜点位。'; }
+        else { v = 'Pro 纯股票'; href = '/songguo-invest/strategies/#pro'; why = '你扛得住大回撤、用的是闲钱、追求极致进攻——Pro 版满仓V35纯股票策略，收益最高、风险最集中。'; }
         res.style.display = 'block';
         res.innerHTML = '<b>你的适配版本：' + v + '</b>　' + why + '<div style="margin-top:10px;"><a href="' + href + '" class="btn btn-gold">去看看 ' + v + ' →</a></div>';
       };
