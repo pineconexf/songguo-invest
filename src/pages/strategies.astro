@@ -273,6 +273,50 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
       </table>
     </div>
 
+    <div class="callout" style="margin-top: 20px;">
+      <b>单一进攻逻辑</b>：Pro 版不做资产分散、不配防守腿，将全部仓位集中于 FCF/EV 量化选股模型。
+      通过帕伯莱红旗财务审查（排雷）与内嵌的空仓保险（沪深300单月跌超8%时自动防御），在单一权益资产内部实现极致的攻守兼备。
+      如果需要多资产弱相关互补与最优组合配比 → 见下方 <b>Max 版</b>。
+    </div>
+  </section>
+
+  <!-- ========== M · Max ========== -->
+  <section class="card" id="max">
+    <div class="section-head">
+      <div class="section-kicker">M · Max · 四策略最优组合（集大成）</div>
+      <h2 class="section-title">Max 版</h2>
+      <p class="section-sub">
+        Max = <b>四策略最优组合版</b>：前面两个版本策略的集大成。
+        防守打底（基金/ETF）+ 进攻引擎（股票V35）+ 宏观保险（择时），网格扫描寻找最优解。
+        弱相关资产互补，在控制回撤的同时兼顾高收益，Calmar 最优。
+      </p>
+    </div>
+
+    <!-- 推荐组合 -->
+    <div class="section-head" style="margin-top: 8px;">
+      <div class="section-kicker" style="color: var(--gold-600);">OPTIMAL COMBO · 网格扫描最优解</div>
+      <h3 class="asset-title" style="font-size: 19px;">推荐组合：{Object.keys(rec.weights).map((k) => `${k.replace('投资策略', '')} ${(rec.weights[k] * 100).toFixed(0)}%`).join(' + ')}</h3>
+      <p class="asset-desc">{rec.rationale}</p>
+    </div>
+    <div class="metric-grid" style="grid-template-columns: repeat(4, 1fr);">
+      <div class="metric-card">
+        <div class="label">组合年化</div>
+        <div class="value">{fmt(rec.metrics.annual)}</div>
+      </div>
+      <div class="metric-card">
+        <div class="label">最大回撤</div>
+        <div class="value" style="color: #a03a28;">{fmt(rec.metrics.mdd)}</div>
+      </div>
+      <div class="metric-card">
+        <div class="label">夏普比率</div>
+        <div class="value">{rec.metrics.sharpe.toFixed(2)}</div>
+      </div>
+      <div class="metric-card">
+        <div class="label">Calmar</div>
+        <div class="value">{rec.metrics.calmar.toFixed(2)}</div>
+      </div>
+    </div>
+
     <!-- 有效前沿 -->
     <div class="section-head" style="margin-top: 24px;">
       <div class="section-kicker">EFFICIENT FRONTIER · 有效前沿</div>
@@ -333,44 +377,6 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
     </div>
     <div class="callout warn" style="margin-top: 8px;">
       <b>数据边界</b>：推荐组合为历史最优解（含数据窥探风险），实盘预期应打折；{vPro.note}
-    </div>
-  </section>
-
-  <!-- ========== M · Max ========== -->
-  <section class="card" id="max">
-    <div class="section-head">
-      <div class="section-kicker">M · Max · 四策略最优组合（集大成）</div>
-      <h2 class="section-title">Max 版</h2>
-      <p class="section-sub">
-        Max = <b>四策略最优组合版</b>：前面两个版本策略的集大成。
-        防守打底（基金/ETF）+ 进攻引擎（股票V35）+ 宏观保险（择时），网格扫描寻找最优解。
-        弱相关资产互补，在控制回撤的同时兼顾高收益，Calmar 最优。
-      </p>
-    </div>
-
-    <!-- 推荐组合 -->
-    <div class="section-head" style="margin-top: 8px;">
-      <div class="section-kicker" style="color: var(--gold-600);">OPTIMAL COMBO · 网格扫描最优解</div>
-      <h3 class="asset-title" style="font-size: 19px;">推荐组合：{Object.keys(rec.weights).map((k) => `${k.replace('投资策略', '')} ${(rec.weights[k] * 100).toFixed(0)}%`).join(' + ')}</h3>
-      <p class="asset-desc">{rec.rationale}</p>
-    </div>
-    <div class="metric-grid" style="grid-template-columns: repeat(4, 1fr);">
-      <div class="metric-card">
-        <div class="label">组合年化</div>
-        <div class="value">{fmt(rec.metrics.annual)}</div>
-      </div>
-      <div class="metric-card">
-        <div class="label">最大回撤</div>
-        <div class="value" style="color: #a03a28;">{fmt(rec.metrics.mdd)}</div>
-      </div>
-      <div class="metric-card">
-        <div class="label">夏普比率</div>
-        <div class="value">{rec.metrics.sharpe.toFixed(2)}</div>
-      </div>
-      <div class="metric-card">
-        <div class="label">Calmar</div>
-        <div class="value">{rec.metrics.calmar.toFixed(2)}</div>
-      </div>
     </div>
 
     <!-- 对照基准 -->
