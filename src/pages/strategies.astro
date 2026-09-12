@@ -174,7 +174,7 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
           <td class="down">{fmt(s.etf.mdd)}</td>
           <td>{s.etf.sharpe.toFixed(2)}</td>
           <td>{s.etf.calmar.toFixed(2)}</td>
-          <td>{fmt(s.etf.cum, 1)}</td>
+          <td>{fmt((s.etf.cum - 1) * 100, 1)}</td>
         </tr>
         <tr>
           <td><b>① 防守 · 基金壳</b></td>
@@ -183,7 +183,7 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
           <td class="down">{fmt(s.fund.mdd)}</td>
           <td>{s.fund.sharpe.toFixed(2)}</td>
           <td>{s.fund.calmar.toFixed(2)}</td>
-          <td>{fmt(s.fund.cum, 1)}</td>
+          <td>{fmt((s.fund.cum - 1) * 100, 1)}</td>
         </tr>
         <tr>
           <td><b>② 进攻选股</b></td>
@@ -192,7 +192,7 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
           <td class="down">{fmt(s.stock.mdd)}</td>
           <td>{s.stock.sharpe.toFixed(2)}</td>
           <td>{s.stock.calmar.toFixed(2)}</td>
-          <td>{fmt(s.stock.cum, 1)}</td>
+          <td>{fmt((s.stock.cum - 1) * 100, 1)}</td>
         </tr>
         <tr>
           <td><b>③ 宏观择时</b></td>
@@ -201,7 +201,7 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
           <td class="down">{fmt(s.index.mdd)}</td>
           <td>{s.index.sharpe.toFixed(2)}</td>
           <td>{s.index.calmar.toFixed(2)}</td>
-          <td>{fmt(s.index.cum, 1)}</td>
+          <td>{fmt((s.index.cum - 1) * 100, 1)}</td>
         </tr>
       </tbody>
       </table>

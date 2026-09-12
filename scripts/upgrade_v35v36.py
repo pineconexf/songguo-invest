@@ -52,7 +52,7 @@ def nav_series(rows, key="adj_ret", start="201204", end="202608"):
 def calc_metrics(nav):
     n = len(nav)
     final = nav[-1]
-    cum = final * 100.0  # 与原网站口径一致：累计净值倍数×100（59.32x → 5932）
+    cum = (final - 1.0) * 100.0  # 累计收益率%（净值倍数 - 1）× 100（59.44x → 5844.5）
     ann = final ** (12.0 / n) - 1.0
     peak, mdd = nav[0], 0.0
     dd_series = []
@@ -66,7 +66,7 @@ def calc_metrics(nav):
         "annual_return": round(ann * 100, 2),
         "mdd": round(mdd * 100, 2),
         "calmar": round(calmar, 3) if calmar else None,
-        "cumulative": round(cum * 100, 1),
+        "cumulative": round(cum, 1),
         "months": n,
     }, dd_series
 
@@ -253,7 +253,7 @@ stock_data = {
     "official": {
         "window": "201204~202608", "months": 173,
         "annual": met35["annual_return"], "mdd": met35["mdd"],
-        "calmar": met35["calmar"], "cum": round(met35["cumulative"] / 100, 1),
+        "calmar": met35["calmar"], "cum": round(met35["cumulative"] / 100 + 1, 1),
     },
     "window_126": {
             "start": "201603", "end": "202608", "months": 126,
