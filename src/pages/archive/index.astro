@@ -10,58 +10,58 @@ import lifeFund from '../../data/life_fund.json';
 const cards = [
   {
     href: '/songguo-invest/archive/etf/',
-    group: '防守组合',
-    groupKey: 'defense',
+    group: 'Standard · 防守组合',
+    groupKey: 'standard',
     title: 'ETF 壳档案',
     desc: '四拼图（债/金/红利/QDII）场内组合，2014-01 起',
     stat: `${lifeEtf.labels.length} 个月`,
     sub: '年化 10.10% · 回测 -6.15% · 标的 511010/159934/510880/513500',
-    tag: '场内 · T+0',
-    search: 'etf 防守 组合 拼图 场内 债券 黄金 红利 qdii 511010 159934 510880 513500',
+    tag: '防守 01 · 场内',
+    search: 'etf 防守 组合 拼图 场内 债券 黄金 红利 qdii 511010 159934 510880 513500 standard',
   },
   {
     href: '/songguo-invest/archive/fund/',
-    group: '防守组合',
-    groupKey: 'defense',
+    group: 'Standard · 防守组合',
+    groupKey: 'standard',
     title: '基金壳档案',
     desc: '同拼图场外落地，固收+ 是灵魂，2016-02 起',
     stat: `${lifeFund.labels.length} 个月`,
     sub: '年化 9.84% · 回测 -5.13% · 基金 217022/002351/000216/050025',
-    tag: '场外 · 不盯盘',
-    search: '基金 防守 组合 拼图 场外 固收 债券 黄金 红利 qdii 217022 002351 000216 050025',
-  },
-  {
-    href: '/songguo-invest/archive/monthly/',
-    group: '进攻选股',
-    groupKey: 'offense',
-    title: '月度选股档案',
-    desc: '每月选股名单 + 权重 + 投前投后',
-    stat: `${history.count} 月`,
-    sub: 'Top4 + FCF加权 · 全量个股可查',
-    tag: '个股可追溯',
-    search: '选股 个股 股票 v35 月度 名单 top4 fcf 组合管理',
+    tag: '防守 02 · 场外',
+    search: '基金 防守 组合 拼图 场外 固收 债券 黄金 红利 qdii 217022 002351 000216 050025 standard',
   },
   {
     href: '/songguo-invest/archive/macro/',
-    group: '宏观择时',
-    groupKey: 'timing',
-    title: '宏观信号档案',
-    desc: 'Shibor 周度信号全量追溯',
+    group: 'Standard · 防守组合',
+    groupKey: 'standard',
+    title: '宏观择时档案',
+    desc: 'Shibor 周度信号全量追溯，中证500流动性避险防守',
     stat: `${macro.stats.total_weeks} 周`,
     sub: '2011 ~ 2026 · 宽松/收紧逐周可查',
-    tag: '全量可追溯',
-    search: '宏观 择时 信号 shibor 宽松 收紧 周度 流动性 中证500',
+    tag: '防守 03 · 避险',
+    search: '宏观 择时 信号 shibor 宽松 收紧 周度 流动性 中证500 standard 防守',
+  },
+  {
+    href: '/songguo-invest/archive/monthly/',
+    group: 'Pro 版 · 纯股票进攻',
+    groupKey: 'pro',
+    title: 'V35 选股档案',
+    desc: '每月选股名单 + 权重 + 红旗删除与投前投后',
+    stat: `${history.count} 月`,
+    sub: 'Top4 + FCF加权 · 帕伯莱红旗审查 + 空仓保险',
+    tag: 'Pro · 纯股票',
+    search: '选股 个股 股票 v35 月度 名单 top4 fcf 红旗审查 空仓保险 pro 进攻',
   },
   {
     href: '/songguo-invest/archive/pro/',
-    group: 'Pro 版',
-    groupKey: 'pro',
-    title: 'Pro 组合档案',
-    desc: 'Calmar 最优组合逐月收益/净值/回测',
+    group: 'Max 版 · 最优组合',
+    groupKey: 'max',
+    title: '最优组合档案',
+    desc: '四策略网格扫描 Calmar 最优解逐月收益/净值/回测',
     stat: `${mRet.length} 个月`,
     sub: '推荐组合 基金60%+股票40% · 年度分解',
-    tag: '组合可追溯',
-    search: 'pro 组合 最优 calmar 网格 基金 股票 配比 年度',
+    tag: 'Max · 最优组合',
+    search: 'max 组合 最优 calmar 网格 基金 股票 配比 年度 集大成',
   },
   {
     href: '/songguo-invest/pay/',
@@ -78,7 +78,7 @@ const cards = [
 ---
 <Layout
   title="历史档案"
-  description="松果历史档案 — 按体系全覆盖：防守组合（ETF/基金）、进攻选股、宏观择时、Pro 组合，全部数据可搜索、可追溯。"
+  description="松果历史档案 — 按体系全覆盖：Standard 防守三策略、Pro 纯股票V35、Max 最优组合，全部数据可搜索、可追溯。"
 >
   <!-- Hero -->
   <section class="hero" style="padding: 48px 40px;">
@@ -88,7 +88,7 @@ const cards = [
         每一期<span class="gold">操作前后</span>的逻辑<br />全部可查
       </h1>
       <p class="hero-lead">
-        按新体系全覆盖：防守组合（ETF/基金两壳）、进攻选股、宏观择时、Pro 组合——
+        按 Standard（防守三选一）/ Pro（V35纯股票）/ Max（最优组合）全覆盖——
         每一层档案都逐期记录逻辑与结果，让「当时怎么想的」和「后来怎么样了」对得上号。
       </p>
     </div>
@@ -109,9 +109,14 @@ const cards = [
 
   <!-- 档案卡片（按体系分组） -->
   {
-    ['defense', 'offense', 'timing', 'pro', 'pay'].map((gk) => {
+    ['standard', 'pro', 'max', 'pay'].map((gk) => {
       const groupCards = cards.filter((c) => c.groupKey === gk);
-      const groupLabel = { defense: 'Standard · 防守组合', offense: 'Standard · 进攻选股', timing: 'Standard · 宏观择时', pro: 'Pro 版 · 最优组合', pay: '付费档案 · PDF 产品' }[gk];
+      const groupLabel = {
+        standard: 'S · Standard · 防守组合（三选一）',
+        pro: 'P · Pro · 纯股票满仓V35（进攻）',
+        max: 'M · Max · 四策略最优组合（集大成）',
+        pay: '付费档案 · PDF 产品'
+      }[gk];
       return (
         <section class="card archive-group" data-group={gk} style="margin-top: 20px;">
           <div class="section-head" style="padding-bottom: 12px; border-bottom: 1px solid var(--border); margin-bottom: 18px;">
@@ -166,14 +171,14 @@ const cards = [
         <div class="sub">2016-02 起 · 含净值/收益/回测</div>
       </div>
       <div class="metric-card">
-        <div class="label">Pro 组合月度明细</div>
+        <div class="label">Max 组合月度明细</div>
         <div class="value">{mRet.length}</div>
-        <div class="sub">2016-03 起 · 含年度分解</div>
+        <div class="sub">2016-03 起 · 最优组合与年度分解</div>
       </div>
       <div class="metric-card">
         <div class="label">回测测试（统一窗口）</div>
         <div class="value">{mRet.length} 月</div>
-        <div class="sub">四策略 + 组合，任意时点可查</div>
+        <div class="sub">四策略 + 最优组合，任意时点可查</div>
       </div>
     </div>
   </section>
@@ -191,7 +196,7 @@ const cards = [
       </a>
       <a href="/songguo-invest/strategies/monthly/" class="link-card">
         <h3><span class="gold">回测测试</span> · 126 个月统一窗口</h3>
-        <p>四策略 + Pro 组合月度收益/净值/回测，全部策略一个页面横向对比。</p>
+        <p>四策略 + Max 最优组合月度收益/净值/回测，全部策略一个页面横向对比。</p>
       </a>
       <a href="/songguo-invest/portfolio/" class="link-card">
         <h3><span class="gold">组合管理</span> · 宏观×个股融合</h3>
@@ -205,7 +210,7 @@ const cards = [
   </section>
 
   <div class="callout">
-    <b>档案机制</b>：全部档案由数据管线自动生成（回算历史全量），数据与定稿口径一致（宏观 V1 + 个股 V35（V31 沿革保留） + 生活投资双壳 + Pro 组合），含成本，可复现。本档案不涉及任何杠杆版本与实盘数据。
+    <b>档案机制</b>：全部档案由数据管线自动生成（回算历史全量），数据与定稿口径一致（宏观 V1 + 个股 V35（V31 沿革保留） + 生活投资双壳 + Max 最优组合），含成本，可复现。本档案不涉及任何杠杆版本与实盘数据。
   </div>
 
   <script>
