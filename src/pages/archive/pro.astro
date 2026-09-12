@@ -14,8 +14,8 @@ const rows = mRet.map((m) => {
   nav *= 1 + ret / 100;
   peak = Math.max(peak, nav);
   return { ym: m.ym, ret, nav, dd: (nav / peak - 1) * 100 };
-});
-let worst = 0;
+  }).reverse();
+  let worst = 0;
 rows.forEach((r) => { if (r.dd != null && r.dd < worst) worst = r.dd; });
 ---
 <Layout
@@ -84,7 +84,7 @@ rows.forEach((r) => { if (r.dd != null && r.dd < worst) worst = r.dd; });
         <thead><tr><th>年份</th><th>Max 推荐组合</th><th>Calmar 最优组合</th></tr></thead>
         <tbody>
           {
-            yBreak.map((y) => (
+            [...yBreak].reverse().map((y) => (
               <tr>
                 <td><b>{y.year}</b></td>
                 <td class={y.combo_reco != null && y.combo_reco > 0 ? 'up' : 'down'}>{y.combo_reco == null ? '—' : `${y.combo_reco > 0 ? '+' : ''}${Number(y.combo_reco).toFixed(1)}%`}</td>

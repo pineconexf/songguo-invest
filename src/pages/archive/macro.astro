@@ -72,7 +72,7 @@ const yearRows = Object.entries(byYear)
     total: v.total,
     pct: Math.round((v.loose / v.total) * 100),
   }))
-  .sort((a, b) => a.year.localeCompare(b.year));
+  .sort((a, b) => b.year.localeCompare(a.year));
 ---
 <Layout
   title="宏观信号档案"

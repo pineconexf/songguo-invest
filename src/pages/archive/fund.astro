@@ -11,8 +11,8 @@ const rows = lifeFund.labels.map((ym, i) => {
   const dd = (nav / peak - 1) * 100;
   prev = nav;
   return { ym, nav, ret, dd };
-});
-let worst = 0;
+  }).reverse();
+  let worst = 0;
 rows.forEach((r) => { if (r.dd < worst) worst = r.dd; });
 const pieces = [
   { name: '债券', code: '217022', weight: '10%', role: '压舱石' },
