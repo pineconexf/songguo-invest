@@ -59,10 +59,10 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
   <!-- ========== S · Standard ========== -->
   <section class="card" id="standard">
     <div class="section-head">
-      <div class="section-kicker">S · Standard · 单策略三选一（最保守）</div>
+      <div class="section-kicker">S · Standard · 防守组合三选一（最保守）</div>
       <h2 class="section-title">Standard 版</h2>
       <p class="section-sub">
-        体系最简单、最保守的入口：防守（ETF/基金）、进攻（V35）、择时（Shibor）各自独立，<b>三选一使用</b>，零门槛、不加杠杆、不搞复杂组合。
+        体系最简单、最保守的入口：纯防守策略，<b>场内 ETF 壳、场外基金壳、宏观择时（Shibor×中证500）三选一</b>。零门槛、不加杠杆、不做复杂组合。
         以下指标统一窗口 <b>{vStd.window.start}–{vStd.window.end}</b>，几何年化、月度再平衡、含成本。
       </p>
     </div>
@@ -70,8 +70,8 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
     <!-- 资产 01 · 防守组合（三选一） -->
     <div class="asset-block">
       <div class="asset-head">
-        <span class="asset-tag" style="background: rgba(74,124,89,0.12); color: var(--green, #4A7C59);">Asset 01 · 防守组合</span>
-        <h3 class="asset-title">防守组合（三选一）</h3>
+        <span class="asset-tag" style="background: rgba(74,124,89,0.12); color: var(--green, #4A7C59);">Asset 01 · 防守组合（三选一）</span>
+        <h3 class="asset-title">防守组合（三个防守策略，三选一）</h3>
         <p class="asset-desc">
           最保守底座：<b>场内 ETF 壳</b>、<b>场外基金壳</b> 与 <b>宏观择时（Shibor×中证500）</b> 三者任选其一作为稳健压舱石。
           ETF 与 基金相关性高（{corr('etf','fund')}），宏观择时则提供流动性下行时的避险通道。
@@ -79,7 +79,7 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
       </div>
       <div class="link-cards" style="grid-template-columns: repeat(3, 1fr);">
         <a href="/songguo-invest/strategies/etf/" class="link-card">
-          <div class="master-school" style="color: var(--gold-600);">选项 A · 场内 ETF</div>
+          <div class="master-school" style="color: var(--gold-600);">防守 01 · 场内 ETF</div>
           <h3>ETF 壳</h3>
           <p>四拼图（债25%+金30%+红利10%+QDII35%）场内落地，T+0 进出、成本低，覆盖 2015/2018/2022 三次股灾。</p>
           <div class="metric-grid" style="grid-template-columns: repeat(3, 1fr); margin: 14px 0 0; gap: 8px;">
@@ -90,7 +90,7 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
           <div class="master-desc" style="font-size: 13px; margin-top: 10px;">🔧 ETF 组合配置（已上线）→</div>
         </a>
         <a href="/songguo-invest/strategies/fund/" class="link-card">
-          <div class="master-school" style="color: var(--gold-600);">选项 B · 场外基金</div>
+          <div class="master-school" style="color: var(--gold-600);">防守 02 · 场外基金</div>
           <h3>基金壳</h3>
           <p>同样拼图（债10%+固收+40%+金20%+QDII30%）场外落地，固收+ 是灵魂，不盯盘、省心。</p>
           <div class="metric-grid" style="grid-template-columns: repeat(3, 1fr); margin: 14px 0 0; gap: 8px;">
@@ -101,7 +101,7 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
           <div class="master-desc" style="font-size: 13px; margin-top: 10px;">🔧 基金打分卡（已上线）→</div>
         </a>
         <a href="/songguo-invest/macro/" class="link-card">
-          <div class="master-school" style="color: var(--gold-600);">选项 C · 宏观择时</div>
+          <div class="master-school" style="color: var(--gold-600);">防守 03 · 宏观择时</div>
           <h3>宏观择时（指数）</h3>
           <p>Shibor 流动性信号 × 中证500：宽松时持有、收紧时空仓，固定 5bp 阈值，避险防守。</p>
           <div class="metric-grid" style="grid-template-columns: repeat(3, 1fr); margin: 14px 0 0; gap: 8px;">
@@ -114,61 +114,31 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
       </div>
     </div>
 
-    <!-- 资产 02 · 进攻选股 -->
-    <div class="asset-block">
-      <div class="asset-head">
-        <span class="asset-tag" style="background: rgba(160,58,40,0.10); color: #a03a28;">Asset 02 · 进攻选股</span>
-        <h3 class="asset-title">进攻选股</h3>
-        <p class="asset-desc">
-          量化价值选股（V35）：FCF/EV Top4 + 帕伯莱红旗审查（净利营收双降删除、满仓集中）+ 空仓保险（HS300 月跌超 8% 转持债金），月度调仓。
-          收益最高、回撤也相对较大，专门负责为组合增厚进攻收益。
-        </p>
-      </div>
-      <div class="link-cards" style="grid-template-columns: repeat(1, 1fr);">
-        <a href="/songguo-invest/backtest/" class="link-card">
-          <div class="master-school" style="color: var(--gold-600);">Asset 02 · 进攻</div>
-          <h3>股票投资策略（V35 纯股票）</h3>
-          <p>量化价值选股：ROE 质量门槛 + 低估值 + 中小盘，月度调仓，14 年（2012-2026）全周期回测，含红旗审查与空仓保险。</p>
-          <div class="metric-grid" style="grid-template-columns: repeat(3, 1fr); margin: 14px 0 0; gap: 8px;">
-            <div class="metric-card" style="padding: 10px 8px;"><div class="label">年化收益</div><div class="value" style="font-size:18px;">{fmt(s.stock.annual)}</div></div>
-            <div class="metric-card" style="padding: 10px 8px;"><div class="label">最大回撤</div><div class="value" style="font-size:18px; color:#a03a28;">{fmt(s.stock.mdd)}</div></div>
-            <div class="metric-card" style="padding: 10px 8px;"><div class="label">夏普</div><div class="value" style="font-size:18px;">{s.stock.sharpe.toFixed(2)}</div></div>
-          </div>
-          <div class="master-desc" style="font-size: 13px; margin-top: 10px;">🔧 个股体检 · 估值计算器 · 复利计算器 →</div>
-        </a>
-      </div>
-    </div>
-
-    <!-- 核心指标 -->
-    <div class="metric-grid" style="grid-template-columns: repeat(4, 1fr);">
+    <!-- 核心指标（Standard 版三防守策略） -->
+    <div class="metric-grid" style="grid-template-columns: repeat(3, 1fr);">
       <div class="metric-card">
-        <div class="label">防守 · ETF壳</div>
+        <div class="label">防守 01 · ETF壳</div>
         <div class="value">{fmt(s.etf.annual)}</div>
         <div class="sub">回撤 {fmt(s.etf.mdd)} · Calmar {s.etf.calmar.toFixed(2)}</div>
       </div>
       <div class="metric-card">
-        <div class="label">防守 · 基金壳</div>
+        <div class="label">防守 02 · 基金壳</div>
         <div class="value">{fmt(s.fund.annual)}</div>
         <div class="sub">回撤 {fmt(s.fund.mdd)} · Calmar {s.fund.calmar.toFixed(2)}</div>
       </div>
       <div class="metric-card">
-        <div class="label">防守 · 宏观择时</div>
+        <div class="label">防守 03 · 宏观择时</div>
         <div class="value">{fmt(s.index.annual)}</div>
         <div class="sub">回撤 {fmt(s.index.mdd)} · Calmar {s.index.calmar.toFixed(2)}</div>
       </div>
-      <div class="metric-card">
-        <div class="label">进攻 · V35纯股票</div>
-        <div class="value">{fmt(s.stock.annual)}</div>
-        <div class="sub">回撤 {fmt(s.stock.mdd)} · Calmar {s.stock.calmar.toFixed(2)}</div>
-      </div>
     </div>
 
-    <!-- 三类资产与基准对照 -->
+    <!-- 防守三策略与基准对照 -->
     <div class="table-wrap" style="margin-top: 28px;">
       <table class="data-table">
         <thead>
         <tr>
-          <th>策略</th>
+          <th>防守策略</th>
           <th>角色</th>
           <th>年化</th>
           <th>最大回撤</th>
@@ -179,7 +149,7 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
       </thead>
       <tbody>
         <tr>
-          <td><b>① 防守 · ETF 壳</b></td>
+          <td><b>防守 01 · ETF 壳</b></td>
           <td>稳健压舱石（场内）</td>
           <td class="up">{fmt(s.etf.annual)}</td>
           <td class="down">{fmt(s.etf.mdd)}</td>
@@ -188,7 +158,7 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
           <td>{fmt((s.etf.cum - 1) * 100, 1)}</td>
         </tr>
         <tr>
-          <td><b>① 防守 · 基金壳</b></td>
+          <td><b>防守 02 · 基金壳</b></td>
           <td>稳健压舱石（场外）</td>
           <td class="up">{fmt(s.fund.annual)}</td>
           <td class="down">{fmt(s.fund.mdd)}</td>
@@ -197,22 +167,13 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
           <td>{fmt((s.fund.cum - 1) * 100, 1)}</td>
         </tr>
         <tr>
-          <td><b>① 防守 · 宏观择时</b></td>
+          <td><b>防守 03 · 宏观择时</b></td>
           <td>稳健避险（指数信号）</td>
           <td class="up">{fmt(s.index.annual)}</td>
           <td class="down">{fmt(s.index.mdd)}</td>
           <td>{s.index.sharpe.toFixed(2)}</td>
           <td>{s.index.calmar.toFixed(2)}</td>
           <td>{fmt((s.index.cum - 1) * 100, 1)}</td>
-        </tr>
-        <tr>
-          <td><b>② 进攻 · 股票 V35</b></td>
-          <td>收益引擎（含空仓保险）</td>
-          <td class="up">{fmt(s.stock.annual)}</td>
-          <td class="down">{fmt(s.stock.mdd)}</td>
-          <td>{s.stock.sharpe.toFixed(2)}</td>
-          <td>{s.stock.calmar.toFixed(2)}</td>
-          <td>{fmt((s.stock.cum - 1) * 100, 1)}</td>
         </tr>
         <tr style="background: rgba(217,164,65,0.05);">
           <td><b>对照 · 沪深300</b></td>
@@ -236,8 +197,7 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
       </table>
     </div>
     <div class="callout" style="margin-top: 20px;">
-      <b>口径说明</b>：本页统一窗口 {vStd.window.start}–{vStd.window.end}（{vStd.window.months} 个月），与各策略详情页的官方口径（不同起点窗口）并存，两个都真实，使用时以标注为准。{vStd.note}
-      <b>怎么配</b>：防守打底（选一个壳）+ 进攻增厚（V35，含空仓保险）+ 择时保护（指数保险）。想要更强 → P 版，更能扛波动 → M 版。
+      <b>口径说明</b>：本页统一窗口 {vStd.window.start}–{vStd.window.end}（{vStd.window.months} 个月）。Standard 版仅包含上述三个防守策略，各自独立、三选一使用。追求更高进攻收益 → 见下方 Pro 版（V35 纯股票）。
     </div>
   </section>
 
