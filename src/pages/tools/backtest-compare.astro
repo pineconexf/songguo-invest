@@ -3,12 +3,11 @@ import Layout from '../../layouts/Layout.astro';
 
 // 回测验证工具 · 策略对比计算器
 // 输入两个策略的年化/MDD/时长（可选年化波动率算夏普），对比 Calmar、夏普、同本金终值
-// 参照锚：V35（32.96%/-22.66%，Calmar 1.45）、V36（42.62%/-33.65%，Calmar 1.27）、HS300（3.97%/-40.56%，Calmar 0.10）
+// 参照锚：V35（32.76%/-22.66%，Calmar 1.45）、HS300（4.06%/-40.56%，Calmar 0.10）
 // 口径：Calmar = 年化 / |MDD|；夏普（简化）= (年化 - 无风险 2%) / 年化波动率
 const bench = [
-  { name: 'V35 基础版（含成本）', ar: 32.96, mdd: 22.66, calmar: 1.45, note: '14 年回测 2012.04-2026.08，红旗审查' },
-  { name: 'V36 杠杆版（1.5x）', ar: 42.62, mdd: 33.65, calmar: 1.27, note: '仅研究参考，杠杆放大亏损' },
-  { name: '沪深300 基准', ar: 3.97, mdd: 40.56, calmar: 0.10, note: '同期买入持有' },
+  { name: 'V35 策略（含成本）', ar: 32.76, mdd: 22.66, calmar: 1.45, note: '14 年回测 2012.04-2026.08，红旗审查' },
+  { name: '沪深300 基准', ar: 4.06, mdd: 40.56, calmar: 0.10, note: '同期买入持有' },
 ];
 ---
 <Layout
@@ -167,7 +166,7 @@ const bench = [
       const bold = (v: string, cond: boolean) => cond ? `<b style="color:var(--green);">${v}</b>` : v;
 
       const rows: Array<[string, string, string, string]> = [
-        ['年化收益率', `+${arA}%`, `+${arB}%`, '+32.96%'],
+        ['年化收益率', `+${arA}%`, `+${arB}%`, '+32.76%'],
         ['最大回撤', `-${mddA}%`, `-${mddB}%`, '-22.66%'],
         ['Calmar（年化/回撤）', fmtNum(a.calmar), fmtNum(b.calmar), '1.45'],
       ];

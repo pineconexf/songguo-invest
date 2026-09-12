@@ -314,78 +314,74 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
   <!-- ========== M · Max ========== -->
   <section class="card" id="max">
     <div class="section-head">
-      <div class="section-kicker">M · Max · 杠杆管理</div>
+      <div class="section-kicker">M · Max · 纯股票策略</div>
       <h2 class="section-title">Max 版</h2>
       <p class="section-sub">
-        Max = <b>杠杆管理版</b>：不是「整体加一遍」——回测结论很明确：<b>对低波动组合整体加融资杠杆，Calmar 不升反降</b>（融资成本 8.35% 吃掉低收益组合的优势）。
-        正确路径：<b>进攻腿加杠杆（V36，1.5x）+ 防守腿不加杠杆（保持无杠杆）</b>，极端行情用期权对冲（宏观 V2）。
+        Max = <b>纯股票策略版</b>：不做资产分散、不加融资杠杆、不做期权对冲，<b>满仓单一股票策略（V35）</b>。
+        它是三条版本线中年化最高的一条，代价是风险最集中——用组合管理纪律（止损线、信号空仓、现金留存）替代分散化。
       </p>
     </div>
 
     <!-- 核心结论 -->
     <div class="metric-grid" style="grid-template-columns: repeat(4, 1fr);">
       <div class="metric-card">
-        <div class="label">V36 进攻腿（杠杆）</div>
-                <div class="value" style="font-size: 22px;">+35.15%</div>
-                <div class="sub">1.5x 融资 + 红旗审查 · 126月窗（对比 V35 基础版 +27.91%）</div>
+        <div class="label">V35 年化（{vMax.window.label}）</div>
+                <div class="value" style="font-size: 22px;">{fmt(vMax.pure_stock.annual)}</div>
+                <div class="sub">{vMax.pure_stock.desc}</div>
       </div>
       <div class="metric-card">
-        <div class="label">杠杆代价（V36 回撤）</div>
-                <div class="value" style="font-size: 22px; color: #a03a28;">-28.58%</div>
-                <div class="sub">对比 V35 -16.78% · Calmar 1.663→1.230</div>
+        <div class="label">最大回撤</div>
+                <div class="value" style="font-size: 22px; color: #a03a28;">{fmt(vMax.pure_stock.mdd)}</div>
+                <div class="sub">满仓单一策略 · 无分散化缓冲</div>
       </div>
       <div class="metric-card">
-        <div class="label">期权对冲路径</div>
-                <div class="value" style="font-size: 22px;">1.31</div>
-                <div class="sub">V32 50% + 宏观V2 50%（48 月短样本，待 V36 版重跑）</div>
+        <div class="label">Calmar</div>
+                <div class="value" style="font-size: 22px;">{vMax.pure_stock.calmar.toFixed(3)}</div>
+                <div class="sub">{vMax.window_126.label}为 {vMax.window_126.calmar.toFixed(3)}</div>
       </div>
       <div class="metric-card">
-        <div class="label">融资成本</div>
-        <div class="value" style="font-size: 22px;">8.35%</div>
-        <div class="sub">整体加杠杆不划算的原因</div>
+        <div class="label">对照 {vMax.benchmark.name}</div>
+        <div class="value" style="font-size: 22px;">{fmt(vMax.benchmark.annual)}</div>
+        <div class="sub">回撤 {fmt(vMax.benchmark.mdd)} · Calmar {vMax.benchmark.calmar.toFixed(2)}</div>
       </div>
     </div>
 
-    <!-- 杠杆映射表 -->
+    <!-- 被否决的两条进取路径 -->
     <div class="section-head" style="margin-top: 24px;">
-      <div class="section-kicker">LEVERAGE MAP · 杠杆映射（{vMax.leverage_map.length} 档）</div>
-      <h3 class="asset-title" style="font-size: 19px;">同一组合不同杠杆档位的收益-回测</h3>
+      <div class="section-kicker">REJECTED PATHS · 被否决的两条路径</div>
+      <h3 class="asset-title" style="font-size: 19px;">为什么 Max 既不用杠杆、也不做期权对冲</h3>
     </div>
     <div class="table-wrap">
       <table class="data-table">
         <thead>
           <tr>
-            <th>组合</th>
-            <th>杠杆</th>
-            <th>年化</th>
-            <th>最大回撤</th>
-            <th>Calmar</th>
-            <th>夏普</th>
+            <th>路径</th>
+            <th>实测</th>
+            <th>结论</th>
           </tr>
         </thead>
         <tbody>
           {
-            vMax.leverage_map.map((l) => (
+            vMax.rejected_paths.map((p) => (
               <tr>
-                <td>{l.combo}</td>
-                <td><b>{l.level}</b></td>
-                <td class="up">{fmt(l.annual)}</td>
-                <td class="down">{fmt(l.mdd)}</td>
-                <td>{l.calmar.toFixed(2)}</td>
-                <td>{l.sharpe.toFixed(2)}</td>
+                <td><b>{p.name}</b></td>
+                <td>{p.figures}</td>
+                <td><b>{p.verdict}</b></td>
               </tr>
             ))
           }
         </tbody>
       </table>
     </div>
-    <div class="callout" style="margin-top: 8px;">
-      <b>读表</b>：同一组合（如 fund+stock 60/40），1.0x → 2x 杠杆，年化从 {vMax.leverage_map[0].annual.toFixed(2)}% 爬到 {fmt(vMax.leverage_map.find((l) => l.combo === vMax.leverage_map[0].combo && l.level === '2x')?.annual ?? vMax.leverage_map[vMax.leverage_map.length - 1].annual)}，
-      但 Calmar 一路下滑——杠杆买到的是收益，不是效率。
-    </div>
+    {
+      vMax.rejected_paths.map((p) => (
+        <div class="callout" style="margin-top: 8px;">
+          <b>{p.name}</b>：{p.reason}
+        </div>
+      ))
+    }
     <div class="callout warn" style="margin-top: 8px;">
-      <b>风险提示</b>：Max 版仅适合风险承受力极强的投资者。期权有到期/保证金/流动性风险，杠杆极端行情可能击穿本金，实盘需严格仓位管理。
-      Max 版为 48 月短样本（{vMax.paths.length} 条实现路径），代表性与长期数据相比有限。
+      <b>风险提示</b>：{vMax.risk_note}
     </div>
   </section>
 

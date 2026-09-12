@@ -12,7 +12,7 @@ import Layout from '../../layouts/Layout.astro';
         复利是第八大奇迹。<br /><span class="gold">算一笔账，你就懂了</span>
       </h1>
       <p class="hero-lead">
-        年化 32.96%（V35 基础版，14 年含成本口径）14 年能变多少？换成 10%、15% 又差多少？
+        年化 32.76%（V35 基础版，14 年含成本口径）14 年能变多少？换成 10%、15% 又差多少？
         输入数字，立刻看见时间的力量——以及"利息再生利息"比单利多攒多少钱。
       </p>
     </div>
@@ -53,8 +53,8 @@ import Layout from '../../layouts/Layout.astro';
         <!-- 复利 vs 单利 资产增长曲线 -->
         <div id="c-chart" style="width:100%; height:300px; margin-top: var(--sp-4); display:none;"></div>
         <div class="callout" style="margin-top: var(--sp-4);">
-          <b>对照</b>：同期沪深300 年化约 3.97%。若 10 年本金 10 万、每年追加 1 万，按 3.97% 复利期末约 19.6 万——
-          与按体系执行（示例年化 32.96%，V35 含成本口径）的差距，就是"体系化稳健投资"的价值。数据为历史回测，不构成投资建议。
+          <b>对照</b>：同期沪深300 年化约 4.06%。若 10 年本金 10 万、每年追加 1 万，按 4.06% 复利期末约 27.4 万——
+          与按体系执行（示例年化 32.76%，V35 含成本口径）的差距，就是"体系化稳健投资"的价值。数据为历史回测，不构成投资建议。
         </div>
       </div>
     </section>
@@ -93,7 +93,7 @@ import Layout from '../../layouts/Layout.astro';
           <div id="ct-compare" style="font-size:13px; color: var(--navy-600); margin-top: 6px;">--</div>
         </div>
         <div class="callout warn" style="margin-top: var(--sp-4);">
-          <b>年化现实区间对照</b>（真实参照）：沪深300 长期约 3.97%；松果 ETF 四拼图稳健档回测约 10.1%；松果 V35 体系（含成本）约 32.96%。若倒推年化远超 32.96%——目标不现实，要么加本金、要么延年限、要么降目标；若在 10~33% 之间——现实可做，按体系执行即可。历史回测不代表未来，不构成投资建议。
+          <b>年化现实区间对照</b>（真实参照）：沪深300 长期约 4.06%；松果 ETF 四拼图稳健档回测约 10.1%；松果 V35 体系（含成本）约 32.76%。若倒推年化远超 32.76%——目标不现实，要么加本金、要么延年限、要么降目标；若在 10~33% 之间——现实可做，按体系执行即可。历史回测不代表未来，不构成投资建议。
         </div>
       </div>
     </section>
@@ -192,11 +192,11 @@ import Layout from '../../layouts/Layout.astro';
           if (needRate > 33) {
             verdict.textContent = '这个目标不现实——需要年化超过 33%，超出松果 V35 与市场化水平。';
             verdict.style.color = 'var(--red)';
-            compare.textContent = '建议：加大本金 / 延长年限 / 降低目标（对照：V35 含成本 32.96%、ETF稳健档 10.1%、沪深300 3.97%）。';
+            compare.textContent = '建议：加大本金 / 延长年限 / 降低目标（对照：V35 含成本 32.76%、ETF稳健档 10.1%、沪深300 4.06%）。';
           } else if (needRate > 10) {
             verdict.textContent = '目标现实可做——在松果体系能力区间内，按体系执行有机会达成。';
             verdict.style.color = 'var(--green)';
-            compare.textContent = '对照：该年化位于 ETF 稳健档 10.1% 与 V35 32.96% 之间。';
+            compare.textContent = '对照：该年化位于 ETF 稳健档 10.1% 与 V35 32.76% 之间。';
           } else if (needRate >= 0) {
             verdict.textContent = '目标保守易达——低于 ETF 稳健档回测水准，降低目标或加弹性。';
             verdict.style.color = 'var(--gold-600)';
