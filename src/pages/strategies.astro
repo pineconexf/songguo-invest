@@ -21,7 +21,7 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
         一个体系<br /><span class="gold">三个版本</span>
       </h1>
       <p class="hero-lead">
-        <b>S · Standard</b> 最保守：三类策略（防守/进攻/择时）各自独立、三选一使用，零门槛。
+        <b>S · Standard</b> 最保守：三个防守策略（场内ETF/场外基金/宏观择时）各自独立、三选一使用，零门槛。
         <b>P · Pro</b> 单一进攻：V35 纯股票满仓，收益最高、风险也最大。
         <b>M · Max</b> 最优组合：四策略网格扫描选出最佳配比，弱相关互补，Calmar 最高。
         全部回测统一窗口 <b>{vStd.window.start}–{vStd.window.end}（{vStd.window.months} 个月）</b>，每个时点的回撤都能测试查到。
