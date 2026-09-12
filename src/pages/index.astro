@@ -50,7 +50,7 @@ const navOption = {
 -->
 <Layout
   title="首页"
-  description="松果投资实验室 — 一个体系三个版本：Standard 三类资产 / Pro 最优组合 / Max 杠杆版。统一窗口 126 个月真实回测，回测测试数据全公开。"
+  description="松果投资实验室 — 一个体系三个版本：Standard 三类资产 / Pro 最优组合 / Max 纯股票V35。统一窗口 126 个月真实回测，回测测试数据全公开。"
 >
 
   <!-- ============ 第1幕 · 钩子 ============ -->
@@ -62,7 +62,7 @@ const navOption = {
       </h1>
       <p class="hero-lead reveal">
         我们把专业机构的投资逻辑，做成了 <b>Standard / Pro / Max</b> 三个版本——
-        从稳健的防守组合，到进击的个股选股，再到杠杆与期权。
+        从稳健的防守组合，到进击的个股选股，再到纯股票满仓策略。
         全部用 <b>126 个月真实回测</b>验证给你看。
       </p>
       <p class="slogan reveal">让普通投资者也能像机构那样享受体系化的稳健投资</p>
@@ -242,7 +242,7 @@ const navOption = {
       <a href="/songguo-invest/strategies/" class="layer">
         <span class="layer-index">S→M</span>
         <span class="layer-name">三版本演进</span>
-        <span class="layer-desc">Standard 三类资产 → Pro 数据选最优组合 → Max 进攻加杠杆、防守用期权对冲。</span>
+        <span class="layer-desc">Standard 三类资产 → Pro 数据选最优组合 → Max 纯股票满仓（V35，无杠杆无期权）。</span>
         <span class="layer-tag">S / P / M</span>
       </a>
     </div>
@@ -360,7 +360,7 @@ const navOption = {
         let v = '', href = '', why = '';
         if (sum <= 7) { v = 'Standard 稳健'; href = '/songguo-invest/strategies/#standard'; why = '你这笔钱偏急用、回撤承受力也克制——标准版防守打底 + 少量进攻，按月调仓、少操心。'; }
         else if (sum <= 12) { v = 'Pro 增强'; href = '/songguo-invest/strategies/#pro'; why = '你能接受中等回撤、也愿意每月看一次——Pro 版攻守均衡、回撤砍半，是多数人的甜点位。'; }
-        else { v = 'Max 进取'; href = '/songguo-invest/strategies/#max'; why = '你扛得住大回撤、用的是闲钱、还认纪律——Max 版进攻加杠杆 + 期权对冲，只给这一类人。'; }
+        else { v = 'Max 纯股票'; href = '/songguo-invest/strategies/#max'; why = '你扛得住大回撤、用的是闲钱、还认纪律——Max 版纯股票满仓V35，收益最高、风险最集中，只给这一类人。'; }
         res.style.display = 'block';
         res.innerHTML = '<b>你的适配版本：' + v + '</b>　' + why + '<div style="margin-top:10px;"><a href="' + href + '" class="btn btn-gold">去看看 ' + v + ' →</a></div>';
       };

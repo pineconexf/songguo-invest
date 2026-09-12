@@ -11,7 +11,7 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
 ---
 <Layout
   title="策略体系"
-  description="松果投资策略体系 — Standard 三类资产 / Pro 最优组合 / Max 杠杆版，统一窗口 2016.03-2026.08 真实回测，全部回测数据可测试查询。"
+  description="松果投资策略体系 — Standard 三类资产 / Pro 最优组合 / Max 纯股票V35，统一窗口 2016.03-2026.08 真实回测，全部回测数据可测试查询。"
 >
   <!-- Hero -->
   <section class="hero" style="padding: 56px 48px;">
@@ -22,7 +22,7 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
       </h1>
       <p class="hero-lead">
         <b>S · Standard</b> 三类资产打底，<b>P · Pro</b> 用数据找出最优组合，
-        <b>M · Max</b> 给进攻腿加杠杆、防守腿用期权对冲。
+        <b>M · Max</b> 纯股票满仓（V35）。
         全部回测统一窗口 <b>{vStd.window.start}–{vStd.window.end}（{vStd.window.months} 个月）</b>，每个时点的回撤都能测试查到。
       </p>
     </div>
@@ -49,7 +49,7 @@ const corr = (a, b) => (vPro.correlation[a]?.[b] ?? 0).toFixed(2);
         <div class="version-chip-tag" style="background: linear-gradient(135deg, #a03a28, #c85a3e);">M</div>
         <div>
           <div class="version-chip-name">Max 版</div>
-          <div class="version-chip-desc">进攻杠杆 · 期权对冲</div>
+          <div class="version-chip-desc">纯股票 · 满仓V35</div>
         </div>
       </a>
     </div>
