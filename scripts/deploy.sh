@@ -30,15 +30,30 @@ echo "② dist 暂存完成: $(ls "$TMP" | wc -l) 项"
 echo "③ 更新 gh-pages 分支..."
 git checkout -q gh-pages
 # ⚠️ rm 清单不含 dist/node_modules（dist 已不入 gh-pages；node_modules 是 untracked，删了会丢 main 的依赖）
-rm -rf index.html _astro about archive backtest favicon.ico favicon.png favicon.svg mascot.png logo-mascot.png macro methodology philosophy portfolio privacy ranking services strategies tools pay .nojekyll
+rm -rf index.html _astro about archive backtest favicon.ico favicon.png favicon.svg mascot.png logo-mascot.png macro methodology philosophy portfolio privacy ranking services strategies tools .nojekyll
 cp -r "$TMP"/* . && touch .nojekyll
 # ⚠️ 显式文件列表，禁止 git add -A（gh-pages 分支无 .gitignore，-A 会把 node_modules 提交进仓库并污染分支切换）
-git add index.html _astro about archive backtest favicon.ico favicon.png favicon.svg mascot.png logo-mascot.png macro methodology philosophy portfolio privacy ranking services strategies tools pay .nojekyll
+git add index.html _astro about archive backtest favicon.ico favicon.png favicon.svg mascot.png logo-mascot.png macro methodology philosophy portfolio privacy ranking services strategies tools .nojekyll
+# 删除已下线目录在 gh-pages 上的残留（pay/ 付费落地页 2026-09-14 下线；rm -rf 只删工作区，需显式 stage 删除）
+git add -u pay 2>/dev/null || true
 git commit -q -m "deploy: $(date +%Y%m%d-%H%M) 构建产物"
-git push origin gh-pages 2>&1 | tail -1
+# ⚠️ push 防假成功：`git push | tail` 管道吃掉退出码，且国内瞬断常见 → 带重试+显式校验远端 SHA
+push_with_retry() {
+  local ref="$1" sha local_sha attempt
+  sha=$(git rev-parse "$ref")
+  for attempt in 1 2 3; do
+    if git push origin "$ref" 2>&1 | tail -2; then
+      local_sha=$(git ls-remote origin "$ref" 2>/dev/null | cut -f1)
+      if [ "$local_sha" = "$sha" ]; then echo "✓ $ref 已确认推送 ($sha)"; return 0; fi
+    fi
+    echo "⚠ push $ref 第 $attempt 次失败/未确认，3s 后重试..."; sleep 3
+  done
+  echo "❌ push $ref 三次失败，部署未完成（本地已 commit，远端未更新）"; return 1
+}
+push_with_retry gh-pages
 git checkout -q main
 if [ "$STASHED" = "1" ]; then
   git stash pop -q && echo "✓ 已恢复部署前的未提交改动" || echo "⚠ stash 恢复失败，请手动 git stash list 处理"
 fi
-git push origin main 2>&1 | tail -1
+push_with_retry main
 echo "✅ 部署完成: https://pineconexf.github.io/songguo-invest/"
