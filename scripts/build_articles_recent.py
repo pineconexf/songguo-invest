@@ -126,7 +126,8 @@ def load_masters():
 
 def packaged_dates():
     s = set()
-    for p in glob.glob(os.path.join(ROOT, '四平台发布包_*')):
+    # 递归扫描（发布包可能产在栏目子目录，如 周末茶话会/四平台发布包_YYYYMMDD）
+    for p in glob.glob(os.path.join(ROOT, '**', '四平台发布包_*'), recursive=True):
         m = re.search(r'四平台发布包_(\d{8})', os.path.basename(p))
         if m:
             s.add(m.group(1))
