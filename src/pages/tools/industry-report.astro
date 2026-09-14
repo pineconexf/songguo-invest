@@ -131,15 +131,23 @@ const radarIssue = radarMatch ? `第 ${radarMatch[1]} 期` : '最新一期';
   <!-- 报告生成器 -->
   <section class="card">
     <div class="section-head">
-      <div class="section-kicker">Generator · 研究提纲生成</div>
-      <h2 class="section-title">行业研究报告提纲生成器</h2>
-      <p class="section-sub">输入你关注的行业，按六维框架生成研究提纲与数据缺口清单——帮你把一篇行业报告拆成可执行的调研任务。</p>
+      <div class="section-kicker">Generator · 行业快报生成</div>
+      <h2 class="section-title">行业研究报告生成器</h2>
+      <p class="section-sub">输入行业名称，实时抓取该行业板块的真实行情、估值、资金流与龙头成分股，按六维框架生成一份可免费查看的行业研究报告。</p>
     </div>
     <div style="display: flex; gap: var(--sp-3); flex-wrap: wrap; margin-bottom: var(--sp-4);">
-      <input id="ir-industry" type="text" placeholder="输入行业，如：虚拟电厂 / 创新药 / AI 算力" style="flex: 1; min-width: 260px; padding: 12px 14px; border: 1px solid rgba(139,94,60,0.25); border-radius: 10px; font-size: 15px; background: var(--bg); color: var(--navy-900);" />
-      <button id="ir-run" class="btn btn-gold">生成提纲 →</button>
+      <input id="ir-industry" type="text" placeholder="输入行业，如：医疗研发外包 / 创新药 / 半导体 / 物流" style="flex: 1; min-width: 260px; padding: 12px 14px; border: 1px solid rgba(139,94,60,0.25); border-radius: 10px; font-size: 15px; background: var(--bg); color: var(--navy-900);" />
+      <button id="ir-run" class="btn btn-gold">生成报告 →</button>
     </div>
+    <div id="ir-hint" style="font-size: 12.5px; color: var(--text-3); margin-bottom: var(--sp-3);">
+      数据来源于东方财富公开行情接口（实时板块级），生成时自动匹配行业板块。若无匹配，请换用更贴近板块的行业名。
+    </div>
+    <div id="ir-loading" style="display: none; padding: 20px; text-align: center; color: var(--text-3); font-size: 14px;">
+      正在抓取真实行情数据…
+    </div>
+    <div id="ir-error" style="display: none; background: rgba(192,90,58,0.08); border: 1px solid rgba(192,90,58,0.3); border-radius: 10px; padding: 14px; font-size: 13.5px; color: #a03a28;"></div>
     <div id="ir-result" style="display: none;">
+      <div id="ir-head" style="background: var(--surface-alt); border-radius: 10px; padding: 18px; margin-bottom: 12px;"></div>
       <div id="ir-outline" style="background: var(--surface-alt); border-radius: 10px; padding: 18px; line-height: 1.8; font-size: 14px;"></div>
       <div id="ir-gaps" style="margin-top: 12px; background: rgba(217,164,65,0.06); border: 1px solid rgba(217,164,65,0.25); border-radius: 10px; padding: 16px; font-size: 13.5px; line-height: 1.8;"></div>
     </div>
@@ -159,40 +167,150 @@ const radarIssue = radarMatch ? `第 ${radarMatch[1]} 期` : '最新一期';
   </section>
 
   <script>
-    const run = document.getElementById('ir-run');
-    const input = document.getElementById('ir-industry');
-    const result = document.getElementById('ir-result');
-    const outline = document.getElementById('ir-outline');
-    const gaps = document.getElementById('ir-gaps');
+    // 行业研究报告生成器 V2（2026-09-14）：实时抓取东财板块级真实数据 → 六维快报
+    // 数据源：push2delay.eastmoney.com JSONP（浏览器 script 注入绕 CORS，同体检卡/体检API模式，禁 fetch）
+    var EM = {
+      sec: 'https://push2delay.eastmoney.com/api/qt/clist/get',
+      fields: 'f12,f14,f3,f6,f8,f9,f20,f62,f104,f105'
+    };
 
-    const DIMS = [
-      ['景气度', '当前景气位置？订单/开工/价格信号？', 'PMI、产量、价格指数、库存周期'],
-      ['竞争格局', '集中度如何？龙头是谁？格局在变好还是变差？', 'CR3/CR5、新进入者、产能规划'],
-      ['估值水位', '当前 PE/PB 在自身历史什么分位？', 'PE/PB 分位数、EV/EBITDA、股息率'],
-      ['政策催化', '有没有明确政策事件？力度多大？', '发改委/工信部文件、补贴细则、试点办法'],
-      ['资金流向', '主力/北向/两融在流入还是流出？', '板块资金流、成交占比、融资余额'],
-      ['风险边界', '最大风险是什么？什么情况逻辑会破坏？', '政策退坡、需求证伪、估值透支'],
-    ];
+    function jsonp(url) {
+      return new Promise(function (resolve, reject) {
+        var cb = 'ir_' + Date.now() + '_' + Math.floor(Math.random() * 1e4);
+        var s = document.createElement('script');
+        var to = setTimeout(function () { done(); reject(new Error('数据源响应超时')); }, 12000);
+        function done() { clearTimeout(to); delete window[cb]; s.remove(); }
+        window[cb] = function (d) { done(); resolve(d); };
+        s.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'cb=' + cb;
+        s.onerror = function () { done(); reject(new Error('数据源不可达')); };
+        document.head.appendChild(s);
+      });
+    }
 
-    run?.addEventListener('click', () => {
-      const ind = (input?.value || '').trim();
+    function fetchSectors() { // 496个板块，每页100，5页
+      var all = [];
+      function page(n) {
+        return jsonp(EM.sec + '?pn=' + n + '&pz=100&po=1&fid=f3&fs=m:90+t:2&fields=' + EM.fields).then(function (d) {
+          var rows = (d.data && d.data.diff) || [];
+          if (Array.isArray(rows)) { all = all.concat(rows); }
+          else { for (var k in rows) { all.push(rows[k]); } }
+          var total = d.data && d.data.total || 0;
+          if (n * 100 < total && n < 6) { return page(n + 1); }
+        });
+      }
+      return page(1).then(function () { return all; });
+    }
+
+    function matchSector(name, list) {
+      var clean = name.replace(/[行业板块概念]$|[（(].*?[）)]$/g, '').trim();
+      function has(ch) { return list.filter(function (x) { return x.f14 && x.f14.indexOf(ch) >= 0; }); }
+      var m = has(clean);
+      if (!m.length && clean !== name) { m = has(name); }
+      m.sort(function (a, b) { return (b.f20 || 0) - (a.f20 || 0); });
+      return m[0] || null;
+    }
+
+    function fetchLeaders(code) {
+      return jsonp(EM.sec + '?pn=1&pz=10&po=1&fid=f20&fs=b:' + code + '&fields=f12,f14,f3,f9,f20').then(function (d) {
+        var rows = (d.data && d.data.diff) || [];
+        rows = Array.isArray(rows) ? rows : Object.keys(rows).map(function (k) { return rows[k]; });
+        return { rows: rows, total: (d.data && d.data.total) || rows.length };
+      });
+    }
+
+    // 东财原始值换算（全部真实数值，禁止估算）
+    function pct(v) { return v == null ? '—' : (v / 100).toFixed(2) + '%'; }
+    function yi(v) { return v == null ? '—' : (v / 1e8).toFixed(1) + '亿'; }
+    function num(v) { return v == null ? '—' : (v / 100).toFixed(2); }
+    function peStr(v) { return !v ? '—（亏损/无PE）' : (v / 100).toFixed(1); }
+
+    function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+    function nowStr() {
+      var d = new Date(), p = function (x) { return (x < 10 ? '0' : '') + x; };
+      return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+    }
+
+    function render(sec, lead, indName) {
+      var leaders = lead.rows || [], nMembers = lead.total || leaders.length;
+      var up = sec.f104 || 0, down = sec.f105 || 0, flat = (up + down === 0) ? '—' : ((up / (up + down) * 100).toFixed(0) + '%');
+      var flow = sec.f62 == null ? null : sec.f62;
+      var flowStr = yi(flow), flowGood = flow != null && flow > 0;
+      var mom = (sec.f3 > 0 && flowGood && up > down) ? '偏强' : (sec.f3 < 0 && !flowGood && up < down) ? '偏弱' : '分化';
+      var rows = leaders.map(function (s, i) {
+        return '<tr><td style="padding:4px 8px;color:var(--text-3);">' + (i + 1) + '</td><td style="padding:4px 8px;font-weight:600;">' + esc(s.f14) +
+          '<span style="color:var(--text-3);font-size:11px;"> ' + esc(s.f12) + '</span></td><td style="padding:4px 8px;">' + (s.f3 == null ? '—' : pct(s.f3)) +
+          '</td><td style="padding:4px 8px;">' + peStr(s.f9) + '</td><td style="padding:4px 8px;">' + yi(s.f20) + '</td></tr>';
+      }).join('');
+      document.getElementById('ir-head').innerHTML =
+        '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:baseline;">' +
+        '<b style="font-size:17px;">「' + esc(indName) + '」→ 匹配板块：' + esc(sec.f14) + '（' + esc(sec.f12) + '）</b>' +
+        '<span style="font-size:12px;color:var(--text-3);">生成时间 ' + nowStr() + ' · 数据源：东方财富公开行情（实时）</span></div>' +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:12px;font-size:13px;">' +
+        '<div><div style="color:var(--text-3);font-size:11.5px;">当日涨跌幅</div><b style="color:' + (sec.f3 >= 0 ? '#4A7C59' : '#a03a28') + ';">' + pct(sec.f3) + '</b></div>' +
+        '<div><div style="color:var(--text-3);font-size:11.5px;">成交额</div><b>' + yi(sec.f6) + '</b></div>' +
+        '<div><div style="color:var(--text-3);font-size:11.5px;">换手率</div><b>' + num(sec.f8) + '%</b></div>' +
+        '<div><div style="color:var(--text-3);font-size:11.5px;">板块PE(TTM)</div><b>' + peStr(sec.f9) + '</b></div>' +
+        '<div><div style="color:var(--text-3);font-size:11.5px;">板块总市值</div><b>' + yi(sec.f20) + '</b></div>' +
+        '<div><div style="color:var(--text-3);font-size:11.5px;">主力净流入</div><b style="color:' + (flowGood ? '#4A7C59' : '#a03a28') + ';">' + flowStr + '</b></div>' +
+        '<div><div style="color:var(--text-3);font-size:11.5px;">涨/跌家数</div><b>' + up + ' / ' + down + '</b></div></div>';
+      document.getElementById('ir-outline').innerHTML =
+        '<b style="font-size:15px;">六维快报（基于上方实时数据）</b>' +
+        '<table style="width:100%;border-collapse:collapse;margin-top:10px;font-size:13px;">' +
+        '<tr style="text-align:left;color:var(--text-3);font-size:12px;"><th style="padding:4px 8px;">维度</th><th style="padding:4px 8px;">数据/判断</th><th style="padding:4px 8px;">状态</th></tr>' +
+        '<tr style="border-top:1px solid rgba(139,94,60,0.15);"><td style="padding:5px 8px;font-weight:700;">资金流向</td><td style="padding:5px 8px;">主力净流入 <b>' + flowStr + '</b>；涨家占比 ' + flat + '</td><td style="padding:5px 8px;">' + (flowGood ? '资金流入' : '资金流出') + '</td></tr>' +
+        '<tr style="border-top:1px solid rgba(139,94,60,0.15);"><td style="padding:5px 8px;font-weight:700;">估值水位</td><td style="padding:5px 8px;">板块PE(TTM) <b>' + peStr(sec.f9) + '</b>（历史分位需另行回验）</td><td style="padding:5px 8px;">实时锚点</td></tr>' +
+        '<tr style="border-top:1px solid rgba(139,94,60,0.15);"><td style="padding:5px 8px;font-weight:700;">竞争格局</td><td style="padding:5px 8px;">成分股共 ' + nMembers + ' 只；前十大龙头见下表</td><td style="padding:5px 8px;">实时锚点</td></tr>' +
+        '<tr style="border-top:1px solid rgba(139,94,60,0.15);"><td style="padding:5px 8px;font-weight:700;">综合动能</td><td style="padding:5px 8px;">涨跌' + pct(sec.f3) + ' × 资金' + (flowGood ? '流入' : '流出') + ' × 广度' + flat + ' → <b>' + mom + '</b></td><td style="padding:5px 8px;">信号合成</td></tr>' +
+        '<tr style="border-top:1px solid rgba(139,94,60,0.15);"><td style="padding:5px 8px;font-weight:700;">景气度</td><td style="padding:5px 8px;color:var(--text-3);">需订单/开工/价格一手数据 → 见缺口清单</td><td style="padding:5px 8px;color:var(--text-3);">待调研</td></tr>' +
+        '<tr style="border-top:1px solid rgba(139,94,60,0.15);"><td style="padding:5px 8px;font-weight:700;">政策催化</td><td style="padding:5px 8px;color:var(--text-3);">参考本页「每周行业雷达」政策事件流</td><td style="padding:5px 8px;color:var(--text-3);">见雷达</td></tr>' +
+        '<tr style="border-top:1px solid rgba(139,94,60,0.15);"><td style="padding:5px 8px;font-weight:700;">风险边界</td><td style="padding:5px 8px;color:var(--text-3);">逻辑破坏条件需人工研判，框架：政策退坡/需求证伪/估值透支</td><td style="padding:5px 8px;color:var(--text-3);">待研判</td></tr>' +
+        '</table>' +
+        '<b style="font-size:15px;display:block;margin-top:16px;">龙头成分股 TOP' + leaders.length + '（按总市值）</b>' +
+        '<table style="width:100%;border-collapse:collapse;margin-top:8px;font-size:13px;text-align:left;">' +
+        '<tr style="color:var(--text-3);font-size:12px;"><th style="padding:4px 8px;"></th><th style="padding:4px 8px;">公司</th><th style="padding:4px 8px;">当日</th><th style="padding:4px 8px;">PE(TTM)</th><th style="padding:4px 8px;">总市值</th></tr>' + rows + '</table>' +
+        '<p style="margin-top:12px;color:var(--text-3);font-size:12px;">写作结构：产业全景 → 六维逐项 → 结论与风险 → 数据来源附录。完整深度报告见「松果商业笔记」行业研究系列。</p>';
+      document.getElementById('ir-gaps').innerHTML = '<b style="color:var(--gold-700);">数据缺口清单（需调研补齐）</b>' +
+        '<ul style="margin:8px 0 0 18px; padding:0;">' +
+        '<li>「' + esc(indName) + '」最新行业规模与增速（口径：协会/统计局）</li>' +
+        '<li>板块 PE/PB 近 5-10 年历史分位（口径：tushare 等长序列数据）</li>' +
+        '<li>近 3 个月板块资金流趋势与成交占比</li>' +
+        '<li>最新政策文件原文与落地时间表</li>' +
+        '<li>产业链上中下游代表公司与传导关系</li></ul>';
+    }
+
+    var run = document.getElementById('ir-run');
+    var input = document.getElementById('ir-industry');
+    function show(id, on) { var el = document.getElementById(id); if (el) el.style.display = on ? 'block' : 'none'; }
+
+    function fail(msg) {
+      show('ir-loading', false);
+      var el = document.getElementById('ir-error');
+      el.textContent = '⚠️ ' + msg; show('ir-error', true);
+    }
+
+    function go() {
+      var ind = (input.value || '').trim();
       if (!ind) { alert('请先输入行业名称'); return; }
-      result.style.display = 'block';
-      outline.innerHTML = `<b style="font-size:15px;">「${ind}」研究报告提纲（六维框架）</b>
-        <ol style="margin:10px 0 0 18px; padding:0;">
-          ${DIMS.map(([k, q]) => `<li><b>${k}</b>：${q}</li>`).join('')}
-        </ol>
-        <p style="margin-top:10px; color:var(--text-3); font-size:12.5px;">写作结构：产业全景 → 六维逐项 → 结论与风险 → 数据来源附录。</p>`;
-      gaps.innerHTML = `<b style="color:var(--gold-700);">数据缺口清单（需调研补齐）</b>
-        <ul style="margin:8px 0 0 18px; padding:0;">
-          <li>「${ind}」最新行业规模与增速（口径：XX 协会/统计局）</li>
-          <li>头部企业 PE/PB 及历史分位（口径：tushare 等公开数据源）</li>
-          <li>近 3 个月板块资金流与成交占比</li>
-          <li>最新政策文件原文与落地时间表</li>
-          <li>产业链上中下游代表公司与传导关系</li>
-        </ul>`;
-    });
-    input?.addEventListener('keydown', (e) => { if (e.key === 'Enter') run?.click(); });
+      show('ir-error', false); show('ir-result', false); show('ir-loading', true);
+      fetchSectors().then(function (list) {
+        var sec = matchSector(ind, list);
+        if (!sec) {
+          show('ir-loading', false);
+          var near = list.filter(function (x) { return x.f14 && (x.f14.indexOf(ind.slice(0, 2)) >= 0); }).slice(0, 6).map(function (x) { return x.f14; });
+          fail('未匹配到含「' + ind + '」的行业板块' + (near.length ? '。相近板块：' + near.join('、') + '，请换名重试。' : '，请换用更贴近板块的行业名。'));
+          return;
+        }
+        return fetchLeaders(sec.f12).then(function (lead) {
+          show('ir-loading', false);
+          render(sec, lead, ind);
+          show('ir-result', true);
+        });
+      })['catch'](function (e) { fail((e && e.message) || '生成失败，请稍后重试'); });
+    }
+
+    run?.addEventListener('click', go);
+    input?.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
   </script>
 
   <div class="callout">
