@@ -133,7 +133,7 @@ const radarIssue = radarMatch ? `第 ${radarMatch[1]} 期` : '最新一期';
     <div class="section-head">
       <div class="section-kicker">Generator · 行业快报生成</div>
       <h2 class="section-title">行业研究报告生成器</h2>
-      <p class="section-sub">输入行业名称，实时抓取该行业板块的真实行情、估值、资金流与龙头成分股，按六维框架生成一份可免费查看的行业研究报告。</p>
+      <p class="section-sub">输入行业名称，实时抓取该行业板块的真实行情、估值、资金流与龙头成分股，按六维框架生成一份可免费查看的<b>六维快报</b>。</p>
     </div>
     <div style="display: flex; gap: var(--sp-3); flex-wrap: wrap; margin-bottom: var(--sp-4);">
       <input id="ir-industry" type="text" placeholder="输入行业，如：医疗研发外包 / 创新药 / 半导体 / 物流" style="flex: 1; min-width: 260px; padding: 12px 14px; border: 1px solid rgba(139,94,60,0.25); border-radius: 10px; font-size: 15px; background: var(--bg); color: var(--navy-900);" />
@@ -269,7 +269,7 @@ const radarIssue = radarMatch ? `第 ${radarMatch[1]} 期` : '最新一期';
         '<b style="font-size:15px;display:block;margin-top:16px;">龙头成分股 TOP' + leaders.length + '（按总市值）</b>' +
         '<table style="width:100%;border-collapse:collapse;margin-top:8px;font-size:13px;text-align:left;">' +
         '<tr style="color:var(--text-3);font-size:12px;"><th style="padding:4px 8px;"></th><th style="padding:4px 8px;">公司</th><th style="padding:4px 8px;">当日</th><th style="padding:4px 8px;">PE(TTM)</th><th style="padding:4px 8px;">总市值</th></tr>' + rows + '</table>' +
-        '<p style="margin-top:12px;color:var(--text-3);font-size:12px;">写作结构：产业全景 → 六维逐项 → 结论与风险 → 数据来源附录。完整深度报告见「松果商业笔记」行业研究系列。</p>';
+        '<p style="margin-top:12px;color:var(--text-3);font-size:12px;">写作结构：产业全景 → 六维逐项 → 结论与风险 → 数据来源附录。本快报为免费精简版，<b style="color:var(--gold-700);">完整深度报告联系微信【松果商业笔记】</b>。</p>';
       document.getElementById('ir-gaps').innerHTML = '<b style="color:var(--gold-700);">数据缺口清单（需调研补齐）</b>' +
         '<ul style="margin:8px 0 0 18px; padding:0;">' +
         '<li>「' + esc(indName) + '」最新行业规模与增速（口径：协会/统计局）</li>' +
@@ -315,7 +315,7 @@ const radarIssue = radarMatch ? `第 ${radarMatch[1]} 期` : '最新一期';
 
   <div class="callout">
     <b>数据说明</b>：行业雷达为每周生成（{industry.source}），全部事件来自公开政策/新闻检索，标注出处。
-    完整六维报告由「松果商业笔记」公众号发布，此处同步目录与要点。
+    生成器输出为<b>免费六维快报</b>（板块级实时行情 + 龙头成分 + 数据缺口清单）；<b>完整深度报告联系微信【松果商业笔记】</b>。
   </div>
   <div class="callout warn">
     ⚠️ <b>合规</b>：研究展示不构成投资建议。行业热度不等于买入信号，需结合估值与个人风险承受力。
