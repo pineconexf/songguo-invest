@@ -3,8 +3,9 @@ import Layout from '../layouts/Layout.astro';
 ---
 <Layout
   title="隐私政策"
-  description="松果投资实验室网站隐私政策 — 数据收集、Cookie 使用与第三方广告（Google AdSense）说明。"
->
+  description="松果投资实验室网站隐私政策 — 数据收集、Cookie 使用与第三方统计服务说明。"
+    dataNotice={false}
+  >
   <section class="hero" style="padding: 48px 40px;">
     <div class="hero-inner">
       <span class="eyebrow">Privacy · 隐私政策</span>
@@ -25,23 +26,22 @@ import Layout from '../layouts/Layout.astro';
     </div>
     <p style="line-height:1.9; color:var(--text-2);">
       本网站为纯静态展示站，<b>不设账号系统，不主动收集任何个人身份信息</b>（姓名、邮箱、手机号等）。
-      你使用工具时输入的数据（如股票代码、金额、估值参数）仅在浏览器本地计算，<b>不会上传或存储到任何服务器</b>。
+      你使用大多数工具时输入的数据（如金额、估值参数）仅在浏览器本地计算，<b>不会上传或存储到任何服务器</b>。例外：「个股体检」工具会把股票代码发送到本站服务器，用于拉取公开财务与行情数据并生成报告，该请求不含任何个人身份信息，也不用于用户画像。
     </p>
   </section>
 
   <section class="card">
     <div class="section-head">
-      <div class="section-kicker">02 · Cookie 与第三方广告</div>
-      <h2 class="section-title">Cookie 与 Google AdSense</h2>
+      <div class="section-kicker">02 · Cookie 使用</div>
+      <h2 class="section-title">Cookie 说明</h2>
     </div>
     <p style="line-height:1.9; color:var(--text-2);">
-      本网站可能接入 <b>Google AdSense</b> 广告服务。Google 作为第三方供应商，使用 Cookie
-      在网站上投放广告（包括但不限于 DART Cookie 及个性化广告），用于衡量广告效果和展示相关广告。
+      本网站自身<b>不设置账号 Cookie，也不投放任何第三方广告</b>。仅有第三方流量统计服务（见下节 51LA）
+      会在你浏览器写入统计用 Cookie，用于区分独立访客、统计访问量。
     </p>
     <p style="line-height:1.9; color:var(--text-2); margin-top:12px;">
-      Google 对 Cookie 的使用方式，可参阅 <a href="https://policies.google.com/technologies/ads" target="_blank" style="color:var(--gold-600);">Google 广告 Cookie 政策</a>。
-      你可以通过 <a href="https://adssettings.google.com" target="_blank" style="color:var(--gold-600);">Google 广告设置</a>
-      管理或关闭个性化广告，或访问 <a href="https://www.aboutads.info" target="_blank" style="color:var(--gold-600);">www.aboutads.info</a> 选择退出第三方 Cookie。
+      你可以随时在浏览器设置中清除或禁用 Cookie，这不影响本站内容的正常浏览。
+      若未来本站引入广告服务，将提前更新本政策说明。
     </p>
   </section>
 
@@ -51,7 +51,7 @@ import Layout from '../layouts/Layout.astro';
       <h2 class="section-title">第三方服务</h2>
     </div>
     <p style="line-height:1.9; color:var(--text-2);">
-      本网站托管于 GitHub Pages，其服务器日志可能记录标准访问信息（IP 地址、浏览器类型、访问时间），
+      本网站托管于中国大陆云服务器，其服务器日志会记录标准访问信息（IP 地址、浏览器类型、访问时间），
       用途限于网站安全与故障排查。
     </p>
     <p style="line-height:1.9; color:var(--text-2); margin-top:12px;">
@@ -74,6 +74,6 @@ import Layout from '../layouts/Layout.astro';
   </section>
 
   <div class="callout">
-    <b>一句话总结</b>：我们不收集你的个人身份数据，你的工具输入只在浏览器本地计算；涉及的第三方数据使用仅两类——51LA 流量统计（访问概况，用于产品改进）与广告服务（Google AdSense）的 Cookie。
+    <b>一句话总结</b>：我们不收集你的个人身份数据，你的工具输入只在浏览器本地计算；涉及的第三方数据仅 51LA 流量统计一类（访问概况，用于产品改进）。
   </div>
 </Layout>

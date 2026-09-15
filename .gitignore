@@ -28,3 +28,6 @@ screenshots/v4/_profile*
 backend/.env
 backend/venv/
 backend/__pycache__/
+
+# 例外：样例文件要入库（真实 .env 仍然忽略）
+!backend/.env.example

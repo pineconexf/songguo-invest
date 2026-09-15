@@ -699,9 +699,22 @@ table.data-table td.songguo-col {
   overflow: hidden;
 }
 
-/* 版本卡/对比卡：描述文字固定两行高，保证各卡小指标区水平对齐 */
+/* 版本卡/对比卡：三卡完全等高对齐——描述区固定3行高，指标区紧接描述同线，底部链接贴卡底 */
+#versions .link-card {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: var(--sp-4);
+}
 #versions .link-card > p {
-  min-height: 2.7em;
+  min-height: 4.7em;
+  line-height: 1.55;
+  margin: var(--sp-2) 0 0;
+}
+#versions .link-card .metric-grid {
+  margin-top: var(--sp-3);
+}
+#versions .link-card .master-desc {
+  margin-top: auto;
 }
 
 .link-card::after {

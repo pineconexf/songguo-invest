@@ -1,32 +1,90 @@
 # -*- coding: utf-8 -*-
 """松果个股体检 API（华纳云部署版）
 POST /api/check  {"code": "600729"} → 完整体检报告 JSON
+
+安全口径（2026-09-15 审计批次0）：
+- 密钥优先级：环境变量 > 本地 .env（生产用 systemd EnvironmentFile 注入）
+- CORS 白名单：仅本站两条来源，不用通配
+- 入参长度上限 + 同码结果缓存（省 LLM 额度、抗重复刷）
+- 结论字段一律中性化：只给画像/评级，禁止任何买卖、持仓类表述
 """
-import os, json, re, time
+import os, json, re, time, threading
 import requests
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+
 def load_ds_key():
+    """密钥优先级：环境变量 > 本地 .env 文件。
+
+    生产环境由 systemd `EnvironmentFile=` 注入（文件权限 600），
+    这样密钥轮换（改 env + 重启）立即生效，磁盘明文不再是唯一来源。
+    """
+    v = (os.environ.get('DEEPSEEK_API_KEY') or '').strip()
+    if v:
+        return v
     env_path = os.path.join(BASE_DIR, '.env')
     if os.path.exists(env_path):
         with open(env_path, encoding='utf-8') as f:
             for line in f:
                 line = line.strip()
                 if line.startswith('DEEPSEEK_API_KEY='):
-                    return line.split('=', 1)[1]
-    return os.environ.get('DEEPSEEK_API_KEY', '')
+                    return line.split('=', 1)[1].strip()
+    return ''
+
 
 DS_KEY = load_ds_key()
 
-app = FastAPI(title='松果个股体检', version='0.1')
-app.add_middleware(CORSMiddleware, allow_origins=['*'], allow_methods=['*'], allow_headers=['*'])
+# CORS 白名单：仅本站来源（含本地开发端口），不开放通配
+ALLOW_ORIGINS = [
+    'https://pinecone-lab.cn',
+    'https://www.pinecone-lab.cn',
+    'http://localhost:4321',
+    'http://127.0.0.1:4321',
+]
+
+app = FastAPI(title='松果个股体检', version='0.2')
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOW_ORIGINS,
+    allow_methods=['GET', 'POST', 'OPTIONS'],
+    allow_headers=['Content-Type'],
+)
+
 
 class Req(BaseModel):
-    code: str
+    code: str = Field(..., max_length=16, description='6 位 A 股代码')
+
+
+# ---------- 同码结果缓存（TTL 10 分钟） ----------
+_CACHE = {}
+_CACHE_TTL = 600
+_CACHE_MAX = 500
+_CACHE_LOCK = threading.Lock()
+
+
+def cache_get(code):
+    with _CACHE_LOCK:
+        item = _CACHE.get(code)
+        if not item:
+            return None
+        ts, payload = item
+        if time.time() - ts > _CACHE_TTL:
+            _CACHE.pop(code, None)
+            return None
+        return payload
+
+
+def cache_put(code, payload):
+    with _CACHE_LOCK:
+        _CACHE[code] = (time.time(), payload)
+        if len(_CACHE) > _CACHE_MAX:  # 上限保护，防内存无限增长
+            for k in sorted(_CACHE, key=lambda k: _CACHE[k][0])[:200]:
+                _CACHE.pop(k, None)
+
 
 # ---------- 数据 ----------
 def fetch_finance(code):
@@ -48,6 +106,7 @@ def fetch_finance(code):
             time.sleep(2)
     return None
 
+
 def fetch_quote(code):
     prefix = 'sh' if code.startswith(('6', '9')) else 'sz'
     url = f"http://qt.gtimg.cn/q={prefix}{code}"
@@ -62,9 +121,11 @@ def fetch_quote(code):
             time.sleep(2)
     return None
 
+
 # ---------- 评分 ----------
 def is_annual(d):
     return '12-31' in str(d)
+
 
 def compute_scores(rows, q):
     annual = [r for r in rows if is_annual(r['REPORT_DATE'])][:3]
@@ -83,13 +144,14 @@ def compute_scores(rows, q):
     total = roe_s + prof_s + pe_s + mv_s + gr_s
     grade = '优' if total >= 80 else '良' if total >= 60 else '中' if total >= 40 else '差'
     return {
-        'roe': {'score': roe_s, 'max': 20, 'detail': f'近3年ROE最低 {roe_min:.1f}%', 'thresh': 'V30：ROE连续3年>3%'},
-        'profit': {'score': prof_s, 'max': 20, 'detail': f'近3年净利负值年数 {neg}/3', 'thresh': 'V30：连续盈利'},
+        'roe': {'score': roe_s, 'max': 20, 'detail': f'近3年ROE最低 {roe_min:.1f}%', 'thresh': 'V35：ROE连续3年>3%'},
+        'profit': {'score': prof_s, 'max': 20, 'detail': f'近3年净利负值年数 {neg}/3', 'thresh': 'V35：连续盈利'},
         'pe': {'score': pe_s, 'max': 20, 'detail': f'PE(TTM) {pe:.1f}', 'thresh': '估值维度（FCF/EV待接入）'},
-        'mv': {'score': mv_s, 'max': 20, 'detail': f'总市值 {mv:.0f}亿', 'thresh': 'V30：市值≤300亿'},
+        'mv': {'score': mv_s, 'max': 20, 'detail': f'总市值 {mv:.0f}亿', 'thresh': 'V35：市值≤300亿'},
         'growth': {'score': gr_s, 'max': 20, 'detail': f'净利同比 {yoy:.1f}%', 'thresh': '成长维度（牛市增强信号）'},
         'total': total, 'grade': grade
     }
+
 
 PROMPT = """你是「松果投资体系」的个股体检助手。请基于给定评分数据，输出一份专业的个股体检报告。
 
@@ -106,30 +168,28 @@ PROMPT = """你是「松果投资体系」的个股体检助手。请基于给�
 请输出 JSON：
 {{
   "summary": "一句话定位（60字内，讲清楚这是一只什么风格的股票）",
-  "style_analysis": "松果V30风格匹配分析（150字内：低估值+高质量+中小盘三个维度分别匹配度）",
+  "style_analysis": "松果 V35 画像匹配分析（150字内：低估值+高质量+中小盘三个维度分别匹配度）",
   "strengths": ["优势1", "优势2", "优势3"],
   "risks": ["风险1", "风险2", "风险3"],
-  "verdict": "体系判定（120字内：是否属于松果V30体系偏好的标的类型，为什么）",
-  "action_hint": "按体系视角的建议方向（80字内：如'符合体系偏好可进入观察池'，禁止买卖指令）"
+  "verdict": "体系画像定位（120字内：从五维评分说明该股的画像特征，如质量型 / 成长型 / 低估型 / 混合型，说明强项与短板各在哪个维度）",
+  "action_hint": "画像归类（60字内：把该股归入「质量型 / 成长型 / 低估型 / 混合型 / 不符合画像」之一，并一句话说明依据）"
 }}
 
-铁律：只描述体系评分结果，禁止任何买卖建议、涨跌预测、收益承诺。"""
+铁律：只做客观画像描述与评分陈述。禁止出现任何买入、卖出、加仓、减仓、持有、建仓、清仓、目标价、涨跌预测、收益承诺类表述。"""
 
-def gen_report(code, name):
-    rows = fetch_finance(code)
-    if not rows:
-        raise HTTPException(404, '未获取到该股票的财务数据，请核对代码')
-    q = fetch_quote(code)
-    if not q:
-        raise HTTPException(404, '未获取到该股票的行情数据，请稍后重试')
-    scores = compute_scores(rows, q)
-    prompt = PROMPT.format(name=name, code=code, price=q['price'], pe=q['pe'], mv=q['mv_yi'], pb=q['pb'],
-                           total=scores['total'], grade=scores['grade'],
-                           roe_score=scores['roe']['score'], roe_detail=scores['roe']['detail'],
-                           profit_score=scores['profit']['score'], profit_detail=scores['profit']['detail'],
-                           pe_score=scores['pe']['score'], pe_detail=scores['pe']['detail'],
-                           mv_score=scores['mv']['score'], mv_detail=scores['mv']['detail'],
-                           growth_score=scores['growth']['score'], growth_detail=scores['growth']['detail'])
+
+def _build_prompt(code, name, q, scores):
+    return PROMPT.format(
+        name=name, code=code, price=q['price'], pe=q['pe'], mv=q['mv_yi'], pb=q['pb'],
+        total=scores['total'], grade=scores['grade'],
+        roe_score=scores['roe']['score'], roe_detail=scores['roe']['detail'],
+        profit_score=scores['profit']['score'], profit_detail=scores['profit']['detail'],
+        pe_score=scores['pe']['score'], pe_detail=scores['pe']['detail'],
+        mv_score=scores['mv']['score'], mv_detail=scores['mv']['detail'],
+        growth_score=scores['growth']['score'], growth_detail=scores['growth']['detail'])
+
+
+def _call_llm(prompt):
     url = "https://api.deepseek.com/chat/completions"
     headers = {'Authorization': f'Bearer {DS_KEY}', 'Content-Type': 'application/json'}
     body = {"model": "deepseek-v4-flash", "messages": [{"role": "user", "content": prompt}],
@@ -142,55 +202,43 @@ def gen_report(code, name):
                 last_err = f'LLM HTTP {r.status_code}'
                 continue
             content = r.json()['choices'][0]['message']['content']
-            report = json.loads(content)
-            return {'name': name, 'code': code, 'quote': {'price': q['price'], 'pe': q['pe'], 'mv': q['mv_yi'], 'pb': q['pb']},
-                    'scores': scores, 'report': report}
+            return json.loads(content)
         except Exception as e:
             last_err = str(e)
             time.sleep(2)
     raise HTTPException(500, f'报告生成失败: {last_err}')
 
+
 @app.get('/api/health')
 def health():
     return {'status': 'ok', 'service': 'songguo-stock-check'}
 
+
 @app.post('/api/check')
 def check(req: Req):
-    code = re.sub(r'\D', '', req.code)
+    code = re.sub(r'\D', '', req.code or '')
     if len(code) != 6:
         raise HTTPException(400, '请输入6位股票代码')
-    # 名称由东财数据带出（先取财务首条）
+
+    cached = cache_get(code)
+    if cached:
+        return cached
+
     rows = fetch_finance(code)
     if not rows:
         raise HTTPException(404, '未获取到该股票的财务数据，请核对代码')
     name = rows[0].get('SECURITY_NAME_ABBR', code)
-    scores = compute_scores(rows, {'pe': 0, 'mv_yi': 0, 'pb': 0, 'price': 0})
     q = fetch_quote(code) or {'price': 0, 'pe': 0, 'mv_yi': 0, 'pb': 0}
     scores = compute_scores(rows, q)
-    prompt = PROMPT.format(name=name, code=code, price=q['price'], pe=q['pe'], mv=q['mv_yi'], pb=q['pb'],
-                           total=scores['total'], grade=scores['grade'],
-                           roe_score=scores['roe']['score'], roe_detail=scores['roe']['detail'],
-                           profit_score=scores['profit']['score'], profit_detail=scores['profit']['detail'],
-                           pe_score=scores['pe']['score'], pe_detail=scores['pe']['detail'],
-                           mv_score=scores['mv']['score'], mv_detail=scores['mv']['detail'],
-                           growth_score=scores['growth']['score'], growth_detail=scores['growth']['detail'])
-    url = "https://api.deepseek.com/chat/completions"
-    headers = {'Authorization': f'Bearer {DS_KEY}', 'Content-Type': 'application/json'}
-    body = {"model": "deepseek-v4-flash", "messages": [{"role": "user", "content": prompt}],
-            "temperature": 0.3, "response_format": {"type": "json_object"}, "max_tokens": 1500}
-    for attempt in range(3):
-        try:
-            r = requests.post(url, headers=headers, json=body, timeout=90)
-            if r.status_code == 200:
-                content = r.json()['choices'][0]['message']['content']
-                report = json.loads(content)
-                return {'name': name, 'code': code,
-                        'quote': {'price': q['price'], 'pe': q['pe'], 'mv': q['mv_yi'], 'pb': q['pb']},
-                        'scores': scores, 'report': report}
-        except Exception:
-            time.sleep(2)
-    raise HTTPException(500, '报告生成失败，请稍后重试')
+    report = _call_llm(_build_prompt(code, name, q, scores))
+
+    payload = {'name': name, 'code': code,
+               'quote': {'price': q['price'], 'pe': q['pe'], 'mv': q['mv_yi'], 'pb': q['pb']},
+               'scores': scores, 'report': report}
+    cache_put(code, payload)
+    return payload
+
 
 if __name__ == '__main__':
     import uvicorn
-    uvicorn.run(app, host='0.0.0.0', port=8000)
+    uvicorn.run(app, host='0.0.0.0', port=int(os.environ.get('PORT', '8080')))

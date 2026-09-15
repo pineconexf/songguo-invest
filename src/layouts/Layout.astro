@@ -4,10 +4,15 @@ import '../styles/global.css';
 interface Props {
   title: string;
   description?: string;
+  /** 正文尾部合规提示条；about / privacy 已含完整合规声明，可置 false */
+  dataNotice?: boolean;
 }
 
-const { title, description = '松果投资实验室 — 融合东西方智慧、经14年真实回测验证的A股量化价值投资方法论' } =
-  Astro.props;
+const {
+  title,
+  description = '松果投资实验室 — 融合东西方智慧、经14年真实回测验证的A股量化价值投资方法论',
+  dataNotice = true,
+} = Astro.props;
 const current = Astro.url.pathname;
 
 const navItems = [
@@ -58,6 +63,14 @@ const navItems = [
 
     <main class="container main-content">
       <slot />
+      {
+        dataNotice && (
+          <p class="inline-disclaimer">
+            <b>合规提示</b>：本页所有收益、回撤等指标均为<b>历史回测结果</b>（含成本口径），非实盘业绩，
+            不代表未来收益，<b>不构成投资建议</b>，亦不构成对任何产品的推荐。投资有风险，入市需谨慎。
+          </p>
+        )
+      }
     </main>
 
     <!-- 底部精简栏：公众号 / 留言 / Pro / 工具 -->
@@ -91,9 +104,13 @@ const navItems = [
           历史表现不代表未来收益，不构成任何投资建议，亦不构成对任何产品的推荐。投资有风险，入市需谨慎。
         </p>
         <p class="footer-meta">
-          © 2026 松果商业笔记 · 数据驱动 · 纪律执行 · 长期主义 ·
-          <a href="/songguo-invest/privacy/" style="color:inherit; text-decoration:underline;">隐私政策</a>
-        </p>
+                  © 2026 松果商业笔记 · 数据驱动 · 纪律执行 · 长期主义 ·
+                  <a href="/songguo-invest/privacy/" style="color:inherit; text-decoration:underline;">隐私政策</a>
+                  ·
+                  <a href="https://beian.miit.gov.cn" target="_blank" rel="noopener" style="color:inherit; text-decoration:underline;">浙ICP备2026075755号</a>
+                  <br />
+                  <span style="font-size:12px; color:var(--text-3);">联系公众号：松果商业笔记（微信）</span>
+                </p>
       </div>
     </footer>
 
@@ -141,5 +158,21 @@ const navItems = [
         });
       }
     </script>
+
+    <style is:global>
+      .inline-disclaimer {
+        margin: var(--sp-5) 0 0;
+        padding: 10px 14px;
+        border-left: 3px solid rgba(139, 94, 60, 0.35);
+        background: rgba(139, 94, 60, 0.045);
+        border-radius: 0 8px 8px 0;
+        font-size: 12.5px;
+        line-height: 1.75;
+        color: var(--text-3);
+      }
+      .inline-disclaimer b {
+        color: var(--text-2);
+      }
+    </style>
   </body>
 </html>
