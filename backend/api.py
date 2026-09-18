@@ -239,6 +239,49 @@ def check(req: Req):
     return payload
 
 
+# ---------- 匿名工具使用埋点（2026-09-18）----------
+# 只记录：工具名/事件/随机sid/停留秒数。不记录IP、不记录用户输入内容。
+# 数据按日切 JSONL 存 track/，90 天归档压缩。埋点失败静默，绝不影响主服务。
+TRACK_DIR = os.path.join(BASE_DIR, 'track')
+TRACK_TOOLS = {'backtest-compare', 'compound', 'daily-insight', 'etf-allocator', 'fund-ranking',
+               'fund-scorecard', 'industry-compare', 'industry-report', 'macro-signal', 'stockcheck', 'valuator'}
+TRACK_EVENTS = {'view', 'run', 'result', 'error', 'dwell'}
+_TRACK_LOCK = threading.Lock()
+
+
+class TrackReq(BaseModel):
+    tool: str = Field('', max_length=32)
+    event: str = Field('', max_length=8)
+    sid: str = Field('', max_length=32)
+    dwell: float = None
+
+
+@app.post('/api/track')
+def track(req: TrackReq):
+    if req.tool not in TRACK_TOOLS or req.event not in TRACK_EVENTS:
+        return {'ok': False}
+    sid = re.sub(r'[^a-zA-Z0-9]', '', req.sid or '')[:24]
+    d = None
+    if req.dwell is not None:
+        try:
+            d = max(0.0, min(float(req.dwell), 3600.0))
+        except (TypeError, ValueError):
+            d = None
+    try:
+        # 文件名用北京时间（UTC+8），与日报口径一致
+        fname = time.strftime('%Y-%m-%d', time.gmtime(time.time() + 28800)) + '.jsonl'
+        rec = {'ts': int(time.time()), 'tool': req.tool, 'event': req.event, 'sid': sid}
+        if d is not None:
+            rec['dwell'] = round(d, 1)
+        os.makedirs(TRACK_DIR, exist_ok=True)
+        with _TRACK_LOCK:
+            with open(os.path.join(TRACK_DIR, fname), 'a', encoding='utf-8') as f:
+                f.write(json.dumps(rec, ensure_ascii=False) + '\n')
+    except Exception:
+        pass
+    return {'ok': True}
+
+
 if __name__ == '__main__':
     import uvicorn
     uvicorn.run(app, host='0.0.0.0', port=int(os.environ.get('PORT', '8080')))

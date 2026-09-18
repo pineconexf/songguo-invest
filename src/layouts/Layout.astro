@@ -174,5 +174,65 @@ const navItems = [
         color: var(--text-2);
       }
     </style>
+    <script is:inline>
+    // 匿名工具使用埋点（2026-09-18）：view/run/result/error/dwell → 同源 /api/track
+    // 只发：工具名/事件/随机sid/停留秒。不发IP、不发任何用户输入。失败静默。
+    (function () {
+      try {
+        var m = (location.pathname.match(/\/tools\/([a-z0-9-]+)\/?$/) || [])[1];
+        if (!m) return;
+        if (!/pinecone-lab\.cn$/.test(location.hostname)) return; // 仅云站上报，GH镜像不发避免404噪声
+        var P2T = { bc: 'backtest-compare', c: 'compound', ea: 'etf-allocator', fs: 'fund-scorecard',
+                    ic: 'industry-compare', ir: 'industry-report', ms: 'macro-signal', sc: 'stockcheck', v: 'valuator' };
+        var tool = P2T[m] ? m : m; // slug 直接用（白名单在服务端）
+        var sid = (Math.random().toString(36).slice(2, 10) + Date.now().toString(36));
+        var t0 = Date.now();
+        function send(ev, dwell) {
+          try {
+            var body = JSON.stringify({ tool: tool, event: ev, sid: sid, dwell: dwell });
+            var url = location.origin + '/api/track';
+            if (navigator.sendBeacon) {
+              var ok = navigator.sendBeacon(url, new Blob([body], { type: 'application/json' }));
+              if (ok) return;
+            }
+            fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                         body: body, keepalive: true, mode: 'cors' })['catch'](function () {});
+          } catch (e) {}
+        }
+        function dwellSec() { return (Date.now() - t0) / 1000; }
+        var leaving = false;
+        function flushDwell() { if (leaving) return; leaving = true; send('dwell', dwellSec()); }
+        send('view');
+        document.addEventListener('click', function (e) {
+          try {
+            var b = e.target && e.target.closest ? e.target.closest('[id$="-run"]') : null;
+            if (b) {
+              var pre = (b.id || '').replace(/-run$/, '');
+              if (P2T[pre] === tool) send('run'); // 防跨页误记
+            }
+          } catch (err) {}
+        }, true);
+        var res = document.getElementById(tool === 'stockcheck' ? 'sc-result' :
+                  tool === 'valuator' ? 'v-result' : tool === 'macro-signal' ? 'ms-result' :
+                  tool === 'industry-report' ? 'ir-result' : tool === 'industry-compare' ? 'ic-result' :
+                  tool === 'etf-allocator' ? 'ea-result' : tool === 'fund-scorecard' ? 'fs-result' :
+                  tool === 'backtest-compare' ? 'bc-result' : tool === 'compound' ? 'c-result' : null);
+        var shown = false;
+        function vis(el) { return el && getComputedStyle(el).display !== 'none' && el.offsetParent !== null; }
+        if (res) {
+          if (vis(res)) shown = true;
+          try {
+            new MutationObserver(function () {
+              var now = vis(res);
+              if (now && !shown) { shown = true; send('result'); }
+              if (!now) shown = false;
+            }).observe(res, { attributes: true, attributeFilter: ['style', 'class'], subtree: false });
+          } catch (e) {}
+        }
+        document.addEventListener('visibilitychange', function () { if (document.hidden) flushDwell(); });
+        window.addEventListener('pagehide', flushDwell);
+      } catch (e) {}
+    })();
+    </script>
   </body>
 </html>
