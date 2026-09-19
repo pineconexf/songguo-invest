@@ -10,6 +10,24 @@ if [ "$BRANCH" != "main" ]; then
   echo "❌ 必须在 main 分支执行（当前: $BRANCH）"; exit 1
 fi
 
+# ⚠️ 2026-09-19 加固①：中途失败（尤其 push 不通）会让仓库停在 gh-pages——该分支没有 src/scripts/package.json，
+# 于是所有站点 cron 集体报「脚本不存在」，且下一次 deploy 也起不来。trap 保证无论成败都切回 main。
+return_main() {
+  cur=$(git branch --show-current 2>/dev/null || echo "")
+  if [ "$cur" != "main" ]; then
+    echo "↩ 部署异常中断，强制切回 main（原分支: $cur）"
+    git checkout -q main 2>/dev/null || echo "⚠ 切回 main 失败，请手动处理（当前: $cur）"
+  fi
+}
+trap return_main EXIT
+
+# ⚠️ 2026-09-19 加固②：github.com 直连会被 reset（国内网络），本地代理在跑就走代理（与 web 插件同一策略）
+GIT_PROXY_ARGS=""
+if python -c "import socket;socket.create_connection(('127.0.0.1',10808),1).close()" 2>/dev/null; then
+  GIT_PROXY_ARGS="-c http.proxy=http://127.0.0.1:10808"
+  echo "ℹ 本地代理 10808 可用，git push/ls-remote 走代理"
+fi
+
 echo "① 构建..."
 npm run build
 
@@ -43,8 +61,8 @@ push_with_retry() {
   local ref="$1" sha local_sha attempt
   sha=$(git rev-parse "$ref")
   for attempt in 1 2 3; do
-    if git push origin "$ref" 2>&1 | tail -2; then
-      local_sha=$(git ls-remote origin "$ref" 2>/dev/null | cut -f1)
+    if git $GIT_PROXY_ARGS push origin "$ref" 2>&1 | tail -2; then
+      local_sha=$(git $GIT_PROXY_ARGS ls-remote origin "$ref" 2>/dev/null | cut -f1)
       if [ "$local_sha" = "$sha" ]; then echo "✓ $ref 已确认推送 ($sha)"; return 0; fi
     fi
     echo "⚠ push $ref 第 $attempt 次失败/未确认，3s 后重试..."; sleep 3
