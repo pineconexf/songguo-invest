@@ -95,4 +95,85 @@ Max = <b>四策略最优组合版</b>：前面两个版本策略的集大成。
         window.addEventListener('pagehide', flushDwell);
       } catch (e) {}
     })();
+    </script><script>
+    // 自建页面访问采集（2026-09-20，替代 51LA）：同源 /api/collect
+    // 只发：路径/来源(剥query)/UTM/视口/屏幕/DPR/语言/时区/设备类别/停留/滚动/性能/CTA高度
+    // 不发：IP、Cookie、完整UA（服务端只留解析后的类别）、任何用户输入。无 cookie、无跨天标识。失败静默。
+    (function () {
+      try {
+        if (!/pinecone-lab\.cn$/.test(location.hostname)) return; // 仅云站上报（GH 镜像不发，避免 404 噪声）
+        var KEY = 'sg_sid', sid = '';
+        try {
+          sid = sessionStorage.getItem(KEY) || '';
+          if (!sid) { sid = Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); sessionStorage.setItem(KEY, sid); }
+        } catch (e) { sid = Math.random().toString(36).slice(2, 12); }
+        var t0 = Date.now(), maxScroll = 0, left = false;
+        function qs(k) { try { return (new URLSearchParams(location.search).get(k) || '').slice(0, 32); } catch (e) { return ''; } }
+        function utms() {
+          var ks = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'], o = [];
+          for (var i = 0; i < ks.length; i++) { var v = qs(ks[i]); if (v) o.push(ks[i] + '=' + v); }
+          return o.join('&');
+        }
+        function nav() {
+          try {
+            var e = performance.getEntriesByType('navigation')[0];
+            if (e) return { ttfb: Math.round(e.responseStart || 0), dom: Math.round(e.domContentLoadedEventEnd || 0) };
+          } catch (e) {}
+          return { ttfb: 0, dom: 0 };
+        }
+        function ctaTop() {
+          try {
+            var el = document.querySelector('[id$="-run"], .btn.btn-gold, .btn');
+            if (!el) return -1;
+            return Math.max(0, Math.round(el.getBoundingClientRect().top + (window.pageYOffset || 0)));
+          } catch (e) { return -1; }
+        }
+        function scrollPct() {
+          try {
+            var h = document.documentElement.scrollHeight - window.innerHeight;
+            return h <= 0 ? 100 : Math.min(100, Math.round(((window.pageYOffset || 0) / h) * 100));
+          } catch (e) { return 0; }
+        }
+        function base() {
+          var n = nav();
+          return {
+            p: (location.pathname.replace(/^\/songguo-invest/, '') || '/').slice(0, 120),
+            t: (document.title || '').slice(0, 80),
+            r: (document.referrer || '').split('?')[0].split('#')[0].slice(0, 200),
+            u: utms(), sid: sid,
+            vw: window.innerWidth || 0, vh: window.innerHeight || 0,
+            sw: (window.screen && screen.width) || 0, sh: (window.screen && screen.height) || 0,
+            dpr: window.devicePixelRatio || 1,
+            lg: (navigator.language || '').slice(0, 16),
+            tz: (function () { try { return (Intl.DateTimeFormat().resolvedOptions().timeZone || '').slice(0, 48); } catch (e) { return ''; } })(),
+            tc: ('ontouchstart' in window) || (navigator.maxTouchPoints > 0),
+            cs: (function () { try { return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; } catch (e) { return ''; } })(),
+            rm: (function () { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } })(),
+            cn: ((navigator.connection && navigator.connection.effectiveType) || '').slice(0, 8),
+            wd: navigator.webdriver === true,
+            ph: document.documentElement.scrollHeight || 0,
+            cta: ctaTop(), ttfb: n.ttfb, dom: n.dom
+          };
+        }
+        function send(ev, extra) {
+          try {
+            var body = base(); body.ev = ev;
+            if (extra) { for (var k in extra) { if (extra.hasOwnProperty(k)) body[k] = extra[k]; } }
+            var url = location.origin + '/api/collect', s = JSON.stringify(body);
+            if (ev === 'leave' && navigator.sendBeacon) {
+              if (navigator.sendBeacon(url, new Blob([s], { type: 'application/json' }))) return;
+            }
+            fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: s, keepalive: true, mode: 'cors' })['catch'](function () {});
+          } catch (e) {}
+        }
+        function leave() {
+          if (left) return; left = true;
+          send('leave', { s: Math.max(maxScroll, scrollPct()), dw: Math.round((Date.now() - t0) / 1000) });
+        }
+        send('pv');
+        window.addEventListener('scroll', function () { var c = scrollPct(); if (c > maxScroll) maxScroll = c; }, { passive: true });
+        document.addEventListener('visibilitychange', function () { if (document.hidden) leave(); });
+        window.addEventListener('pagehide', leave);
+      } catch (e) {}
+    })();
     </script></body> </html>
