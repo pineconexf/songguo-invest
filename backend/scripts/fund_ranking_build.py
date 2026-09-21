@@ -33,6 +33,8 @@ load_dotenv(os.path.expanduser('~/AppData/Local/hermes/.env'))
 TOKEN = os.environ.get('TUSHARE_API_KEY', '')
 API = 'http://api.tushare.pro/dataapi/'
 OUT_FILE = r'D:/pineconeinvestfiles/松果投资体系网站/01_网站开发/src/data/fund_ranking.json'
+# 全量榜（前端搜索/筛选用，单独 JSON 懒加载；上方 OUT_FILE 仍只含 Top10/Top50）
+FULL_FILE = r'D:/pineconeinvestfiles/松果投资体系网站/01_网站开发/public/data/fund_ranking_full.json'
 
 CALLS = 0
 
@@ -127,18 +129,29 @@ def main():
 
     # ---------- ② fund_nav 按交易日批量拉近一年 ----------
     print('② fund_nav 批量拉近一年交易日净值...')
-    # 先拿交易日列表：用 fund_nav 最后一个交易日 + 往前 370 天每个交易日
-    # 简化：直接用 fund_nav 的 nav_date 参数从最近交易日逐日向前
+    # ⚠️ 2026-09-21 修复：fund_nav 单次调用硬截断 10500 行（服务端上限），全市场约 22300 只
+    #    → 原来不分页只能拿到约 42% 的随机子集，三类榜数量天天漂移（909/3002/3148 都是抽样结果）
+    #    现改为 offset 分页，limit=10000（实测 >10500 会被服务端压回 10500，故取 10000），每天 3 次调用
     nav_by_code = {}  # ts_code -> [(date, adj_nav), ...] 最新在前
-    # 从今天往前枚举日期，逐日拉（只拉工作日，拿到 10500 只全量）
     d = today
     days_fetched = 0
     while days_fetched < 240:  # 约一年交易日（250 左右）
         date_s = d.strftime('%Y%m%d')
         try:
-            rows = q('fund_nav', {'nav_date': date_s, 'market': 'O'}, 'ts_code,adj_nav,unit_nav')
-            if rows:
-                for r in rows:
+            day_rows = []
+            offset = 0
+            while True:
+                rows = q('fund_nav', {'nav_date': date_s, 'market': 'O', 'offset': offset, 'limit': 10000},
+                         'ts_code,adj_nav,unit_nav')
+                if not rows:
+                    break
+                day_rows.extend(rows)
+                offset += len(rows)
+                if len(rows) < 10000:
+                    break
+                time.sleep(0.1)
+            if day_rows:
+                for r in day_rows:
                     ts = r['ts_code']
                     try:
                         adj = float(r['adj_nav'])
@@ -163,11 +176,21 @@ def main():
     for qdate in ['20260630', '20260331']:
         try:
             batch = q_all('fund_share', {'trade_date': qdate, 'market': 'O'}, 'ts_code,fd_share', page_size=2000)
+            for b in batch:
+                b['_qdate'] = qdate
             share_rows.extend(batch)
             print(f'   {qdate}: {len(batch)} 条')
         except Exception as e:
             print(f'   {qdate} 失败: {e}')
-    share_by_code = {r['ts_code']: (qdate, float(r['fd_share'])) for r in share_rows if r.get('fd_share')}
+    # ⚠️ 2026-09-21 修复：原写法把两个季末一起 extend 后做 dict 推导，
+    #   后写入的 20260331 会覆盖 20260630 → 规模一直取的是 Q1 而非最新季。改为「先到先用」（列表按新→旧排列）。
+    share_by_code = {}
+    for r in share_rows:
+        ts = r.get('ts_code')
+        if not ts or not r.get('fd_share'):
+            continue
+        if ts not in share_by_code:
+            share_by_code[ts] = (r.get('_qdate'), float(r['fd_share']))
 
     # ---------- ④ fund_manager 全量（分页） ----------
     print('④ fund_manager 全量拉取...')
@@ -269,19 +292,29 @@ def main():
         },
         'categories': [],
     }
+    # 全量榜（供前端搜索/筛选，单独 JSON；避免首屏 HTML 膨胀）
+    full = {'meta': dict(ranking['meta']), 'categories': []}
     for cname in cats:
         entries = [r for k, r in results.items() if k.startswith(cname + '|')]
         entries.sort(key=lambda x: (-x['total'], -x['r1y']))
-        top = entries[:50]
-        slim = [{'code': r['code'], 'name': r['name'], 'r1y': r['r1y'], 'mdd': r['mdd'],
-                 'fee': r['fee'], 'size': r['size'], 'mgr': r['mgr'], 'total': r['total'], 'grade': r['grade']}
-                for r in top]
+        # 完整名次：全量带 rank 字段（前端「我的基金排第几」直接读）
+        slim_all = [{'rank': i + 1, 'code': r['code'], 'name': r['name'], 'r1y': r['r1y'], 'mdd': r['mdd'],
+                     'fee': r['fee'], 'size': r['size'], 'mgr': r['mgr'], 'total': r['total'], 'grade': r['grade']}
+                    for i, r in enumerate(entries)]
+        top = slim_all[:50]
+        slim = [{k: v for k, v in r.items() if k != 'rank'} for r in top]
         ranking['categories'].append({'name': cname, 'count': len(entries), 'top10': slim[:10], 'top50': slim})
+        full['categories'].append({'name': cname, 'count': len(entries), 'entries': slim_all})
         print(f'   {cname}: {len(entries)} 只 | Top1: {top[0]["name"]} {top[0]["total"]}分')
 
     with open(OUT_FILE, 'w', encoding='utf-8') as f:
         json.dump(ranking, f, ensure_ascii=False, indent=1)
-    print(f'✅ 输出: {OUT_FILE}（总调用 {CALLS} 次，用时 {(time.time() - t0) / 60:.1f} min）')
+    os.makedirs(os.path.dirname(FULL_FILE), exist_ok=True)
+    with open(FULL_FILE, 'w', encoding='utf-8') as f:
+        json.dump(full, f, ensure_ascii=False, separators=(',', ':'))
+    kb = os.path.getsize(FULL_FILE) / 1024
+    print(f'✅ 输出: {OUT_FILE}')
+    print(f'✅ 全量榜: {FULL_FILE}（{sum(c["count"] for c in full["categories"])} 只, {kb:.0f}KB，总调用 {CALLS} 次，用时 {(time.time() - t0) / 60:.1f} min）')
 
 
 if __name__ == '__main__':

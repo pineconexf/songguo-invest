@@ -49,10 +49,10 @@ echo "③ 更新 gh-pages 分支..."
 git checkout -q gh-pages
 # ⚠️ rm 清单不含 dist/node_modules（dist 已不入 gh-pages；node_modules 是 untracked，删了会丢 main 的依赖）
 # ⚠️ pay 已在 2026-09-14 下线，必须显式 rm 从 gh-pages 工作树删除（否则旧 pay/ 残留线上）
-rm -rf index.html _astro about archive backtest favicon.ico favicon.png favicon.svg mascot.png logo-mascot.png macro methodology philosophy portfolio privacy ranking services strategies tools pay .nojekyll
+rm -rf index.html _astro about archive backtest data favicon.ico favicon.png favicon.svg mascot.png logo-mascot.png macro methodology philosophy portfolio privacy ranking services strategies tools pay .nojekyll
 cp -r "$TMP"/* . && touch .nojekyll
 # ⚠️ 显式文件列表，禁止 git add -A（gh-pages 分支无 .gitignore，-A 会把 node_modules 提交进仓库并污染分支切换）
-git add index.html _astro about archive backtest favicon.ico favicon.png favicon.svg mascot.png logo-mascot.png macro methodology philosophy portfolio privacy ranking services strategies tools .nojekyll
+git add index.html _astro about archive backtest data favicon.ico favicon.png favicon.svg mascot.png logo-mascot.png macro methodology philosophy portfolio privacy ranking services strategies tools .nojekyll
 # 删除已下线目录在 gh-pages 上的残留（pay/ 付费落地页 2026-09-14 下线；rm -rf 只删工作区，需显式 stage 删除）
 git add -u pay 2>/dev/null || true
 git commit -q -m "deploy: $(date +%Y%m%d-%H%M) 构建产物"

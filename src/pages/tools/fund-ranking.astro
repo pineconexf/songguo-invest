@@ -121,6 +121,78 @@ const meta = ranking.meta || {};
     ))}
   </section>
 
+  <!-- ============ 全量榜查询（V4，2026-09-21） ============ -->
+  <section class="card" style="max-width: 1100px; margin: var(--sp-5) auto 0;">
+    <div class="section-head">
+      <div class="section-kicker">全量查询 · 共 <span id="fr-total">—</span> 只</div>
+      <h2 class="section-title">全市场都在这里，不只是前 50</h2>
+      <p class="section-sub">
+        打分算的是<b>全部</b>基金，榜单只露了前 50。这里可以：查任意基金排在<b>第几名</b>、按六个维度<b>筛出</b>符合条件的基金、点列头<b>排序</b>。
+        规则与上方完全一致，数据同源。
+      </p>
+    </div>
+
+    <div id="fr-loading" style="font-size:13px; color:var(--navy-600); padding: var(--sp-3) 0;">
+      正在加载全量数据…
+    </div>
+
+    <div id="fr-panel" style="display:none;">
+      <!-- 类目 Tab -->
+      <div style="display:flex; gap: var(--sp-2); margin-bottom: var(--sp-4); flex-wrap:wrap;">
+        {cats.map((c, i) => (
+          <button data-fcat={i} class={"fr-cat btn" + (i === 0 ? " btn-gold" : "")}
+            style={i === 0 ? "" : "background:transparent; border:1px solid rgba(139,94,60,0.3); color:var(--navy-800);"}>
+            {c.name}
+          </button>
+        ))}
+      </div>
+
+      <!-- 搜索 -->
+      <div style="margin-bottom: var(--sp-4);">
+        <label style="font-size:12px; color:var(--navy-600); display:block; margin-bottom:6px;">
+          查我的基金排第几（输入 6 位代码或名称）
+        </label>
+        <input id="fr-search" type="text" placeholder="例如 000577 或 安信价值"
+          style="width:100%; max-width:360px; padding:9px 12px; border:1px solid rgba(139,94,60,0.35); border-radius:6px; font-size:14px; background:#fff; color:var(--navy-900);" />
+        <span id="fr-search-hint" style="font-size:12px; color:var(--navy-600); margin-left:10px;"></span>
+      </div>
+
+      <!-- 六维筛选 -->
+      <div id="fr-filters" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:var(--sp-3) var(--sp-4); margin-bottom:var(--sp-4);"></div>
+      <div style="margin-bottom:var(--sp-3);">
+        <button id="fr-reset" class="btn" style="font-size:12px; padding:6px 14px; background:transparent; border:1px solid rgba(139,94,60,0.35); color:var(--navy-800);">清空筛选</button>
+        <span id="fr-count" style="font-size:12px; color:var(--navy-600); margin-left:10px;"></span>
+      </div>
+
+      <!-- 结果表 -->
+      <div class="table-wrap">
+        <table class="data-table" id="fr-table">
+          <thead>
+            <tr>
+              <th>名次</th><th>代码</th><th>名称</th>
+              <th class="fr-sort" data-key="r1y">近1年收益</th>
+              <th class="fr-sort" data-key="mdd">最大回撤</th>
+              <th class="fr-sort" data-key="fee">费率</th>
+              <th class="fr-sort" data-key="size">规模</th>
+              <th class="fr-sort" data-key="mgr">经理</th>
+              <th class="fr-sort" data-key="total">总分</th>
+              <th>等级</th>
+            </tr>
+          </thead>
+          <tbody id="fr-body"></tbody>
+        </table>
+      </div>
+      <div style="display:flex; align-items:center; gap:var(--sp-3); margin-top:var(--sp-3);">
+        <button id="fr-prev" class="btn" style="font-size:12px; padding:5px 14px; background:transparent; border:1px solid rgba(139,94,60,0.35); color:var(--navy-800);">← 上一页</button>
+        <span id="fr-page" style="font-size:12px; color:var(--navy-600);"></span>
+        <button id="fr-next" class="btn" style="font-size:12px; padding:5px 14px; background:transparent; border:1px solid rgba(139,94,60,0.35); color:var(--navy-800);">下一页 →</button>
+      </div>
+      <p style="font-size:12px; color:var(--navy-600); margin-top:var(--sp-3);">
+        筛选阈值按「入选门槛」理解：设「收益 ≥ 10」即只看近 1 年涨过 10% 的。名次为该类目全量池中的真实排名。
+      </p>
+    </div>
+  </section>
+
   <!-- ============ 规则公开（与打分卡同款） ============ -->
   <section class="card" style="max-width: 960px; margin: var(--sp-5) auto 0;">
     <div class="section-head">
@@ -174,6 +246,182 @@ const meta = ranking.meta || {};
       btn.style.display = 'none';
     });
   });
+
+  // ================= V4 全量榜查询 =================
+  (function () {
+    var PANEL = document.getElementById('fr-panel');
+    if (!PANEL) return;
+    var LOADING = document.getElementById('fr-loading');
+    var TBODY = document.getElementById('fr-body');
+    // base 兼容：云端 base='/'，GitHub Pages base='/songguo-invest/'
+    // 从当前路径反推（本页恒在 <base>tools/fund-ranking/ 下），两套部署零配置通用
+    var BASE = location.pathname.replace(/tools\/fund-ranking\/.*$/, '');
+    var PAGE_SIZE = 50;
+    var DATA = null, CAT = 0, rows = [], page = 0, sortKey = null, sortDir = -1;
+    var FILTERS = [
+      { key: 'r1y', label: '近1年收益', unit: '%', min: -50, max: 100, step: 1 },
+      { key: 'mdd', label: '最大回撤', unit: '%', min: 0, max: 60, step: 1 },
+      { key: 'fee', label: '费率(管理+托管)', unit: '%', min: 0, max: 2, step: 0.05 },
+      { key: 'size', label: '规模', unit: '亿', min: 0, max: 500, step: 1 },
+      { key: 'mgr', label: '经理任职', unit: '年', min: 0, max: 20, step: 0.5 },
+      { key: 'total', label: '总分', unit: '', min: 0, max: 100, step: 1 }
+    ];
+    var state = {}; // key -> {min, max} 当前阈值（来自滑块低位端）
+
+    fetch(BASE + 'data/fund_ranking_full.json')
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (d) {
+        DATA = d;
+        var total = d.categories.reduce(function (a, c) { return a + c.count; }, 0);
+        document.getElementById('fr-total').textContent = total.toLocaleString();
+        LOADING.style.display = 'none';
+        PANEL.style.display = '';
+        buildFilters();
+        render();
+      })
+      .catch(function (e) {
+        LOADING.textContent = '全量数据加载失败（' + e.message + '）。榜单数据本身仍可正常查看。';
+      });
+
+    function buildFilters() {
+      var box = document.getElementById('fr-filters');
+      box.innerHTML = FILTERS.map(function (f, i) {
+        // 回撤是「越小越好」，语义与其他维度相反：显示 ≤
+        var op = f.key === 'mdd' ? '≤' : '≥';
+        return '<div>' +
+          '<label style="font-size:12px; color:var(--navy-600); display:block; margin-bottom:4px;">' +
+          f.label + ' ' + op + ' <b class="fr-val" data-i="' + i + '" style="color:var(--gold);">—</b>' + f.unit + '</label>' +
+          '<input class="fr-range" data-i="' + i + '" type="range" min="' + f.min + '" max="' + f.max +
+          '" step="' + f.step + '" value="' + f.min + '" style="width:100%;" />' +
+          '</div>';
+      }).join('');
+      box.querySelectorAll('.fr-range').forEach(function (el) {
+        el.addEventListener('input', function () {
+          var f = FILTERS[+el.dataset.i];
+          var v = parseFloat(el.value);
+          var active = v > f.min;
+          box.querySelector('.fr-val[data-i="' + el.dataset.i + '"]').textContent = active ? v : '不限';
+          if (active) state[f.key] = v; else delete state[f.key];
+          page = 0; render();
+        });
+      });
+    }
+
+    function applyFilters(list) {
+      return list.filter(function (r) {
+        for (var k in state) {
+          if (r[k] == null) return false;
+          // 回撤：越小越好，滑块是「下限」语义 → 这里按 ≤ 阈值理解
+          if (k === 'mdd') { if (r[k] > state[k]) return false; }
+          else if (r[k] < state[k]) return false;
+        }
+        return true;
+      });
+    }
+
+    function render() {
+      var cat = DATA.categories[CAT];
+      var q = (document.getElementById('fr-search').value || '').trim().toLowerCase();
+      var list = cat.entries.slice();
+
+      // 搜索：代码或名称
+      var hint = document.getElementById('fr-search-hint');
+      if (q) {
+        var byCode = list.filter(function (r) { return r.code.indexOf(q) === 0; });
+        var byName = list.filter(function (r) { return r.name.toLowerCase().indexOf(q) >= 0; });
+        var hits = byCode.length ? byCode : byName;
+        list = hits;
+        if (hits.length) {
+          var best = hits[0];
+          hint.innerHTML = '已定位：<b>' + best.name + '</b> 在 ' + cat.name + ' 中排第 <b style="color:var(--gold);">' +
+            best.rank + '</b> / ' + cat.count + ' 名（总分 ' + best.total.toFixed(1) + '，' + best.grade + '）';
+        } else {
+          hint.textContent = '该类目下没找到，换个关键字或切换上方类目试试';
+        }
+      } else {
+        hint.textContent = '';
+      }
+
+      list = applyFilters(list);
+      if (sortKey) {
+        list.sort(function (a, b) { return ((a[sortKey] ?? -1e9) - (b[sortKey] ?? -1e9)) * sortDir; });
+      }
+      rows = list;
+      var pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+      if (page >= pages) page = pages - 1;
+      var slice = rows.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+
+      TBODY.innerHTML = slice.map(function (r) {
+        return '<tr>' +
+          '<td><b>' + r.rank + '</b></td>' +
+          '<td>' + r.code + '</td>' +
+          '<td><a href="' + BASE + 'tools/fund-scorecard/?code=' + r.code + '" style="color:var(--navy-900); text-decoration:none; border-bottom:1px dashed rgba(139,94,60,0.4);">' + r.name + '</a></td>' +
+          '<td style="color:' + (r.r1y >= 0 ? 'var(--green)' : 'var(--red)') + '; font-weight:600;">' + (r.r1y >= 0 ? '+' : '') + r.r1y.toFixed(1) + '%</td>' +
+          '<td>-' + r.mdd.toFixed(1) + '%</td>' +
+          '<td>' + r.fee.toFixed(2) + '%</td>' +
+          '<td>' + r.size.toFixed(0) + '</td>' +
+          '<td>' + r.mgr.toFixed(1) + '</td>' +
+          '<td style="font-weight:700; color:' + (r.total >= 75 ? 'var(--green)' : r.total >= 60 ? 'var(--gold)' : 'var(--red)') + ';">' + r.total.toFixed(1) + '</td>' +
+          '<td>' + r.grade + '</td>' +
+          '</tr>';
+      }).join('') || '<tr><td colspan="10" style="text-align:center; color:var(--navy-600); padding:24px;">没有符合筛选条件的基金，放宽一点试试</td></tr>';
+
+      document.getElementById('fr-count').textContent = '命中 ' + rows.length + ' 只 / 该类目 ' + cat.count + ' 只';
+      document.getElementById('fr-page').textContent = '第 ' + (page + 1) + ' / ' + pages + ' 页';
+      document.getElementById('fr-prev').disabled = page === 0;
+      document.getElementById('fr-next').disabled = page >= pages - 1;
+    }
+
+    // 类目切换
+    document.querySelectorAll('.fr-cat').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.fr-cat').forEach(function (b) {
+          b.classList.remove('btn-gold');
+          b.style.background = 'transparent';
+          b.style.border = '1px solid rgba(139,94,60,0.3)';
+          b.style.color = 'var(--navy-800)';
+        });
+        btn.classList.add('btn-gold');
+        btn.style.background = ''; btn.style.border = ''; btn.style.color = '';
+        CAT = +btn.dataset.fcat; page = 0; render();
+      });
+    });
+
+    // 搜索与分页
+    var t;
+    document.getElementById('fr-search').addEventListener('input', function () {
+      clearTimeout(t); t = setTimeout(function () { page = 0; render(); }, 180);
+    });
+    document.getElementById('fr-prev').addEventListener('click', function () { if (page > 0) { page--; render(); } });
+    document.getElementById('fr-next').addEventListener('click', function () { page++; render(); });
+
+    // 清空
+    document.getElementById('fr-reset').addEventListener('click', function () {
+      state = {}; sortKey = null; page = 0;
+      var box = document.getElementById('fr-filters');
+      FILTERS.forEach(function (f, i) {
+        var el = box.querySelector('.fr-range[data-i="' + i + '"]');
+        if (el) el.value = f.min;
+        var lab = box.querySelector('.fr-val[data-i="' + i + '"]');
+        if (lab) lab.textContent = '不限';
+      });
+      document.getElementById('fr-search').value = '';
+      render();
+    });
+
+    // 列头排序
+    document.querySelectorAll('.fr-sort').forEach(function (th) {
+      th.style.cursor = 'pointer';
+      th.style.userSelect = 'none';
+      th.addEventListener('click', function () {
+        var k = th.dataset.key;
+        if (sortKey === k) { sortDir = -sortDir; } else { sortKey = k; sortDir = -1; }
+        document.querySelectorAll('.fr-sort').forEach(function (o) { o.textContent = o.textContent.replace(/ [↑↓]$/, ''); });
+        th.textContent = th.textContent.replace(/ [↑↓]$/, '') + (sortDir === -1 ? ' ↓' : ' ↑');
+        page = 0; render();
+      });
+    });
+  })();
 </script>
 
 <style>

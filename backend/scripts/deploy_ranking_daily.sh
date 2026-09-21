@@ -12,7 +12,7 @@ echo "② build..."
 npm run build >/dev/null 2>&1
 
 echo "③ commit + push main..."
-git add src/data/fund_ranking.json backend/scripts/fund_ranking_build.py src/pages/tools/fund-ranking.astro src/pages/tools/fund-scorecard.astro
+git add src/data/fund_ranking.json public/data/fund_ranking_full.json backend/scripts/fund_ranking_build.py src/pages/tools/fund-ranking.astro src/pages/tools/fund-scorecard.astro
 git commit -m "chore(fund-ranking): $(date +%Y%m%d) 排名数据更新上线" || echo "（无新改动，跳过 commit）"
 git push origin main
 
