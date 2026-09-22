@@ -3,7 +3,7 @@ import Layout from '../layouts/Layout.astro';
 ---
 <Layout
   title="隐私政策"
-  description="松果投资实验室网站隐私政策 — 数据收集、Cookie 使用与第三方统计服务说明。"
+  description="松果投资实验室网站隐私政策 — 自建匿名化访问统计与工具使用统计说明。"
     dataNotice={false}
   >
   <section class="hero" style="padding: 48px 40px;">
@@ -36,8 +36,9 @@ import Layout from '../layouts/Layout.astro';
       <h2 class="section-title">Cookie 说明</h2>
     </div>
     <p style="line-height:1.9; color:var(--text-2);">
-      本网站自身<b>不设置账号 Cookie，也不投放任何第三方广告</b>。仅有第三方流量统计服务（见下节 51LA）
-      会在你浏览器写入统计用 Cookie，用于区分独立访客、统计访问量。
+      本网站自身<b>不设置账号 Cookie，也不投放任何第三方广告</b>，也不使用第三方统计 Cookie。
+      自建匿名化统计（见下节）仅在你的浏览器 <b>sessionStorage</b> 中保存一个随机会话标识，
+      关闭标签页即清除，<b>不写入 Cookie、不跨天识别访客</b>。
     </p>
     <p style="line-height:1.9; color:var(--text-2); margin-top:12px;">
       你可以随时在浏览器设置中清除或禁用 Cookie，这不影响本站内容的正常浏览。
@@ -55,10 +56,12 @@ import Layout from '../layouts/Layout.astro';
       用途限于网站安全与故障排查。
     </p>
     <p style="line-height:1.9; color:var(--text-2); margin-top:12px;">
-      本网站接入 <b>51LA 流量统计</b>（第三方，粤ICP备17055553号-1）以了解网站访问情况，用于产品改进与运营决策。
-      该统计服务会收集<b>访客访问数据</b>（访问页面、浏览器类型、来源、IP 地址的大致地域、访问时间等），
-      不收集你的姓名、邮箱、手机号等可识别个人身份的信息。相关数据由 51LA 按其隐私政策处理，
-      可参阅 <a href="https://www.51.la/about/privacy" target="_blank" style="color:var(--gold-600);">51LA 隐私政策</a>。
+      本网站使用<b>自建匿名化访问统计</b>（同源接口，无第三方）：记录页面路径、来源网站域名、
+      浏览器与设备类别标签、视口与屏幕尺寸、语言与时区、页面停留时长与滚动比例、基础加载性能，
+      以及推广链接自带的 UTM 参数（用于区分引流渠道）。
+      以上数据与一个<b>随机生成的会话标识</b>关联；该标识保存在浏览器 sessionStorage 中，关闭标签页即清除。
+      统计<b>不记录 IP 地址、不使用 Cookie、不跨天识别访客、不记录你在任何工具中输入的内容</b>
+      （如股票代码、基金代码、行业名称），数据仅用于产品改进，不用于任何画像或对外共享。
     </p>
     <p style="line-height:1.9; color:var(--text-2); margin-top:12px;">
       此外，本站对<b>免费工具页</b>使用情况做<b>匿名化自建统计</b>：仅记录工具名称、打开/使用/完成的次数、停留时长，
@@ -79,6 +82,6 @@ import Layout from '../layouts/Layout.astro';
   </section>
 
   <div class="callout">
-    <b>一句话总结</b>：我们不收集你的个人身份数据，你的工具输入只在浏览器本地计算；涉及的第三方数据仅 51LA 流量统计一类（访问概况，用于产品改进）。
+    <b>一句话总结</b>：我们不收集你的个人身份数据，你的工具输入只在浏览器本地计算；访问统计为本站自建的匿名化统计（不记 IP、不用 Cookie、不跨天识别），不涉及第三方数据共享。
   </div>
 </Layout>

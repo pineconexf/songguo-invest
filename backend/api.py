@@ -10,7 +10,7 @@ POST /api/check  {"code": "600729"} → 完整体检报告 JSON
 """
 import os, json, re, time, threading
 import requests
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -276,6 +276,140 @@ def track(req: TrackReq):
         os.makedirs(TRACK_DIR, exist_ok=True)
         with _TRACK_LOCK:
             with open(os.path.join(TRACK_DIR, fname), 'a', encoding='utf-8') as f:
+                f.write(json.dumps(rec, ensure_ascii=False) + '\n')
+    except Exception:
+        pass
+    return {'ok': True}
+
+
+# ---------- 页面级访问采集（自建，替代 51LA · 2026-09-20）----------
+# 只记录：路径/来源(剥query)/UTM/视口/屏幕/DPR/语言/时区/设备类别/停留/滚动/性能/机器人标记
+# 不记录：IP、Cookie、完整 UA（只存解析后的类别标签）、任何用户输入内容。
+# 按日切 JSONL 存 pv/，90 天归档压缩。失败静默，绝不影响主服务。
+PV_DIR = os.path.join(BASE_DIR, 'pv')
+_PV_LOCK = threading.Lock()
+_PV_RATE = {}
+PV_RATE_WIN = 600       # 限流窗口（秒）
+PV_RATE_MAX = 120       # 单 sid 单个窗口内上限（防刷）
+PV_EVENTS = {'pv', 'leave'}
+_BOT_RE = re.compile(
+    r'bot|crawl|spider|slurp|headless|phantom|python-requests|python-urllib|curl/|wget|'
+    r'semrush|ahrefs|mj12|dotbot|petal|bytespider|yandex|facebookexternalhit|'
+    r'go-http-client|okhttp|java/|libwww|scrapy|masscan|nmap', re.I)
+
+
+def _ua_class(ua):
+    """UA → 类别标签（不留原串）。返回 (browser, os_name, device, is_bot)。"""
+    u = ua or ''
+    is_bot = bool(_BOT_RE.search(u))
+    if re.search(r'Edg/|EdgA/', u):
+        browser = 'Edge'
+    elif re.search(r'OPR/|Opera', u):
+        browser = 'Opera'
+    elif re.search(r'MicroMessenger', u):
+        browser = 'WeChat'
+    elif re.search(r'Chrome/', u):
+        browser = 'Chrome'
+    elif re.search(r'Firefox/', u):
+        browser = 'Firefox'
+    elif re.search(r'Safari/', u):
+        browser = 'Safari'
+    else:
+        browser = 'Other'
+    if re.search(r'Android', u):
+        os_name = 'Android'
+    elif re.search(r'iPhone|iPad|iPod', u):
+        os_name = 'iOS'
+    elif re.search(r'Windows', u):
+        os_name = 'Windows'
+    elif re.search(r'Mac OS X', u):
+        os_name = 'macOS'
+    elif re.search(r'Linux', u):
+        os_name = 'Linux'
+    else:
+        os_name = 'Other'
+    if re.search(r'iPad|Tablet', u):
+        device = 'tablet'
+    elif re.search(r'Mobile|Android|iPhone', u):
+        device = 'mobile'
+    else:
+        device = 'desktop'
+    return browser, os_name, device, is_bot
+
+
+class CollectReq(BaseModel):
+    ev: str = Field('pv', max_length=8)
+    p: str = Field('/', max_length=120)
+    t: str = Field('', max_length=80)
+    r: str = Field('', max_length=200)
+    u: str = Field('', max_length=120)
+    vw: int = Field(0, ge=0, le=10000)
+    vh: int = Field(0, ge=0, le=10000)
+    sw: int = Field(0, ge=0, le=20000)
+    sh: int = Field(0, ge=0, le=20000)
+    dpr: float = Field(1.0, ge=0.1, le=10.0)
+    lg: str = Field('', max_length=16)
+    tz: str = Field('', max_length=48)
+    tc: bool = False
+    cs: str = Field('', max_length=8)
+    rm: bool = False
+    cn: str = Field('', max_length=8)
+    wd: bool = False
+    sid: str = Field('', max_length=32)
+    s: int = Field(0, ge=0, le=100)
+    dw: float = None
+    ph: int = Field(0, ge=0, le=2000000)
+    cta: int = Field(-1, ge=-1, le=2000000)
+    ttfb: int = Field(0, ge=0, le=600000)
+    dom: int = Field(0, ge=0, le=600000)
+
+
+def _pv_allow(sid):
+    """单 sid 窗口限流（内存级，防采集端点被刷）。"""
+    now = time.time()
+    with _PV_LOCK:
+        win, cnt = _PV_RATE.get(sid, (now, 0))
+        if now - win > PV_RATE_WIN:
+            win, cnt = now, 0
+        if cnt >= PV_RATE_MAX:
+            return False
+        _PV_RATE[sid] = (win, cnt + 1)
+        if len(_PV_RATE) > 5000:
+            for k, v in list(_PV_RATE.items()):
+                if now - v[0] > PV_RATE_WIN:
+                    _PV_RATE.pop(k, None)
+    return True
+
+
+@app.post('/api/collect')
+def collect(req: CollectReq, request: Request):
+    try:
+        if req.ev not in PV_EVENTS or not req.sid:
+            return {'ok': False}
+        if not _pv_allow(req.sid):
+            return {'ok': False}
+        ua = (request.headers.get('user-agent') or '')[:300]
+        browser, os_name, device, is_bot = _ua_class(ua)
+        rec = {
+            'ts': int(time.time()), 'ev': req.ev, 'p': req.p, 't': req.t,
+            'r': req.r, 'u': req.u, 'sid': req.sid,
+            'vw': req.vw, 'vh': req.vh, 'sw': req.sw, 'sh': req.sh,
+            'dpr': round(req.dpr, 2),
+            'lg': req.lg, 'tz': req.tz, 'tc': req.tc, 'cs': req.cs, 'rm': req.rm, 'cn': req.cn,
+            'wd': req.wd, 'bot': is_bot, 'br': browser, 'os': os_name, 'dv': device,
+            'ph': req.ph, 'cta': req.cta, 'ttfb': req.ttfb, 'dom': req.dom,
+        }
+        if req.ev == 'leave':
+            rec['s'] = req.s
+            if req.dw is not None:
+                try:
+                    rec['dw'] = round(max(0.0, min(float(req.dw), 3600.0)), 1)
+                except (TypeError, ValueError):
+                    pass
+        fname = time.strftime('%Y-%m-%d', time.gmtime(time.time() + 28800)) + '.jsonl'
+        os.makedirs(PV_DIR, exist_ok=True)
+        with _PV_LOCK:
+            with open(os.path.join(PV_DIR, fname), 'a', encoding='utf-8') as f:
                 f.write(json.dumps(rec, ensure_ascii=False) + '\n')
     except Exception:
         pass
