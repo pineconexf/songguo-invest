@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="zh-CN"> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" type="image/png" href="/songguo-invest/favicon.png"><title>隐私政策 · 松果投资实验室</title><meta name="description" content="松果投资实验室网站隐私政策 — 数据收集、Cookie 使用与第三方统计服务说明。"><meta name="robots" content="index, follow"><!-- 51LA 全站访问统计（S11 流量计数器 · 2026-09-04 启用） --><script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script><script type="module">LA.init({id:`3R652g8Pi9bMsul2`,ck:`3R652g8Pi9bMsul2`});</script><link rel="stylesheet" href="/songguo-invest/_astro/Layout.e9oOKWsk.css"></head> <body> <header class="site-header"> <nav class="nav container"> <a href="/songguo-invest/" class="brand"> <img src="/songguo-invest/logo-mascot.png" alt="松果投资实验室" class="brand-logo" width="44" height="44"> <span><span class="gold">松果</span>投资实验室</span> </a> <div class="nav-links"> <a href="/songguo-invest/" class="nav-link"> 首页 </a><a href="/songguo-invest/philosophy/" class="nav-link"> 理念 </a><a href="/songguo-invest/methodology/" class="nav-link"> 体系 </a><a href="/songguo-invest/strategies/" class="nav-link"> 策略 </a><a href="/songguo-invest/archive/" class="nav-link"> 历史档案 </a><a href="/songguo-invest/tools/" class="nav-link"> 工具 </a><a href="/songguo-invest/services/" class="nav-link"> 服务 </a><a href="/songguo-invest/about/" class="nav-link"> 关于 </a> </div> </nav> </header> <main class="container main-content">  <section class="hero" style="padding: 48px 40px;"> <div class="hero-inner"> <span class="eyebrow">Privacy · 隐私政策</span> <h1>
+<!DOCTYPE html><html lang="zh-CN"> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" type="image/png" href="/songguo-invest/favicon.png"><title>隐私政策 · 松果投资实验室</title><meta name="description" content="松果投资实验室网站隐私政策 — 自建匿名化访问统计与工具使用统计说明。"><meta name="robots" content="index, follow"><link rel="stylesheet" href="/songguo-invest/_astro/Layout.e9oOKWsk.css"></head> <body> <header class="site-header"> <nav class="nav container"> <a href="/songguo-invest/" class="brand"> <img src="/songguo-invest/logo-mascot.png" alt="松果投资实验室" class="brand-logo" width="44" height="44"> <span><span class="gold">松果</span>投资实验室</span> </a> <div class="nav-links"> <a href="/songguo-invest/" class="nav-link"> 首页 </a><a href="/songguo-invest/philosophy/" class="nav-link"> 理念 </a><a href="/songguo-invest/methodology/" class="nav-link"> 体系 </a><a href="/songguo-invest/strategies/" class="nav-link"> 策略 </a><a href="/songguo-invest/archive/" class="nav-link"> 历史档案 </a><a href="/songguo-invest/tools/" class="nav-link"> 工具 </a><a href="/songguo-invest/services/" class="nav-link"> 服务 </a><a href="/songguo-invest/about/" class="nav-link"> 关于 </a> </div> </nav> </header> <main class="container main-content">  <section class="hero" style="padding: 48px 40px;"> <div class="hero-inner"> <span class="eyebrow">Privacy · 隐私政策</span> <h1>
 隐私与<span class="gold">数据使用</span>说明
 </h1> <p class="hero-lead">
 本政策说明松果投资实验室网站（下称「本网站」）如何收集、使用和保护访客信息。
@@ -7,8 +7,9 @@
 本网站为纯静态展示站，<b>不设账号系统，不主动收集任何个人身份信息</b>（姓名、邮箱、手机号等）。
       你使用大多数工具时输入的数据（如金额、估值参数）仅在浏览器本地计算，<b>不会上传或存储到任何服务器</b>。例外：「个股体检」工具会把股票代码发送到本站服务器，用于拉取公开财务与行情数据并生成报告，该请求不含任何个人身份信息，也不用于用户画像。
 </p> </section> <section class="card"> <div class="section-head"> <div class="section-kicker">02 · Cookie 使用</div> <h2 class="section-title">Cookie 说明</h2> </div> <p style="line-height:1.9; color:var(--text-2);">
-本网站自身<b>不设置账号 Cookie，也不投放任何第三方广告</b>。仅有第三方流量统计服务（见下节 51LA）
-      会在你浏览器写入统计用 Cookie，用于区分独立访客、统计访问量。
+本网站自身<b>不设置账号 Cookie，也不投放任何第三方广告</b>，也不使用第三方统计 Cookie。
+      自建匿名化统计（见下节）仅在你的浏览器 <b>sessionStorage</b> 中保存一个随机会话标识，
+      关闭标签页即清除，<b>不写入 Cookie、不跨天识别访客</b>。
 </p> <p style="line-height:1.9; color:var(--text-2); margin-top:12px;">
 你可以随时在浏览器设置中清除或禁用 Cookie，这不影响本站内容的正常浏览。
       若未来本站引入广告服务，将提前更新本政策说明。
@@ -16,10 +17,12 @@
 本网站托管于中国大陆云服务器，其服务器日志会记录标准访问信息（IP 地址、浏览器类型、访问时间），
       用途限于网站安全与故障排查。
 </p> <p style="line-height:1.9; color:var(--text-2); margin-top:12px;">
-本网站接入 <b>51LA 流量统计</b>（第三方，粤ICP备17055553号-1）以了解网站访问情况，用于产品改进与运营决策。
-      该统计服务会收集<b>访客访问数据</b>（访问页面、浏览器类型、来源、IP 地址的大致地域、访问时间等），
-      不收集你的姓名、邮箱、手机号等可识别个人身份的信息。相关数据由 51LA 按其隐私政策处理，
-      可参阅 <a href="https://www.51.la/about/privacy" target="_blank" style="color:var(--gold-600);">51LA 隐私政策</a>。
+本网站使用<b>自建匿名化访问统计</b>（同源接口，无第三方）：记录页面路径、来源网站域名、
+      浏览器与设备类别标签、视口与屏幕尺寸、语言与时区、页面停留时长与滚动比例、基础加载性能，
+      以及推广链接自带的 UTM 参数（用于区分引流渠道）。
+      以上数据与一个<b>随机生成的会话标识</b>关联；该标识保存在浏览器 sessionStorage 中，关闭标签页即清除。
+      统计<b>不记录 IP 地址、不使用 Cookie、不跨天识别访客、不记录你在任何工具中输入的内容</b>
+（如股票代码、基金代码、行业名称），数据仅用于产品改进，不用于任何画像或对外共享。
 </p> <p style="line-height:1.9; color:var(--text-2); margin-top:12px;">
 此外，本站对<b>免费工具页</b>使用情况做<b>匿名化自建统计</b>：仅记录工具名称、打开/使用/完成的次数、停留时长，
       以及一个随机生成的会话标识。该统计<b>不记录你的 IP 地址、不记录你输入的任何内容</b>（如股票代码、基金代码、行业名称），
@@ -27,7 +30,7 @@
 </p> </section> <section class="card"> <div class="section-head"> <div class="section-kicker">04 · 免责与联系我们</div> <h2 class="section-title">内容免责与联系</h2> </div> <p style="line-height:1.9; color:var(--text-2);">
 本网站所有回测数据与工具输出均为<b>历史数据研究展示，不构成投资建议</b>，不承担因使用本网站内容产生的任何投资损失。
       如对隐私政策有任何疑问，可通过本网站「服务」页的联系方式与我们联系。
-</p> </section> <div class="callout"> <b>一句话总结</b>：我们不收集你的个人身份数据，你的工具输入只在浏览器本地计算；涉及的第三方数据仅 51LA 流量统计一类（访问概况，用于产品改进）。
+</p> </section> <div class="callout"> <b>一句话总结</b>：我们不收集你的个人身份数据，你的工具输入只在浏览器本地计算；访问统计为本站自建的匿名化统计（不记 IP、不用 Cookie、不跨天识别），不涉及第三方数据共享。
 </div>   </main> <!-- 底部精简栏：公众号 / 留言 / Pro / 工具 --> <div class="bottom-strip"> <div class="container bottom-strip-grid"> <div class="bs-col"> <div class="bs-title">📬 公众号</div> <div class="bs-text">每周深度文章在「松果商业笔记」</div> <a href="/songguo-invest/services/" class="bs-link">去看看 →</a> </div> <div class="bs-col bs-col-wide"> <div class="bs-title">💬 给「松果投资实验室」留言</div> <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;"> <input id="fb-content" type="text" placeholder="意见 / 建议（必填）" style="flex: 1; min-width: 0; padding: 7px 10px; border: 1px solid var(--border-strong); border-radius: 8px; font-size: 12px; box-sizing: border-box;"> <button id="fb-submit" class="btn btn-gold" style="font-size: 12px; padding: 7px 14px; white-space: nowrap;">提交</button> </div> <div id="fb-msg" style="font-size: 11px; color: var(--text-3); margin-top: 4px; min-height: 14px;">每一条反馈都会看，仅用于产品改进。</div> </div> <div class="bs-col"> <div class="bs-title">🔒 松果投资实验室 Pro</div> <div class="bs-text">组合档案 · 126 个月逐月可查</div> <a href="/songguo-invest/archive/pro/" class="bs-link">看 Pro 档案 →</a> </div> </div> </div> <footer class="site-footer"> <div class="container"> <p class="disclaimer">
 本站为投资方法论的历史回测研究展示，数据为 2012-2026 年 173 个月回测结果（含成本口径），
           历史表现不代表未来收益，不构成任何投资建议，亦不构成对任何产品的推荐。投资有风险，入市需谨慎。
@@ -95,8 +98,8 @@
       } catch (e) {}
     })();
     </script><script>
-    // 自建页面访问采集（2026-09-20，替代 51LA）：同源 /api/collect
-    // 只发：路径/来源(剥query)/UTM/视口/屏幕/DPR/语言/时区/设备类别/停留/滚动/性能/CTA高度
+    // 自建页面访问采集（2026-09-20 起替代第三方统计）：同源 /api/collect
+    // 只发：路径/来源(仅域名)/UTM/视口/屏幕/DPR/语言/时区/设备类别/停留/滚动/性能/CTA高度
     // 不发：IP、Cookie、完整UA（服务端只留解析后的类别）、任何用户输入。无 cookie、无跨天标识。失败静默。
     (function () {
       try {
@@ -138,7 +141,7 @@
           return {
             p: (location.pathname.replace(/^\/songguo-invest/, '') || '/').slice(0, 120),
             t: (document.title || '').slice(0, 80),
-            r: (document.referrer || '').split('?')[0].split('#')[0].slice(0, 200),
+            r: (function(){ try { return new URL(document.referrer || 'about:blank').hostname; } catch(e){ return ''; } })(),
             u: utms(), sid: sid,
             vw: window.innerWidth || 0, vh: window.innerHeight || 0,
             sw: (window.screen && screen.width) || 0, sh: (window.screen && screen.height) || 0,
