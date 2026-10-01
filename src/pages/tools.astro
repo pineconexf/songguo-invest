@@ -53,8 +53,15 @@ const tools = [
   },
   {
     type: '查询计算类', strategy: 'defense',
+    name: 'ETF 五维查询',
+    desc: '跟踪纯度/跟踪误差/费率/流动性/规模稳健，全市场 2,966 只场内 ETF 打分。缺维显示「—」不用 0 顶替。',
+    status: 'live', statusLabel: '已上线', cta: '免费使用',
+    href: '/songguo-invest/tools/etf-score5d/',
+  },
+  {
+    type: '查询计算类', strategy: 'defense',
     name: '基金打分卡',
-    desc: '收益/回撤/费率/规模/经理年限五维规则打分，帮你在候选里筛出优质基金（基金壳）。',
+    desc: '场外主动基金专用：收益/回撤/费率/规模/经理年限五维规则打分（经理维度对 ETF 不适用，ETF 请用上方五维查询）。',
     status: 'live', statusLabel: '已上线', cta: '免费使用',
     href: '/songguo-invest/tools/fund-scorecard/',
   },
