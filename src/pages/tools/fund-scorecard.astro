@@ -72,7 +72,7 @@ import Layout from '../../layouts/Layout.astro';
         <div style="font-weight:700;color:var(--navy-700);margin-bottom:4px;">③ 组合配置</div>
         <div style="font-size:13px;color:var(--navy-600);line-height:1.7;">
           选好几只之后去
-          <a href="/songguo-invest/tools/etf-allocator/" style="color:var(--gold);text-decoration:underline;">ETF 组合配置器</a>
+          <a href="/songguo-invest/tools/etf-allocator/" id="fs-nav-alloc" style="color:var(--gold);text-decoration:underline;">ETF 组合配置器</a>
           做权重与风险预算，那里有独立的历史回测口径。
         </div>
       </div>
@@ -326,6 +326,11 @@ import Layout from '../../layouts/Layout.astro';
       </div>
       <div style="margin-top:18px;padding:12px 16px;background:rgba(74,124,89,0.08);border-left:4px solid var(--green);border-radius:6px;font-size:14px;line-height:1.7;">
         <b>买它吗？</b>　${advice(f)}
+      </div>
+      <div style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <button class="fs-linkbtn" onclick="window.__fsAdd('${f.c}')">加入组合候选</button>
+        <button class="fs-linkbtn" onclick="window.__fsGoAlloc()">去 ETF 组合配置 →</button>
+        <span id="fs-addtip" style="font-size:12px;color:var(--navy-500);"></span>
       </div>`;
     box.appendChild(head);
 
@@ -683,6 +688,38 @@ import Layout from '../../layouts/Layout.astro';
 
 
 
+  // ---- 组合候选集：打通到「ETF 组合配置器」 ----
+  // 候选存 localStorage 而不是只放 URL：URL 长度有限，且用户往往是
+  // 一边看榜单一边攒几只，最后一次性送进配置器。
+  const CAND_KEY = 'songguo_fund_candidates';
+  function getCands() {
+    try { return JSON.parse(localStorage.getItem(CAND_KEY) || '[]'); }
+    catch { return []; }
+  }
+  function setCands(a) {
+    try { localStorage.setItem(CAND_KEY, JSON.stringify(a.slice(-12))); } catch { /* 隐私模式忽略 */ }
+  }
+  window.__fsAdd = function (code) {
+    const a = getCands();
+    if (a.includes(code)) {
+      setCands(a.filter((x) => x !== code));
+      flash('已从候选中移除');
+    } else {
+      a.push(code);
+      setCands(a);
+      flash('已加入候选（' + a.length + ' 只）');
+    }
+  };
+  window.__fsGoAlloc = function () {
+    const a = getCands();
+    if (!a.length) { flash('还没有候选，先在榜单里点「加入组合」'); return; }
+    location.href = '/songguo-invest/tools/etf-allocator/?add=' + a.join(',');
+  };
+  function flash(msg) {
+    const t = document.getElementById('fs-addtip');
+    if (t) t.textContent = msg;
+  }
+
   async function doRun(code) {
     const meta = (DB.funds || []).find(x => x.c === code);
     if (!meta) {
@@ -743,6 +780,12 @@ import Layout from '../../layouts/Layout.astro';
           const m = /fund_shard_([0-9a-f])\.json$/.exec(fn);
           if (m) SHARD_URL[m[1]] = fn;
         }
+      }
+      // 导航里的配置器链接：已有候选时自动带上 ?add= 参数
+      const navAlloc = document.getElementById('fs-nav-alloc');
+      if (navAlloc) {
+        const pre = getCands();
+        if (pre.length) navAlloc.setAttribute('href', '/songguo-invest/tools/etf-allocator/?add=' + pre.join(','));
       }
       buildIndex();
       const ok = DB.n_scored !== undefined ? DB.n_scored
