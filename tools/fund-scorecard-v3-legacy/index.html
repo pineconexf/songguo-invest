@@ -1,0 +1,162 @@
+<!DOCTYPE html><html lang="zh-CN"> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" type="image/png" href="/songguo-invest/favicon.png"><title>基金体检卡 · 松果投资实验室</title><meta name="description" content="松果基金体检卡 V3 — 输入基金代码，30 秒出三张体检卡：净值收益风险、持仓透视、组合角色。数据来自天天基金公开接口，规则公开可复算。免费工具，不构成投资建议。"><meta name="robots" content="index, follow"><link rel="stylesheet" href="/songguo-invest/_astro/Layout.e9oOKWsk.css"></head> <body> <header class="site-header"> <nav class="nav container"> <a href="/songguo-invest/" class="brand"> <img src="/songguo-invest/logo-mascot.png" alt="松果投资实验室" class="brand-logo" width="44" height="44"> <span><span class="gold">松果</span>投资实验室</span> </a> <div class="nav-links"> <a href="/songguo-invest/" class="nav-link"> 首页 </a><a href="/songguo-invest/philosophy/" class="nav-link"> 理念 </a><a href="/songguo-invest/methodology/" class="nav-link"> 体系 </a><a href="/songguo-invest/strategies/" class="nav-link"> 策略 </a><a href="/songguo-invest/archive/" class="nav-link"> 历史档案 </a><a href="/songguo-invest/tools/" class="nav-link"> 工具 </a><a href="/songguo-invest/services/" class="nav-link"> 服务 </a><a href="/songguo-invest/about/" class="nav-link"> 关于 </a> </div> </nav> </header> <main class="container main-content">  <section class="hero" style="padding: 56px 48px;" data-astro-cid-3f6pcmdi> <div class="hero-inner" data-astro-cid-3f6pcmdi> <span class="eyebrow" data-astro-cid-3f6pcmdi>Free Tool · 基金体检卡 V3</span> <h1 data-astro-cid-3f6pcmdi>
+别问哪只涨得多，<br data-astro-cid-3f6pcmdi><span class="gold" data-astro-cid-3f6pcmdi>问它负责什么、扛不扛得住</span> </h1> <p class="hero-lead" data-astro-cid-3f6pcmdi>
+输入基金代码，三张体检卡：<b data-astro-cid-3f6pcmdi>净值卡</b>看收益与回撤、<b data-astro-cid-3f6pcmdi>持仓卡</b>看到底买了什么、
+<b data-astro-cid-3f6pcmdi>角色卡</b>看它在你的组合里该站哪块。数据全部来自天天基金公开接口，规则公开、结果可复算。
+</p> </div> </section> <section class="card" style="max-width: 920px; margin: 0 auto;" data-astro-cid-3f6pcmdi> <div class="section-head" data-astro-cid-3f6pcmdi> <div class="section-kicker" data-astro-cid-3f6pcmdi>Step 1 · 输入基金代码或经理名</div> <h2 class="section-title" data-astro-cid-3f6pcmdi>输入基金代码，或直接输经理名</h2> <p class="section-sub" data-astro-cid-3f6pcmdi>支持 6 位基金代码（如 002351 易方达裕祥回报）；记不住代码就输基金经理姓名（如 刘彦春），从下拉里选。数据实时取自天天基金公开接口，无后端、不存任何输入。</p> </div> <div style="display:flex; gap: var(--sp-3); align-items:center; flex-wrap:wrap; margin-bottom: var(--sp-4);" data-astro-cid-3f6pcmdi> <div style="flex:1; min-width:220px; position:relative;" data-astro-cid-3f6pcmdi> <input id="fs-code" type="text" maxlength="12" placeholder="基金代码（6 位）或基金经理姓名" autocomplete="off" style="width:100%; box-sizing:border-box; padding:12px 14px; border:1px solid rgba(139,94,60,0.25); border-radius:10px; font-size:15px; background:var(--bg); color:var(--navy-900);" data-astro-cid-3f6pcmdi> <div id="fs-suggest" style="display:none; position:absolute; z-index:30; top:calc(100% + 4px); left:0; right:0; max-height:280px; overflow-y:auto; background:var(--bg); border:1px solid rgba(139,94,60,0.3); border-radius:10px; box-shadow:0 6px 18px rgba(74,46,26,0.15);" data-astro-cid-3f6pcmdi></div> </div> <button id="fs-run" class="btn btn-gold" data-astro-cid-3f6pcmdi>开始体检 →</button> </div> <div id="fs-status" style="display:none; padding:12px 16px; border-radius:10px; background:rgba(217,164,65,0.08); color:var(--navy-700); font-size:14px; margin-bottom: var(--sp-4);" data-astro-cid-3f6pcmdi></div> <!-- ============ 结论先行卡（V3 新增，Step 2） ============ --> <section id="card-conclusion" style="display:none; margin-top: var(--sp-5);" data-astro-cid-3f6pcmdi> <div class="section-head" data-astro-cid-3f6pcmdi> <div class="section-kicker" data-astro-cid-3f6pcmdi>Step 2 · 结论先行 ★</div> <h2 class="section-title" data-astro-cid-3f6pcmdi>一句话角色定位</h2> <p class="section-sub" data-astro-cid-3f6pcmdi>不卖分数，卖结论：这只基金负责什么、能不能拿得住。先看这一段，再决定要不要往下读。</p> </div> <div class="card" style="padding: var(--sp-5); border-left: 6px solid var(--gold);" data-astro-cid-3f6pcmdi> <div style="display:flex; align-items:flex-start; gap: var(--sp-4); flex-wrap:wrap;" data-astro-cid-3f6pcmdi> <div style="flex:1; min-width:240px;" data-astro-cid-3f6pcmdi> <div style="font-size:13px; color:var(--navy-600); margin-bottom:4px;" data-astro-cid-3f6pcmdi>组合角色</div> <div id="fs-conclusion-role" style="font-size:24px; font-weight:700; color:var(--navy-900); margin-bottom:8px;" data-astro-cid-3f6pcmdi>—</div> <div id="fs-conclusion-desc" style="font-size:14px; color:var(--navy-700); line-height:1.6;" data-astro-cid-3f6pcmdi>—</div> </div> <div style="flex:0 0 auto; padding-top:6px;" data-astro-cid-3f6pcmdi> <span id="fs-conclusion-flag-label" style="display:inline-block; font-size:12.5px; font-weight:600; padding:5px 14px; border-radius:999px; background:rgba(139,94,60,0.10); white-space:nowrap;" data-astro-cid-3f6pcmdi>角色标签</span> </div> </div> <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-3); margin-top: var(--sp-4); padding-top: var(--sp-4); border-top: 1px solid rgba(139,94,60,0.15);" data-astro-cid-3f6pcmdi> <div data-astro-cid-3f6pcmdi><div style="font-size:12px; color:var(--navy-600);" data-astro-cid-3f6pcmdi>股票仓位</div><div id="fs-conclusion-stock" style="font-size:18px; font-weight:700; color:var(--navy-900);" data-astro-cid-3f6pcmdi>—</div></div> <div data-astro-cid-3f6pcmdi><div style="font-size:12px; color:var(--navy-600);" data-astro-cid-3f6pcmdi>近1年波动</div><div id="fs-conclusion-vol" style="font-size:18px; font-weight:700; color:var(--navy-900);" data-astro-cid-3f6pcmdi>—</div></div> <div data-astro-cid-3f6pcmdi><div style="font-size:12px; color:var(--navy-600);" data-astro-cid-3f6pcmdi>近1年收益</div><div id="fs-conclusion-ret" style="font-size:18px; font-weight:700; color:var(--navy-900);" data-astro-cid-3f6pcmdi>—</div></div> </div> <div id="fs-conclusion-warn" style="display:none; margin-top: var(--sp-3); padding:10px 14px; border-radius:8px; background:rgba(179,84,62,0.10); color:var(--red); font-size:13.5px;" data-astro-cid-3f6pcmdi></div> <div style="display:flex; gap: var(--sp-3); margin-top: var(--sp-4);" data-astro-cid-3f6pcmdi> <button id="fs-copy" class="btn btn-outline" style="font-size:13px; padding:8px 14px;" data-astro-cid-3f6pcmdi>📋 复制结论</button> </div> </div> </section> <!-- ============ 卡1 净值体检 ============ --> <section id="card-nav" style="display:none; margin-top: var(--sp-5);" data-astro-cid-3f6pcmdi> <div class="section-head" data-astro-cid-3f6pcmdi> <div class="section-kicker" data-astro-cid-3f6pcmdi>Card 1 · Net Value · 净值体检</div> <h2 class="section-title" data-astro-cid-3f6pcmdi>收益与风险</h2> </div> <div id="fs-base" style="margin-bottom: var(--sp-4);" data-astro-cid-3f6pcmdi></div> <div class="metric-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: var(--sp-3);" data-astro-cid-3f6pcmdi> <div class="metric-card" data-astro-cid-3f6pcmdi><div class="label" data-astro-cid-3f6pcmdi>近 1 月收益</div><div id="fs-s1m" class="value" data-astro-cid-3f6pcmdi>--</div></div> <div class="metric-card" data-astro-cid-3f6pcmdi><div class="label" data-astro-cid-3f6pcmdi>近 3 月收益</div><div id="fs-s3m" class="value" data-astro-cid-3f6pcmdi>--</div></div> <div class="metric-card" data-astro-cid-3f6pcmdi><div class="label" data-astro-cid-3f6pcmdi>近 6 月收益</div><div id="fs-s6m" class="value" data-astro-cid-3f6pcmdi>--</div></div> <div class="metric-card" data-astro-cid-3f6pcmdi><div class="label" data-astro-cid-3f6pcmdi>近 1 年收益</div><div id="fs-s1y" class="value" data-astro-cid-3f6pcmdi>--</div></div> </div> <div class="metric-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: var(--sp-3);" data-astro-cid-3f6pcmdi> <div class="metric-card" data-astro-cid-3f6pcmdi><div class="label" data-astro-cid-3f6pcmdi>近 1 年最大回撤</div><div id="fs-dd1" class="value" data-astro-cid-3f6pcmdi>--</div></div> <div class="metric-card" data-astro-cid-3f6pcmdi><div class="label" data-astro-cid-3f6pcmdi>近 1 年波动率(年化)</div><div id="fs-vol1" class="value" data-astro-cid-3f6pcmdi>--</div></div> <div class="metric-card" data-astro-cid-3f6pcmdi><div class="label" data-astro-cid-3f6pcmdi>近 1 年夏普</div><div id="fs-sharpe1" class="value" data-astro-cid-3f6pcmdi>--</div></div> <div class="metric-card" data-astro-cid-3f6pcmdi><div class="label" data-astro-cid-3f6pcmdi>同类排名</div><div id="fs-rank1" class="value" data-astro-cid-3f6pcmdi>--</div><div id="fs-rank1-note" style="font-size:10.5px; color:var(--navy-600); margin-top:4px; line-height:1.3;" data-astro-cid-3f6pcmdi>分位越小越靠前</div><div id="fs-mgr-note" style="font-size:10.5px; color:var(--navy-600); margin-top:2px; line-height:1.3;" data-astro-cid-3f6pcmdi></div></div> </div> <div id="fs-star" data-astro-cid-3f6pcmdi></div> </section> <!-- ============ 卡2 持仓透视 ============ --> <section id="card-position" style="display:none; margin-top: var(--sp-5);" data-astro-cid-3f6pcmdi> <div class="section-head" data-astro-cid-3f6pcmdi> <div class="section-kicker" data-astro-cid-3f6pcmdi>Card 2 · Holdings · 持仓透视</div> <h2 class="section-title" data-astro-cid-3f6pcmdi>它到底买了什么</h2> <p class="section-sub" data-astro-cid-3f6pcmdi>收益是结果，持仓是原因。资产配置决定这基金的风险来源——股票占比才是固收+ 波动的幕后推手。</p> </div> <div id="fs-alloc" style="margin-bottom: var(--sp-4);" data-astro-cid-3f6pcmdi></div> <div id="fs-holdings" style="margin-bottom: var(--sp-4);" data-astro-cid-3f6pcmdi></div> <div id="fs-conc" style="margin-bottom: var(--sp-3);" data-astro-cid-3f6pcmdi></div> </section> <!-- ============ 卡3 组合角色 ============ --> <section id="card-role" style="display:none; margin-top: var(--sp-5);" data-astro-cid-3f6pcmdi> <div class="section-head" data-astro-cid-3f6pcmdi> <div class="section-kicker" data-astro-cid-3f6pcmdi>Card 3 · Role · 组合角色</div> <h2 class="section-title" data-astro-cid-3f6pcmdi>它在松果体系里站哪块</h2> <p class="section-sub" data-astro-cid-3f6pcmdi>单看一只基金没有意义，先问它负责什么。按资产配置与持仓特征，把它对到松果生活投资三版本拼图（全ETF版/全公募版/混合版）里。</p> </div> <div id="fs-role" data-astro-cid-3f6pcmdi></div> </section> <!-- ============ 互验区 ============ --> <section id="card-xval" style="display:none; margin-top: var(--sp-5);" data-astro-cid-3f6pcmdi> <div class="section-head" data-astro-cid-3f6pcmdi> <div class="section-kicker" data-astro-cid-3f6pcmdi>Cross Check · 互验</div> <h2 class="section-title" data-astro-cid-3f6pcmdi>仓位 × 波动：对得上吗</h2> </div> <div id="fs-xval" data-astro-cid-3f6pcmdi></div> </section> <!-- ============ 自身特色卡（V3 新增） ============ --> <section class="card" style="max-width: 920px; margin: var(--sp-5) auto 0;" data-astro-cid-3f6pcmdi> <div class="section-head" data-astro-cid-3f6pcmdi> <div class="section-kicker" data-astro-cid-3f6pcmdi>基准对比 · 同类工具</div> <h2 class="section-title" data-astro-cid-3f6pcmdi>和市面上的"基金评分"对比，我们的特色是什么</h2> <p class="section-sub" data-astro-cid-3f6pcmdi>市面上的基金评分通常是黑箱：给一个数字，不告诉你怎么算的、数据全不全、结论适不适合你。我们把这件事拆成三件，分开做：<b data-astro-cid-3f6pcmdi>数据公开可验、规则公开可算、结论留给你</b>。</p> </div> <div class="table-wrap" data-astro-cid-3f6pcmdi> <table class="data-table wrap-cells" data-astro-cid-3f6pcmdi> <thead data-astro-cid-3f6pcmdi><tr data-astro-cid-3f6pcmdi><th data-astro-cid-3f6pcmdi></th><th data-astro-cid-3f6pcmdi>常规做法</th><th class="songguo-col" data-astro-cid-3f6pcmdi>松果基金体检卡</th></tr></thead> <tbody data-astro-cid-3f6pcmdi> <tr data-astro-cid-3f6pcmdi><td data-astro-cid-3f6pcmdi><b data-astro-cid-3f6pcmdi>数据权</b></td><td data-astro-cid-3f6pcmdi>模型不公开，历史可看不可验</td><td class="songguo-col" data-astro-cid-3f6pcmdi><b data-astro-cid-3f6pcmdi>天天基金公开接口直读</b>：净值/收益率/同类排名/资产配置/重仓/费率/规模/经理，全部可复算</td></tr> <tr data-astro-cid-3f6pcmdi><td data-astro-cid-3f6pcmdi><b data-astro-cid-3f6pcmdi>规则权</b></td><td data-astro-cid-3f6pcmdi>权重不公开</td><td class="songguo-col" data-astro-cid-3f6pcmdi><b data-astro-cid-3f6pcmdi>五标准权重公开</b>：收益30 回撤25 费率15 规模20 经理10，写死在本页，任何人可核</td></tr> <tr data-astro-cid-3f6pcmdi><td data-astro-cid-3f6pcmdi><b data-astro-cid-3f6pcmdi>结论权</b></td><td data-astro-cid-3f6pcmdi>给分不给证据</td><td class="songguo-col" data-astro-cid-3f6pcmdi><b data-astro-cid-3f6pcmdi>三卡分维度呈现</b>：净值风险 / 持仓穿透 / 组合角色——结论你自己下，工具只给证据链</td></tr> <tr data-astro-cid-3f6pcmdi><td data-astro-cid-3f6pcmdi><b data-astro-cid-3f6pcmdi>持仓穿透</b></td><td data-astro-cid-3f6pcmdi>看不到底层资产</td><td class="songguo-col" data-astro-cid-3f6pcmdi><b data-astro-cid-3f6pcmdi>资产配置+前十大重仓全亮</b>：固收+ 的股票仓位、集中度、风险来源一眼可见</td></tr> <tr data-astro-cid-3f6pcmdi><td data-astro-cid-3f6pcmdi><b data-astro-cid-3f6pcmdi>结论先行</b></td><td data-astro-cid-3f6pcmdi>给完数字才解释</td><td class="songguo-col" data-astro-cid-3f6pcmdi><b data-astro-cid-3f6pcmdi>先给角色定位</b>：结论卡永远最前，告诉你这只基金"在组合里负责什么"，细节往下看</td></tr> <tr data-astro-cid-3f6pcmdi><td data-astro-cid-3f6pcmdi><b data-astro-cid-3f6pcmdi>分享/存档</b></td><td data-astro-cid-3f6pcmdi>截图为主</td><td class="songguo-col" data-astro-cid-3f6pcmdi><b data-astro-cid-3f6pcmdi>一键复制</b>：结论文本可粘到笔记/微信，含口径标注和规则权重</td></tr> </tbody> </table> </div> </section> <div class="callout" style="max-width: 920px; margin: var(--sp-4) auto 0;" data-astro-cid-3f6pcmdi> <b data-astro-cid-3f6pcmdi>口径与合规</b>：
+      收益（近1月/3月/6月/1年）与同类排名分位取自天天基金公开数据；风险指标（回撤/波动/夏普）由复权累计净值序列计算，波动年化按 250 交易日、夏普无风险利率按 0 简化。
+      松果五标准：收益 30 分（近1年 ≥20% 满分）、回撤 25 分（近1年 MDD ≤5% 满分）、费率 15 分（申购费 ≤0.1% 即满分，管理费以申购费近似提示）、规模 20 分（20-300 亿最舒适——百亿是收益的敌人，太小心清盘）、经理 10 分（任职 ≥7 年满分，策略稳定性代理）。
+      本工具为方法论演示，<b data-astro-cid-3f6pcmdi>不构成投资建议</b>，不评估任何基金的投资价值；数据加载自第三方公开接口，若有变更以天天基金页面为准。
+</div> <div class="callout" style="max-width: 920px; margin: var(--sp-3) auto 0; border-left: 4px solid var(--gold);" data-astro-cid-3f6pcmdi> <b data-astro-cid-3f6pcmdi>场内 ETF 请走另一套：<a href="/songguo-invest/tools/etf-score5d/" style="color:var(--gold);" data-astro-cid-3f6pcmdi>ETF 五维查询 →</a></b><br data-astro-cid-3f6pcmdi>
+本页是<b data-astro-cid-3f6pcmdi>场外主动基金</b>口径，五维里有「基金经理 10 分」——这项对被动 ETF 毫无意义（ETF 没有主动选券的人），
+      硬套反而会掩盖真实差异。所以场内 ETF 我们另做了一套：<b data-astro-cid-3f6pcmdi>跟踪纯度 / 跟踪误差 / 费率 / 流动性 / 规模稳健</b>，
+      用的是真实指数对照与成交数据，覆盖全市场 2,966 只。
+</div> </section> <script type="module" src="/songguo-invest/_astro/fund-scorecard-v3-legacy.astro_astro_type_script_index_0_lang.Dra-6UOC.js"></script>  <p class="inline-disclaimer"> <b>合规提示</b>：本页所有收益、回撤等指标均为<b>历史回测结果</b>（含成本口径），非实盘业绩，
+            不代表未来收益，<b>不构成投资建议</b>，亦不构成对任何产品的推荐。投资有风险，入市需谨慎。
+</p> </main> <!-- 底部精简栏：公众号 / 留言 / Pro / 工具 --> <div class="bottom-strip"> <div class="container bottom-strip-grid"> <div class="bs-col"> <div class="bs-title">📬 公众号</div> <div class="bs-text">每周深度文章在「松果商业笔记」</div> <a href="/songguo-invest/services/" class="bs-link">去看看 →</a> </div> <div class="bs-col bs-col-wide"> <div class="bs-title">💬 给「松果投资实验室」留言</div> <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;"> <input id="fb-content" type="text" placeholder="意见 / 建议（必填）" style="flex: 1; min-width: 0; padding: 7px 10px; border: 1px solid var(--border-strong); border-radius: 8px; font-size: 12px; box-sizing: border-box;"> <button id="fb-submit" class="btn btn-gold" style="font-size: 12px; padding: 7px 14px; white-space: nowrap;">提交</button> </div> <div id="fb-msg" style="font-size: 11px; color: var(--text-3); margin-top: 4px; min-height: 14px;">每一条反馈都会看，仅用于产品改进。</div> </div> <div class="bs-col"> <div class="bs-title">🔒 松果投资实验室 Pro</div> <div class="bs-text">组合档案 · 126 个月逐月可查</div> <a href="/songguo-invest/archive/pro/" class="bs-link">看 Pro 档案 →</a> </div> </div> </div> <footer class="site-footer"> <div class="container"> <p class="disclaimer">
+本站为投资方法论的历史回测研究展示，数据为 2012-2026 年 173 个月回测结果（含成本口径），
+          历史表现不代表未来收益，不构成任何投资建议，亦不构成对任何产品的推荐。投资有风险，入市需谨慎。
+</p> <p class="footer-meta">
+© 2026 松果商业笔记 · 数据驱动 · 纪律执行 · 长期主义 ·
+<a href="/songguo-invest/privacy/" style="color:inherit; text-decoration:underline;">隐私政策</a>
+·
+<a href="https://beian.miit.gov.cn" target="_blank" rel="noopener" style="color:inherit; text-decoration:underline;">浙ICP备2026075755号</a> <br> <span style="font-size:12px; color:var(--text-3);">联系公众号：松果商业笔记（微信）</span> </p> </div> </footer> <script type="module">var e=document.getElementById(`fb-submit`);e&&e.addEventListener(`click`,async()=>{let t=(e=>(document.getElementById(e)?.value||``).trim())(`fb-content`),n=document.getElementById(`fb-msg`);if(!t){n.textContent=`请先填写意见内容`,n.style.color=`var(--red)`;return}e.textContent=`提交中…`,e.disabled=!0;try{let e=await fetch(`https://formsubmit.co/ajax/Pinecone.finn@gmail.com`,{method:`POST`,headers:{"Content-Type":`application/json`,Accept:`application/json`},body:JSON.stringify({content:t,page:location.pathname,_subject:`松果投资实验室·读者留言`})}),r=await e.json().catch(()=>({}));if(e.ok&&r.success===`true`){n.textContent=`✅ 感谢留言！我们会认真看每一条反馈。`,n.style.color=`var(--green)`;let e=document.getElementById(`fb-content`);e&&(e.value=``)}else n.textContent=`提交失败，请稍后再试。`,n.style.color=`var(--red)`}catch{n.textContent=`网络异常，提交失败，可稍后重试。`,n.style.color=`var(--red)`}e.textContent=`提交`,e.disabled=!1});</script> <script>
+    // 匿名工具使用埋点（2026-09-18）：view/run/result/error/dwell → 同源 /api/track
+    // 只发：工具名/事件/随机sid/停留秒。不发IP、不发任何用户输入。失败静默。
+    (function () {
+      try {
+        var m = (location.pathname.match(/\/tools\/([a-z0-9-]+)\/?$/) || [])[1];
+        if (!m) return;
+        if (!/pinecone-lab\.cn$/.test(location.hostname)) return; // 仅云站上报，GH镜像不发避免404噪声
+        var P2T = { bc: 'backtest-compare', c: 'compound', ea: 'etf-allocator', fs: 'fund-scorecard',
+                    ic: 'industry-compare', ir: 'industry-report', ms: 'macro-signal', sc: 'stockcheck', v: 'valuator' };
+        var tool = P2T[m] ? m : m; // slug 直接用（白名单在服务端）
+        var sid = (Math.random().toString(36).slice(2, 10) + Date.now().toString(36));
+        var t0 = Date.now();
+        function send(ev, dwell) {
+          try {
+            var body = JSON.stringify({ tool: tool, event: ev, sid: sid, dwell: dwell });
+            var url = location.origin + '/api/track';
+            if (navigator.sendBeacon) {
+              var ok = navigator.sendBeacon(url, new Blob([body], { type: 'application/json' }));
+              if (ok) return;
+            }
+            fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                         body: body, keepalive: true, mode: 'cors' })['catch'](function () {});
+          } catch (e) {}
+        }
+        function dwellSec() { return (Date.now() - t0) / 1000; }
+        var leaving = false;
+        function flushDwell() { if (leaving) return; leaving = true; send('dwell', dwellSec()); }
+        send('view');
+        document.addEventListener('click', function (e) {
+          try {
+            var b = e.target && e.target.closest ? e.target.closest('[id$="-run"]') : null;
+            if (b) {
+              var pre = (b.id || '').replace(/-run$/, '');
+              if (P2T[pre] === tool) send('run'); // 防跨页误记
+            }
+          } catch (err) {}
+        }, true);
+        var res = document.getElementById(tool === 'stockcheck' ? 'sc-result' :
+                  tool === 'valuator' ? 'v-result' : tool === 'macro-signal' ? 'ms-result' :
+                  tool === 'industry-report' ? 'ir-result' : tool === 'industry-compare' ? 'ic-result' :
+                  tool === 'etf-allocator' ? 'ea-result' : tool === 'fund-scorecard' ? 'fs-result' :
+                  tool === 'backtest-compare' ? 'bc-result' : tool === 'compound' ? 'c-result' : null);
+        var shown = false;
+        function vis(el) { return el && getComputedStyle(el).display !== 'none' && el.offsetParent !== null; }
+        if (res) {
+          if (vis(res)) shown = true;
+          try {
+            new MutationObserver(function () {
+              var now = vis(res);
+              if (now && !shown) { shown = true; send('result'); }
+              if (!now) shown = false;
+            }).observe(res, { attributes: true, attributeFilter: ['style', 'class'], subtree: false });
+          } catch (e) {}
+        }
+        document.addEventListener('visibilitychange', function () { if (document.hidden) flushDwell(); });
+        window.addEventListener('pagehide', flushDwell);
+      } catch (e) {}
+    })();
+    </script><script>
+    // 自建页面访问采集（2026-09-20 起替代第三方统计）：同源 /api/collect
+    // 只发：路径/来源(仅域名)/UTM/视口/屏幕/DPR/语言/时区/设备类别/停留/滚动/性能/CTA高度
+    // 不发：IP、Cookie、完整UA（服务端只留解析后的类别）、任何用户输入。无 cookie、无跨天标识。失败静默。
+    (function () {
+      try {
+        if (!/pinecone-lab\.cn$/.test(location.hostname)) return; // 仅云站上报（GH 镜像不发，避免 404 噪声）
+        var KEY = 'sg_sid', sid = '';
+        try {
+          sid = sessionStorage.getItem(KEY) || '';
+          if (!sid) { sid = Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); sessionStorage.setItem(KEY, sid); }
+        } catch (e) { sid = Math.random().toString(36).slice(2, 12); }
+        var t0 = Date.now(), maxScroll = 0, left = false;
+        function qs(k) { try { return (new URLSearchParams(location.search).get(k) || '').slice(0, 32); } catch (e) { return ''; } }
+        function utms() {
+          var ks = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'], o = [];
+          for (var i = 0; i < ks.length; i++) { var v = qs(ks[i]); if (v) o.push(ks[i] + '=' + v); }
+          return o.join('&');
+        }
+        function nav() {
+          try {
+            var e = performance.getEntriesByType('navigation')[0];
+            if (e) return { ttfb: Math.round(e.responseStart || 0), dom: Math.round(e.domContentLoadedEventEnd || 0) };
+          } catch (e) {}
+          return { ttfb: 0, dom: 0 };
+        }
+        function ctaTop() {
+          try {
+            var el = document.querySelector('[id$="-run"], .btn.btn-gold, .btn');
+            if (!el) return -1;
+            return Math.max(0, Math.round(el.getBoundingClientRect().top + (window.pageYOffset || 0)));
+          } catch (e) { return -1; }
+        }
+        function scrollPct() {
+          try {
+            var h = document.documentElement.scrollHeight - window.innerHeight;
+            return h <= 0 ? 100 : Math.min(100, Math.round(((window.pageYOffset || 0) / h) * 100));
+          } catch (e) { return 0; }
+        }
+        function base() {
+          var n = nav();
+          return {
+            p: (location.pathname.replace(/^\/songguo-invest/, '') || '/').slice(0, 120),
+            t: (document.title || '').slice(0, 80),
+            r: (function(){ try { return new URL(document.referrer || 'about:blank').hostname; } catch(e){ return ''; } })(),
+            u: utms(), sid: sid,
+            vw: window.innerWidth || 0, vh: window.innerHeight || 0,
+            sw: (window.screen && screen.width) || 0, sh: (window.screen && screen.height) || 0,
+            dpr: window.devicePixelRatio || 1,
+            lg: (navigator.language || '').slice(0, 16),
+            tz: (function () { try { return (Intl.DateTimeFormat().resolvedOptions().timeZone || '').slice(0, 48); } catch (e) { return ''; } })(),
+            tc: ('ontouchstart' in window) || (navigator.maxTouchPoints > 0),
+            cs: (function () { try { return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; } catch (e) { return ''; } })(),
+            rm: (function () { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } })(),
+            cn: ((navigator.connection && navigator.connection.effectiveType) || '').slice(0, 8),
+            wd: navigator.webdriver === true,
+            ph: document.documentElement.scrollHeight || 0,
+            cta: ctaTop(), ttfb: n.ttfb, dom: n.dom
+          };
+        }
+        function send(ev, extra) {
+          try {
+            var body = base(); body.ev = ev;
+            if (extra) { for (var k in extra) { if (extra.hasOwnProperty(k)) body[k] = extra[k]; } }
+            var url = location.origin + '/api/collect', s = JSON.stringify(body);
+            if (ev === 'leave' && navigator.sendBeacon) {
+              if (navigator.sendBeacon(url, new Blob([s], { type: 'application/json' }))) return;
+            }
+            fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: s, keepalive: true, mode: 'cors' })['catch'](function () {});
+          } catch (e) {}
+        }
+        function leave() {
+          if (left) return; left = true;
+          send('leave', { s: Math.max(maxScroll, scrollPct()), dw: Math.round((Date.now() - t0) / 1000) });
+        }
+        send('pv');
+        window.addEventListener('scroll', function () { var c = scrollPct(); if (c > maxScroll) maxScroll = c; }, { passive: true });
+        document.addEventListener('visibilitychange', function () { if (document.hidden) leave(); });
+        window.addEventListener('pagehide', leave);
+      } catch (e) {}
+    })();
+    </script></body> </html>

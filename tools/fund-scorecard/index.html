@@ -1,17 +1,684 @@
-<!DOCTYPE html><html lang="zh-CN"> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" type="image/png" href="/songguo-invest/favicon.png"><title>基金体检卡 · 松果投资实验室</title><meta name="description" content="松果基金体检卡 V3 — 输入基金代码，30 秒出三张体检卡：净值收益风险、持仓透视、组合角色。数据来自天天基金公开接口，规则公开可复算。免费工具，不构成投资建议。"><meta name="robots" content="index, follow"><link rel="stylesheet" href="/songguo-invest/_astro/Layout.e9oOKWsk.css"><style>.wrap-cells[data-astro-cid-7qijxauk] th[data-astro-cid-7qijxauk],.wrap-cells[data-astro-cid-7qijxauk] td[data-astro-cid-7qijxauk]{white-space:normal;text-align:left;line-height:1.6}
-</style></head> <body> <header class="site-header"> <nav class="nav container"> <a href="/songguo-invest/" class="brand"> <img src="/songguo-invest/logo-mascot.png" alt="松果投资实验室" class="brand-logo" width="44" height="44"> <span><span class="gold">松果</span>投资实验室</span> </a> <div class="nav-links"> <a href="/songguo-invest/" class="nav-link"> 首页 </a><a href="/songguo-invest/philosophy/" class="nav-link"> 理念 </a><a href="/songguo-invest/methodology/" class="nav-link"> 体系 </a><a href="/songguo-invest/strategies/" class="nav-link"> 策略 </a><a href="/songguo-invest/archive/" class="nav-link"> 历史档案 </a><a href="/songguo-invest/tools/" class="nav-link"> 工具 </a><a href="/songguo-invest/services/" class="nav-link"> 服务 </a><a href="/songguo-invest/about/" class="nav-link"> 关于 </a> </div> </nav> </header> <main class="container main-content">  <section class="hero" style="padding: 56px 48px;" data-astro-cid-7qijxauk> <div class="hero-inner" data-astro-cid-7qijxauk> <span class="eyebrow" data-astro-cid-7qijxauk>Free Tool · 基金体检卡 V3</span> <h1 data-astro-cid-7qijxauk>
-别问哪只涨得多，<br data-astro-cid-7qijxauk><span class="gold" data-astro-cid-7qijxauk>问它负责什么、扛不扛得住</span> </h1> <p class="hero-lead" data-astro-cid-7qijxauk>
-输入基金代码，三张体检卡：<b data-astro-cid-7qijxauk>净值卡</b>看收益与回撤、<b data-astro-cid-7qijxauk>持仓卡</b>看到底买了什么、
-<b data-astro-cid-7qijxauk>角色卡</b>看它在你的组合里该站哪块。数据全部来自天天基金公开接口，规则公开、结果可复算。
-</p> </div> </section> <section class="card" style="max-width: 920px; margin: 0 auto;" data-astro-cid-7qijxauk> <div class="section-head" data-astro-cid-7qijxauk> <div class="section-kicker" data-astro-cid-7qijxauk>Step 1 · 输入基金代码或经理名</div> <h2 class="section-title" data-astro-cid-7qijxauk>输入基金代码，或直接输经理名</h2> <p class="section-sub" data-astro-cid-7qijxauk>支持 6 位基金代码（如 002351 易方达裕祥回报）；记不住代码就输基金经理姓名（如 刘彦春），从下拉里选。数据实时取自天天基金公开接口，无后端、不存任何输入。</p> </div> <div style="display:flex; gap: var(--sp-3); align-items:center; flex-wrap:wrap; margin-bottom: var(--sp-4);" data-astro-cid-7qijxauk> <div style="flex:1; min-width:220px; position:relative;" data-astro-cid-7qijxauk> <input id="fs-code" type="text" maxlength="12" placeholder="基金代码（6 位）或基金经理姓名" autocomplete="off" style="width:100%; box-sizing:border-box; padding:12px 14px; border:1px solid rgba(139,94,60,0.25); border-radius:10px; font-size:15px; background:var(--bg); color:var(--navy-900);" data-astro-cid-7qijxauk> <div id="fs-suggest" style="display:none; position:absolute; z-index:30; top:calc(100% + 4px); left:0; right:0; max-height:280px; overflow-y:auto; background:var(--bg); border:1px solid rgba(139,94,60,0.3); border-radius:10px; box-shadow:0 6px 18px rgba(74,46,26,0.15);" data-astro-cid-7qijxauk></div> </div> <button id="fs-run" class="btn btn-gold" data-astro-cid-7qijxauk>开始体检 →</button> </div> <div id="fs-status" style="display:none; padding:12px 16px; border-radius:10px; background:rgba(217,164,65,0.08); color:var(--navy-700); font-size:14px; margin-bottom: var(--sp-4);" data-astro-cid-7qijxauk></div> <!-- ============ 结论先行卡（V3 新增，Step 2） ============ --> <section id="card-conclusion" style="display:none; margin-top: var(--sp-5);" data-astro-cid-7qijxauk> <div class="section-head" data-astro-cid-7qijxauk> <div class="section-kicker" data-astro-cid-7qijxauk>Step 2 · 结论先行 ★</div> <h2 class="section-title" data-astro-cid-7qijxauk>一句话角色定位</h2> <p class="section-sub" data-astro-cid-7qijxauk>不卖分数，卖结论：这只基金负责什么、能不能拿得住。先看这一段，再决定要不要往下读。</p> </div> <div class="card" style="padding: var(--sp-5); border-left: 6px solid var(--gold);" data-astro-cid-7qijxauk> <div style="display:flex; align-items:flex-start; gap: var(--sp-4); flex-wrap:wrap;" data-astro-cid-7qijxauk> <div style="flex:1; min-width:240px;" data-astro-cid-7qijxauk> <div style="font-size:13px; color:var(--navy-600); margin-bottom:4px;" data-astro-cid-7qijxauk>组合角色</div> <div id="fs-conclusion-role" style="font-size:24px; font-weight:700; color:var(--navy-900); margin-bottom:8px;" data-astro-cid-7qijxauk>—</div> <div id="fs-conclusion-desc" style="font-size:14px; color:var(--navy-700); line-height:1.6;" data-astro-cid-7qijxauk>—</div> </div> <div style="flex:0 0 auto; padding-top:6px;" data-astro-cid-7qijxauk> <span id="fs-conclusion-flag-label" style="display:inline-block; font-size:12.5px; font-weight:600; padding:5px 14px; border-radius:999px; background:rgba(139,94,60,0.10); white-space:nowrap;" data-astro-cid-7qijxauk>角色标签</span> </div> </div> <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-3); margin-top: var(--sp-4); padding-top: var(--sp-4); border-top: 1px solid rgba(139,94,60,0.15);" data-astro-cid-7qijxauk> <div data-astro-cid-7qijxauk><div style="font-size:12px; color:var(--navy-600);" data-astro-cid-7qijxauk>股票仓位</div><div id="fs-conclusion-stock" style="font-size:18px; font-weight:700; color:var(--navy-900);" data-astro-cid-7qijxauk>—</div></div> <div data-astro-cid-7qijxauk><div style="font-size:12px; color:var(--navy-600);" data-astro-cid-7qijxauk>近1年波动</div><div id="fs-conclusion-vol" style="font-size:18px; font-weight:700; color:var(--navy-900);" data-astro-cid-7qijxauk>—</div></div> <div data-astro-cid-7qijxauk><div style="font-size:12px; color:var(--navy-600);" data-astro-cid-7qijxauk>近1年收益</div><div id="fs-conclusion-ret" style="font-size:18px; font-weight:700; color:var(--navy-900);" data-astro-cid-7qijxauk>—</div></div> </div> <div id="fs-conclusion-warn" style="display:none; margin-top: var(--sp-3); padding:10px 14px; border-radius:8px; background:rgba(179,84,62,0.10); color:var(--red); font-size:13.5px;" data-astro-cid-7qijxauk></div> <div style="display:flex; gap: var(--sp-3); margin-top: var(--sp-4);" data-astro-cid-7qijxauk> <button id="fs-copy" class="btn btn-outline" style="font-size:13px; padding:8px 14px;" data-astro-cid-7qijxauk>📋 复制结论</button> </div> </div> </section> <!-- ============ 卡1 净值体检 ============ --> <section id="card-nav" style="display:none; margin-top: var(--sp-5);" data-astro-cid-7qijxauk> <div class="section-head" data-astro-cid-7qijxauk> <div class="section-kicker" data-astro-cid-7qijxauk>Card 1 · Net Value · 净值体检</div> <h2 class="section-title" data-astro-cid-7qijxauk>收益与风险</h2> </div> <div id="fs-base" style="margin-bottom: var(--sp-4);" data-astro-cid-7qijxauk></div> <div class="metric-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: var(--sp-3);" data-astro-cid-7qijxauk> <div class="metric-card" data-astro-cid-7qijxauk><div class="label" data-astro-cid-7qijxauk>近 1 月收益</div><div id="fs-s1m" class="value" data-astro-cid-7qijxauk>--</div></div> <div class="metric-card" data-astro-cid-7qijxauk><div class="label" data-astro-cid-7qijxauk>近 3 月收益</div><div id="fs-s3m" class="value" data-astro-cid-7qijxauk>--</div></div> <div class="metric-card" data-astro-cid-7qijxauk><div class="label" data-astro-cid-7qijxauk>近 6 月收益</div><div id="fs-s6m" class="value" data-astro-cid-7qijxauk>--</div></div> <div class="metric-card" data-astro-cid-7qijxauk><div class="label" data-astro-cid-7qijxauk>近 1 年收益</div><div id="fs-s1y" class="value" data-astro-cid-7qijxauk>--</div></div> </div> <div class="metric-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: var(--sp-3);" data-astro-cid-7qijxauk> <div class="metric-card" data-astro-cid-7qijxauk><div class="label" data-astro-cid-7qijxauk>近 1 年最大回撤</div><div id="fs-dd1" class="value" data-astro-cid-7qijxauk>--</div></div> <div class="metric-card" data-astro-cid-7qijxauk><div class="label" data-astro-cid-7qijxauk>近 1 年波动率(年化)</div><div id="fs-vol1" class="value" data-astro-cid-7qijxauk>--</div></div> <div class="metric-card" data-astro-cid-7qijxauk><div class="label" data-astro-cid-7qijxauk>近 1 年夏普</div><div id="fs-sharpe1" class="value" data-astro-cid-7qijxauk>--</div></div> <div class="metric-card" data-astro-cid-7qijxauk><div class="label" data-astro-cid-7qijxauk>同类排名</div><div id="fs-rank1" class="value" data-astro-cid-7qijxauk>--</div><div id="fs-rank1-note" style="font-size:10.5px; color:var(--navy-600); margin-top:4px; line-height:1.3;" data-astro-cid-7qijxauk>分位越小越靠前</div><div id="fs-mgr-note" style="font-size:10.5px; color:var(--navy-600); margin-top:2px; line-height:1.3;" data-astro-cid-7qijxauk></div></div> </div> <div id="fs-star" data-astro-cid-7qijxauk></div> </section> <!-- ============ 卡2 持仓透视 ============ --> <section id="card-position" style="display:none; margin-top: var(--sp-5);" data-astro-cid-7qijxauk> <div class="section-head" data-astro-cid-7qijxauk> <div class="section-kicker" data-astro-cid-7qijxauk>Card 2 · Holdings · 持仓透视</div> <h2 class="section-title" data-astro-cid-7qijxauk>它到底买了什么</h2> <p class="section-sub" data-astro-cid-7qijxauk>收益是结果，持仓是原因。资产配置决定这基金的风险来源——股票占比才是固收+ 波动的幕后推手。</p> </div> <div id="fs-alloc" style="margin-bottom: var(--sp-4);" data-astro-cid-7qijxauk></div> <div id="fs-holdings" style="margin-bottom: var(--sp-4);" data-astro-cid-7qijxauk></div> <div id="fs-conc" style="margin-bottom: var(--sp-3);" data-astro-cid-7qijxauk></div> </section> <!-- ============ 卡3 组合角色 ============ --> <section id="card-role" style="display:none; margin-top: var(--sp-5);" data-astro-cid-7qijxauk> <div class="section-head" data-astro-cid-7qijxauk> <div class="section-kicker" data-astro-cid-7qijxauk>Card 3 · Role · 组合角色</div> <h2 class="section-title" data-astro-cid-7qijxauk>它在松果体系里站哪块</h2> <p class="section-sub" data-astro-cid-7qijxauk>单看一只基金没有意义，先问它负责什么。按资产配置与持仓特征，把它对到松果生活投资三版本拼图（全ETF版/全公募版/混合版）里。</p> </div> <div id="fs-role" data-astro-cid-7qijxauk></div> </section> <!-- ============ 互验区 ============ --> <section id="card-xval" style="display:none; margin-top: var(--sp-5);" data-astro-cid-7qijxauk> <div class="section-head" data-astro-cid-7qijxauk> <div class="section-kicker" data-astro-cid-7qijxauk>Cross Check · 互验</div> <h2 class="section-title" data-astro-cid-7qijxauk>仓位 × 波动：对得上吗</h2> </div> <div id="fs-xval" data-astro-cid-7qijxauk></div> </section> <!-- ============ 自身特色卡（V3 新增） ============ --> <section class="card" style="max-width: 920px; margin: var(--sp-5) auto 0;" data-astro-cid-7qijxauk> <div class="section-head" data-astro-cid-7qijxauk> <div class="section-kicker" data-astro-cid-7qijxauk>基准对比 · 同类工具</div> <h2 class="section-title" data-astro-cid-7qijxauk>和市面上的"基金评分"对比，我们的特色是什么</h2> <p class="section-sub" data-astro-cid-7qijxauk>市面上的基金评分通常是黑箱：给一个数字，不告诉你怎么算的、数据全不全、结论适不适合你。我们把这件事拆成三件，分开做：<b data-astro-cid-7qijxauk>数据公开可验、规则公开可算、结论留给你</b>。</p> </div> <div class="table-wrap" data-astro-cid-7qijxauk> <table class="data-table wrap-cells" data-astro-cid-7qijxauk> <thead data-astro-cid-7qijxauk><tr data-astro-cid-7qijxauk><th data-astro-cid-7qijxauk></th><th data-astro-cid-7qijxauk>常规做法</th><th class="songguo-col" data-astro-cid-7qijxauk>松果基金体检卡</th></tr></thead> <tbody data-astro-cid-7qijxauk> <tr data-astro-cid-7qijxauk><td data-astro-cid-7qijxauk><b data-astro-cid-7qijxauk>数据权</b></td><td data-astro-cid-7qijxauk>模型不公开，历史可看不可验</td><td class="songguo-col" data-astro-cid-7qijxauk><b data-astro-cid-7qijxauk>天天基金公开接口直读</b>：净值/收益率/同类排名/资产配置/重仓/费率/规模/经理，全部可复算</td></tr> <tr data-astro-cid-7qijxauk><td data-astro-cid-7qijxauk><b data-astro-cid-7qijxauk>规则权</b></td><td data-astro-cid-7qijxauk>权重不公开</td><td class="songguo-col" data-astro-cid-7qijxauk><b data-astro-cid-7qijxauk>五标准权重公开</b>：收益30 回撤25 费率15 规模20 经理10，写死在本页，任何人可核</td></tr> <tr data-astro-cid-7qijxauk><td data-astro-cid-7qijxauk><b data-astro-cid-7qijxauk>结论权</b></td><td data-astro-cid-7qijxauk>给分不给证据</td><td class="songguo-col" data-astro-cid-7qijxauk><b data-astro-cid-7qijxauk>三卡分维度呈现</b>：净值风险 / 持仓穿透 / 组合角色——结论你自己下，工具只给证据链</td></tr> <tr data-astro-cid-7qijxauk><td data-astro-cid-7qijxauk><b data-astro-cid-7qijxauk>持仓穿透</b></td><td data-astro-cid-7qijxauk>看不到底层资产</td><td class="songguo-col" data-astro-cid-7qijxauk><b data-astro-cid-7qijxauk>资产配置+前十大重仓全亮</b>：固收+ 的股票仓位、集中度、风险来源一眼可见</td></tr> <tr data-astro-cid-7qijxauk><td data-astro-cid-7qijxauk><b data-astro-cid-7qijxauk>结论先行</b></td><td data-astro-cid-7qijxauk>给完数字才解释</td><td class="songguo-col" data-astro-cid-7qijxauk><b data-astro-cid-7qijxauk>先给角色定位</b>：结论卡永远最前，告诉你这只基金"在组合里负责什么"，细节往下看</td></tr> <tr data-astro-cid-7qijxauk><td data-astro-cid-7qijxauk><b data-astro-cid-7qijxauk>分享/存档</b></td><td data-astro-cid-7qijxauk>截图为主</td><td class="songguo-col" data-astro-cid-7qijxauk><b data-astro-cid-7qijxauk>一键复制</b>：结论文本可粘到笔记/微信，含口径标注和规则权重</td></tr> </tbody> </table> </div> </section> <div class="callout" style="max-width: 920px; margin: var(--sp-4) auto 0;" data-astro-cid-7qijxauk> <b data-astro-cid-7qijxauk>口径与合规</b>：
-      收益（近1月/3月/6月/1年）与同类排名分位取自天天基金公开数据；风险指标（回撤/波动/夏普）由复权累计净值序列计算，波动年化按 250 交易日、夏普无风险利率按 0 简化。
-      松果五标准：收益 30 分（近1年 ≥20% 满分）、回撤 25 分（近1年 MDD ≤5% 满分）、费率 15 分（申购费 ≤0.1% 即满分，管理费以申购费近似提示）、规模 20 分（20-300 亿最舒适——百亿是收益的敌人，太小心清盘）、经理 10 分（任职 ≥7 年满分，策略稳定性代理）。
-      本工具为方法论演示，<b data-astro-cid-7qijxauk>不构成投资建议</b>，不评估任何基金的投资价值；数据加载自第三方公开接口，若有变更以天天基金页面为准。
-</div> <div class="callout" style="max-width: 920px; margin: var(--sp-3) auto 0; border-left: 4px solid var(--gold);" data-astro-cid-7qijxauk> <b data-astro-cid-7qijxauk>场内 ETF 请走另一套：<a href="/songguo-invest/tools/etf-score5d/" style="color:var(--gold);" data-astro-cid-7qijxauk>ETF 五维查询 →</a></b><br data-astro-cid-7qijxauk>
-本页是<b data-astro-cid-7qijxauk>场外主动基金</b>口径，五维里有「基金经理 10 分」——这项对被动 ETF 毫无意义（ETF 没有主动选券的人），
-      硬套反而会掩盖真实差异。所以场内 ETF 我们另做了一套：<b data-astro-cid-7qijxauk>跟踪纯度 / 跟踪误差 / 费率 / 流动性 / 规模稳健</b>，
-      用的是真实指数对照与成交数据，覆盖全市场 2,966 只。
-</div> </section> <script type="module" src="/songguo-invest/_astro/fund-scorecard.astro_astro_type_script_index_0_lang.Dra-6UOC.js"></script>  <p class="inline-disclaimer"> <b>合规提示</b>：本页所有收益、回撤等指标均为<b>历史回测结果</b>（含成本口径），非实盘业绩，
+<!DOCTYPE html><html lang="zh-CN"> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" type="image/png" href="/songguo-invest/favicon.png"><title>基金打分卡 · 松果投资实验室</title><meta name="description" content="输入基金名称或代码，30 秒看懂一只基金：同类排位、多周期回撤、超额收益稳定性、择时能力、经理能力、具体持仓股票、适合谁买。全市场 3 万只基金，数据公开可复算。"><meta name="robots" content="index, follow"><link rel="stylesheet" href="/songguo-invest/_astro/Layout.e9oOKWsk.css"><style>.fs-linkbtn{border:1px solid var(--gold);color:var(--gold);cursor:pointer;background:0 0;border-radius:6px;padding:2px 8px;font-size:12px}.fs-linkbtn:hover{background:var(--gold);color:#fff}
+</style></head> <body> <header class="site-header"> <nav class="nav container"> <a href="/songguo-invest/" class="brand"> <img src="/songguo-invest/logo-mascot.png" alt="松果投资实验室" class="brand-logo" width="44" height="44"> <span><span class="gold">松果</span>投资实验室</span> </a> <div class="nav-links"> <a href="/songguo-invest/" class="nav-link"> 首页 </a><a href="/songguo-invest/philosophy/" class="nav-link"> 理念 </a><a href="/songguo-invest/methodology/" class="nav-link"> 体系 </a><a href="/songguo-invest/strategies/" class="nav-link"> 策略 </a><a href="/songguo-invest/archive/" class="nav-link"> 历史档案 </a><a href="/songguo-invest/tools/" class="nav-link"> 工具 </a><a href="/songguo-invest/services/" class="nav-link"> 服务 </a><a href="/songguo-invest/about/" class="nav-link"> 关于 </a> </div> </nav> </header> <main class="container main-content">  <section class="hero" style="padding: 48px 48px 28px;"> <div class="hero-inner"> <span class="eyebrow">Free Tool · 基金打分卡 V4</span> <h1>
+买基金前，<br><span class="gold">先把这只基金拆开看一遍</span> </h1> <p class="hero-lead">
+输入基金名称或代码，得到一份完整的购买决策报告：<b>同类排位</b>、<b>多周期回撤</b>、
+<b>超额收益稳定性</b>、<b>择时能力</b>、<b>基金经理能力</b>、<b>具体持仓哪几只股票</b>、
+<b>适合什么风险承受力的人买</b>。<br>
+全市场 <b>29,992</b> 只场外基金 + <b>2,966</b> 只场内基金，离线计算，规则公开可复算。
+</p> </div> </section>  <section class="card" style="max-width: 980px; margin: 0 auto 16px;"> <div class="section-head"> <div class="section-kicker">工具怎么用</div> <h2 class="section-title">三步闭环：体检 → 比较 → 配置</h2> </div> <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;"> <div style="border:1px solid var(--border);border-radius:10px;padding:14px;background:var(--card);"> <div style="font-weight:700;color:var(--navy-700);margin-bottom:4px;">① 单只体检<span style="font-weight:400;color:var(--navy-400);">（本页）</span></div> <div style="font-size:13px;color:var(--navy-600);line-height:1.7;">
+输入代码或名字 → 6/7 维拆解、持仓下钻、适配人群判断。旧「基金体检卡 V3」「ETF 五维诊断」已并入本页。
+</div> </div> <div style="border:1px solid var(--border);border-radius:10px;padding:14px;background:var(--card);"> <div style="font-weight:700;color:var(--navy-700);margin-bottom:4px;">② 同类比较</div> <div style="font-size:13px;color:var(--navy-600);line-height:1.7;">
+同类分位已内置在每只基金的「同类排位」维度里：20 个可比组（资产大类 × 市场 × 策略），
+          被动与主动分开排、A/C 份额不重复计权。
+</div> </div> <div style="border:1px solid var(--border);border-radius:10px;padding:14px;background:var(--card);"> <div style="font-weight:700;color:var(--navy-700);margin-bottom:4px;">③ 组合配置</div> <div style="font-size:13px;color:var(--navy-600);line-height:1.7;">
+选好几只之后去
+<a href="/songguo-invest/tools/etf-allocator/" style="color:var(--gold);text-decoration:underline;">ETF 组合配置器</a>
+做权重与风险预算，那里有独立的历史回测口径。
+</div> </div> </div> </section>  <section class="card" style="max-width: 980px; margin: 0 auto 16px;"> <div class="section-head"> <div class="section-kicker">横向比较</div> <h2 class="section-title">同类榜单</h2> <p class="section-sub">
+同类 = 资产大类 × 市场 × 策略。选一组，看这一组里排前面的都是谁。
+</p> </div> <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;"> <select id="fs-rank-peer" style="flex:1;min-width:200px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--foreground);font-size:14px;"> <option value="">选择同类组…</option> </select> <select id="fs-rank-order" style="padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--foreground);font-size:14px;"> <option value="tt">按总分</option> <option value="pa">按同类排位</option> <option value="pm">按回撤控制</option> <option value="ps">按收益稳定性</option> <option value="pst">按超额稳定性</option> <option value="pt">按择时能力</option> </select> <span id="fs-rank-cnt" style="font-size:13px;color:var(--navy-500);"></span> </div> <div id="fs-rank-list" style="margin-top:12px;"></div> <p style="font-size:12px;color:var(--navy-400);margin-top:10px;line-height:1.7;">
+榜单需要逐只载入详情分片，点「看详情」即跳转。被动基金不参与「超额稳定性 / 择时能力」排名。
+</p> </section>  <section class="card" style="max-width: 980px; margin: 0 auto;"> <div class="section-head"> <div class="section-kicker">Step 1</div> <h2 class="section-title">输入基金名称或代码</h2> <p class="section-sub">
+支持 6 位代码（如 <code>110011</code> 易方达优质精选）、中文名称片段（如「沪深300 指数增强」）。
+        记不住就输名字，直接从下拉里选。全部本地计算，不上传任何输入。
+</p> </div> <div style="display:flex; gap: var(--sp-3); align-items:center; flex-wrap:wrap; margin-bottom: var(--sp-3);"> <div style="flex:1; min-width:240px; position:relative;"> <input id="fs-q" type="text" maxlength="24" placeholder="基金名称 / 代码 / 公司，如：沪深300增强、110011、华夏成长" autocomplete="off" style="width:100%; box-sizing:border-box; padding:12px 14px; border:1px solid rgba(139,94,60,0.25); border-radius:10px; font-size:15px; background:var(--bg); color:var(--navy-900);"> <div id="fs-suggest" style="display:none; position:absolute; z-index:30; top:calc(100% + 4px); left:0; right:0; max-height:320px; overflow-y:auto; background:var(--bg); border:1px solid rgba(139,94,60,0.3); border-radius:10px; box-shadow:0 6px 18px rgba(74,46,26,0.15);"></div> </div> <button id="fs-run" class="btn btn-gold">体检 →</button> </div> <div id="fs-stats" style="display:flex; gap:var(--sp-4); flex-wrap:wrap; padding:10px 14px; border-radius:10px; background:rgba(74,124,89,0.06); font-size:13px; color:var(--navy-700);"></div> </section>  <div id="fs-result"></div>  <section class="card" style="max-width: 980px; margin: 32px auto;"> <div class="section-head"> <div class="section-kicker">方法论与口径</div> <h2 class="section-title">分数是怎么算出来的</h2> </div> <div id="fs-method" style="font-size:14px; line-height:1.85; color:var(--navy-700);"></div> </section> <script>
+  // 注意：这里必须用 is:inline，不能用 define:vars。
+  // define:vars 会让 Astro 把整个脚本当组件编译，内部的中划线 DOM id
+  // （$('#fs-rank-peer') 之类）会被当成 JSX 标识符而报
+  // "Identifiers in JSX cannot contain hyphens"。
+  // 本脚本不需要服务端注入任何变量，纯客户端跑，用 is:inline 最直接。
+  // ============================================================
+  // 基金打分卡 V4 前端
+  // 数据源：/songguo-invest/data/fund_scorecard.json（离线计算产物）
+  // ============================================================
+  const BASE = '/songguo-invest/data/';
+  let DB = null, HOLD = null, IDX = null;
+
+  const $ = s => document.querySelector(s);
+  const el = (t, a = {}, kids = []) => {
+    const n = document.createElement(t);
+    for (const [k, v] of Object.entries(a)) {
+      if (k === 'html') n.innerHTML = v;
+      else if (k === 'text') n.textContent = v;
+      else if (k.startsWith('on')) n.addEventListener(k.slice(2), v);
+      else n.setAttribute(k, v);
+    }
+    for (const k of [].concat(kids)) if (k) n.appendChild(typeof k === 'string' ? document.createTextNode(k) : k);
+    return n;
+  };
+  const nz = v => (v === null || v === undefined || Number.isNaN(v) || v === '') ? null : v;
+  const pct = (v, d = 1) => v === null ? '—' : (v > 0 ? '+' : '') + v.toFixed(d) + '%';
+  const num = (v, d = 2) => v === null ? '—' : v.toFixed(d);
+
+  const TYPE_LABEL = { '被动': '被动指数型', '主动': '主动管理型' };
+
+  // ---------------------------------------------------------------- 评分解释
+  const PASSIVE_DIMS = [
+    ['同类排位', '25%', '与同类基金比，长期年化和回撤排在什么位置'],
+    ['回撤控制', '20%', '历史最大回撤有多深，1/3/5 年各阶段最深亏多少'],
+    ['收益稳定性', '20%', '多周期收益是否稳定，1/3/5 年方向是否一致'],
+    ['费率', '15%', '管理费+托管费，长期复利下的确定性拖累'],
+    ['规模稳定', '10%', '发行规模与净值连续性，过小有清盘风险'],
+    ['持仓透明度', '10%', '指数成分股是否可得，买不买得明明白白'],
+  ];
+  const ACTIVE_DIMS = [
+    ['长期业绩', '20%', '年化收益 + 同类排位'],
+    ['回撤控制', '15%', '最大回撤与各周期回撤深度'],
+    ['风险回报效率', '15%', 'Sharpe / Calmar，每单位波动换回多少收益'],
+    ['超额收益稳定性', '15%', 'A 值：年化超额收益 + 超额 Sharpe + 同类分位'],
+    ['择时能力', '10%', 'T 值：超额收益的 t 统计量均值，正负择时贡献'],
+    ['基金经理', '15%', '任期、任职回报、相对基准超额、滚动胜率、回撤'],
+    ['费率与规模', '10%', '综合费率与规模稳定性'],
+  ];
+
+  function grade(t) {
+    if (t === null) return { g: '—', cls: 'na', txt: '数据不足，不打分' };
+    if (t >= 80) return { g: 'A', cls: 'a', txt: '同类前列，值得优先看' };
+    if (t >= 70) return { g: 'B', cls: 'b', txt: '同类中上，可以考虑' };
+    if (t >= 60) return { g: 'C', cls: 'c', txt: '同类中等，需看自己需求' };
+    if (t >= 45) return { g: 'D', cls: 'd', txt: '同类偏弱，建议谨慎' };
+    return { g: 'E', cls: 'e', txt: '同类落后，不建议优先' };
+  }
+
+  function advice(f) {
+    const pg = f.pg || '', tp = f.tp;
+    const out = [];
+    if (pg.includes('货币')) return '现金管理工具，不适合作为长期配置，看收益率就行。';
+    if (pg.includes('固收') || pg.includes('债券')) {
+      const an = nz(f.an);
+      if (an !== null && an < 1) return '低波固收，适合压舱石，注意久期风险和规模萎缩导致的清盘。';
+      return '固收类，看的是确定性和回撤控制，别只盯着收益率。';
+    }
+    if (pg.includes('商品')) return '商品类，与股债相关度低，适合做组合对冲，注意它本身波动不小。';
+    if (pg.includes('宽基')) {
+      if (tp === '被动') return '宽基底仓，长期定投最省心的选择，跟住市场就别频繁换。';
+      return '宽基底仓，主动增强版，超额能不能持续是关键，看 A 值和超额 Sharpe。';
+    }
+    if (pg.includes('行业') || pg.includes('窄基') || pg.includes('主题')) {
+      if (tp === '被动') return '窄基/主题基金，波动天然大于宽基，单只别超过组合的 15%，先想清楚能不能扛住 30% 回撤。';
+      return '窄基/主题基金，主动管理难度更高，重点看经理任职时间和超额稳定性。';
+    }
+    if (pg.includes('港股') || pg.includes('海外')) return '跨市场基金，注意汇率和当地市场风险，仓位别超配。';
+    out.push(tp === '被动' ? '被动指数产品，长期持有成本最低。' : '主动管理产品，超额收益的可持续性是核心。');
+    return out.join('');
+  }
+
+  // ---------------------------------------------------------------- 渲染
+  function dimBar(name, w, val, hint) {
+    const v = nz(val);
+    const pctw = v === null ? 0 : Math.max(4, Math.min(100, v));
+    const col = v === null ? '#999' : v >= 80 ? '#4A7C59' : v >= 65 ? '#8B5E3C' : v >= 50 ? '#D9A441' : '#B4553A';
+    return `<tr>
+      <td style="padding:8px 10px; font-weight:600; white-space:nowrap;">${name}<span style="font-weight:400;color:var(--navy-500);font-size:12px;"> ${w}</span></td>
+      <td style="padding:8px 10px; width:52%;">
+        <div style="background:rgba(139,94,60,0.10); border-radius:5px; height:8px; position:relative; overflow:hidden;">
+          <div style="width:${pctw}%; height:100%; background:${col}; border-radius:5px;"></div>
+        </div>
+        <div style="font-size:11px; color:var(--navy-500); margin-top:3px; line-height:1.4;">${hint || ''}</div>
+      </td>
+      <td style="padding:8px 10px; text-align:right; font-variant-numeric:tabular-nums; font-weight:700; color:${col}; white-space:nowrap;">${v === null ? '—' : v.toFixed(1)}</td>
+    </tr>`;
+  }
+
+  function renderResult(f) {
+    const R = $('#fs-result');
+    R.innerHTML = '';
+    const g = grade(nz(f.tt));
+    const isP = f.tp === '被动';
+    const dims = isP ? PASSIVE_DIMS : ACTIVE_DIMS;
+    const dm = f.dm || {}, wt = f.wt || {};
+    const hintFor = {
+      pa: '同类年化分位：越高说明同类里赚得多',
+      pm: '同类回撤分位：越高说明跌得比同类轻',
+      ps: '同类 Sharpe 分位',
+      pst: '多周期收益方向一致性分位',
+      pf: '费率分位：越高越便宜',
+      pal: '超额收益分位：主动基金最核心的一项',
+      pt: '择时能力分位：正负超额择时贡献',
+    };
+  // 展示名 → 评分引擎内部键（引擎用简称，页面用全称）
+  const DIMKEY = {
+    '超额收益稳定性': '超额稳定性',
+    '同类排位': '同类排位', '回撤控制': '回撤控制', '收益稳定性': '收益稳定性',
+    '费率': '费率', '规模稳定': '规模稳定', '持仓透明度': '持仓透明度',
+    '长期业绩': '长期业绩', '风险回报效率': '风险回报效率',
+    '择时能力': '择时能力', '基金经理': '基金经理', '费率与规模': '费率与规模',
+  };
+  // 经理履历一行摘要。子项是数值对象，直接拼会渲染成 [object Object]，
+  // 所以这里把关键几项拼成人话：任职年化、超额、胜率、最深回撤。
+  function mgrSummary(sb) {
+    if (!sb || typeof sb !== 'object') return '';
+    const bits = [];
+    if (sb.tenure_ann !== undefined && sb.tenure_ann !== null)
+      bits.push('任职期年化 ' + num(sb.tenure_ann, 2) + '%');
+    if (sb.excess_ann !== undefined && sb.excess_ann !== null)
+      bits.push('超额 ' + num(sb.excess_ann, 2) + '%/年');
+    if (sb.win_rate !== undefined && sb.win_rate !== null)
+      bits.push('跑赢基准的年份 ' + sb.win_rate + '%');
+    if (sb.tenure_mdd !== undefined && sb.tenure_mdd !== null)
+      bits.push('任职期最深回撤 ' + num(sb.tenure_mdd, 1) + '%');
+    return bits.length ? ' · ' + bits.join(' · ') : '';
+  }
+
+  const hintDim = {
+      '同类排位': f.hpp === false
+        ? '这只基金暂时归不出可靠同类组，无同类分位；总分只由绝对指标维度给出'
+        : '同类年化 + 回撤 + Sharpe 综合分位',
+      '回撤控制': '最大回撤 + 1/3/5 年各阶段',
+      '收益稳定性': '1/3/5 年收益 + 波动 + Sharpe',
+      '费率': '管理费 + 托管费',
+      '规模稳定': '发行规模（非当前AUM）+ 净值连续性',
+      '持仓透明度': '指数成分股可得性',
+      '长期业绩': '年化收益 + 同类排位',
+      '风险回报效率': 'Sharpe + Calmar',
+      '超额稳定性': `A 值 ${pct(nz(f.a), 2)}/年 · 同类分位 ${nz(f.pal) !== null ? f.pal.toFixed(0) + '%' : '—'}`,
+      '择时能力': `T 值 ${num(nz(f.tr), 2)} · 同类分位 ${nz(f.pt) !== null ? f.pt.toFixed(0) + '%' : '—'}`,
+      '基金经理': f.mg
+        ? `${f.mg.n || ''} 任职 ${num(nz(f.mg.ty), 1)} 年`
+        : '经理履历未取到，或任职不足 1.5 年样本太短，本维度不计分',
+      '费率与规模': `同类费率分位 ${pct(nz(f.pf), 0)} · 含发行规模与净值连续性`,
+    };
+
+    const box = el('div', { class: 'card', style: 'max-width:980px;margin:28px auto;padding:0;overflow:hidden;' });
+
+    // ===== 头部：结论 =====
+    const head = el('div', { style: 'padding:28px 32px;background:linear-gradient(135deg,rgba(139,94,60,0.08),rgba(217,164,65,0.06));border-bottom:1px solid var(--border);' });
+    head.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:24px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:280px;">
+          <div style="font-size:12px;color:var(--navy-500);margin-bottom:6px;">
+            ${TYPE_LABEL[f.tp] || f.tp || '—'} · ${f.pg || '未分类'}${f.it ? ' · ' + f.it : ''}
+          </div>
+          <h2 style="font-size:26px;margin:0 0 4px;line-height:1.3;">${f.n || ''}</h2>
+          <div style="font-size:13px;color:var(--navy-600);">
+            ${f.c || ''}${f.co ? ' · ' + f.co : ''}${f.fd ? ' · 成立 ' + f.fd : ''}
+          </div>
+        </div>
+        <div style="text-align:center;min-width:150px;">
+          <div style="font-size:11px;color:var(--navy-500);letter-spacing:1px;">松果内部购买决策分</div>
+          <div style="font-size:56px;font-weight:800;line-height:1;color:var(--gold);font-variant-numeric:tabular-nums;">${f.tt === null || f.tt === undefined ? '—' : f.tt.toFixed(0)}</div>
+          <div style="font-size:13px;font-weight:700;color:var(--navy-700);margin-top:4px;">评级 ${g.g} · ${g.txt}</div>
+          <div style="font-size:11px;color:var(--navy-500);margin-top:4px;">数据完整度 ${f.cv === null || f.cv === undefined ? '—' : Number(f.cv).toFixed(0) + '%'}</div>
+        </div>
+      </div>
+      <div style="margin-top:18px;padding:12px 16px;background:rgba(74,124,89,0.08);border-left:4px solid var(--green);border-radius:6px;font-size:14px;line-height:1.7;">
+        <b>买它吗？</b>　${advice(f)}
+      </div>`;
+    box.appendChild(head);
+
+    // ===== 指标区 =====
+    const met = el('div', { style: 'padding:24px 32px;border-bottom:1px solid var(--border);' });
+    const cells = [
+      ['年化收益', pct(nz(f.an), 2), '成立以来'],
+      ['最大回撤', pct(nz(f.md), 2), '历史最深'],
+      ['年化波动', pct(nz(f.vol), 2), '日收益标准差'],
+      ['Sharpe', num(nz(f.sh)), '每单位波动'],
+      ['Calmar', num(nz(f.ca)), '收益/回撤'],
+    ];
+    met.innerHTML = `<div style="font-size:13px;font-weight:700;color:var(--navy-600);margin-bottom:14px;">① 过往业绩怎么样</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:14px;">
+        ${cells.map(([l, v, s]) => `<div style="padding:12px;background:rgba(139,94,60,0.05);border-radius:8px;text-align:center;">
+          <div style="font-size:11px;color:var(--navy-500);">${l}</div>
+          <div style="font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;margin:4px 0;">${v}</div>
+          <div style="font-size:11px;color:var(--navy-500);">${s}</div></div>`).join('')}
+      </div>
+      <table style="width:100%;margin-top:18px;border-collapse:collapse;font-size:13px;">
+        <thead><tr style="border-bottom:1px solid var(--border);color:var(--navy-600);">
+          <th style="text-align:left;padding:7px 10px;font-weight:600;">周期</th>
+          <th style="text-align:right;padding:7px 10px;font-weight:600;">收益</th>
+          <th style="text-align:right;padding:7px 10px;font-weight:600;">最大回撤</th>
+          <th style="text-align:right;padding:7px 10px;font-weight:600;">同类排位</th>
+        </tr></thead><tbody>
+        ${[['近1年', 'r1', 'd1', 'pa'], ['近3年', 'r3', 'd3', 'pm'], ['近5年', 'r5', 'd5', 'ps'], ['成立以来', 'an', 'md', null]]
+        .map(([lb, rk, dk, pk]) => `<tr style="border-bottom:1px solid rgba(139,94,60,0.08);">
+            <td style="padding:7px 10px;color:var(--navy-700);">${lb}</td>
+            <td style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums;font-weight:600;">${pct(nz(f[rk]), 1)}</td>
+            <td style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums;">${pct(nz(f[dk]), 1)}</td>
+            <td style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums;color:var(--navy-500);">${pk ? (nz(f[pk]) !== null ? f[pk].toFixed(0) + '%' : '—') : '—'}</td>
+          </tr>`).join('')}
+        </tbody></table>
+      <div style="font-size:11px;color:var(--navy-500);margin-top:10px;line-height:1.6;">
+        净值样本 ${f.no === null || f.no === undefined ? '—' : f.no} 期（${f.ns || '?'} ~ ${f.ne || '?'}）${f.no !== null && f.no < 244 ? '　⚠ 样本不足 1 年，指标代表性有限' : ''}
+      </div>`;
+    box.appendChild(met);
+
+    // ===== A/T + 主动专属 =====
+    if (!isP) {
+      const at = el('div', { style: 'padding:24px 32px;border-bottom:1px solid var(--border);' });
+      const atOk = f.as === 'ok';
+      at.innerHTML = `<div style="font-size:13px;font-weight:700;color:var(--navy-600);margin-bottom:14px;">② 主动能力：超额收益 & 择时能力（对自身复合基准回归）</div>
+        ${atOk ? `
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:14px;">
+          <div style="padding:12px;background:rgba(74,124,89,0.08);border-radius:8px;text-align:center;">
+            <div style="font-size:11px;color:var(--navy-500);">A 值 · 年化超额</div>
+            <div style="font-size:22px;font-weight:700;color:${(nz(f.a) || 0) > 0 ? 'var(--green)' : '#B4553A'};margin:4px 0;">${pct(nz(f.a), 2)}</div>
+            <div style="font-size:11px;color:var(--navy-500);">同类分位 ${nz(f.pal) !== null ? f.pal.toFixed(0) + '%' : '—'}</div></div>
+          <div style="padding:12px;background:rgba(139,94,60,0.07);border-radius:8px;text-align:center;">
+            <div style="font-size:11px;color:var(--navy-500);">T 值 · 择时能力</div>
+            <div style="font-size:22px;font-weight:700;color:${(nz(f.tr) || 0) > 0 ? 'var(--green)' : '#B4553A'};margin:4px 0;">${num(nz(f.tr), 2)}</div>
+            <div style="font-size:11px;color:var(--navy-500);">同类分位 ${nz(f.pt) !== null ? f.pt.toFixed(0) + '%' : '—'}</div></div>
+          <div style="padding:12px;background:rgba(139,94,60,0.05);border-radius:8px;text-align:center;">
+            <div style="font-size:11px;color:var(--navy-500);">超额 Sharpe</div>
+            <div style="font-size:22px;font-weight:700;margin:4px 0;">${num(nz(f.asr))}</div>
+            <div style="font-size:11px;color:var(--navy-500);">基准拟合 R² ${num(nz(f.r2), 2)}</div></div>
+          <div style="padding:12px;background:rgba(139,94,60,0.05);border-radius:8px;text-align:center;">
+            <div style="font-size:11px;color:var(--navy-500);">滚动 β 均值</div>
+            <div style="font-size:22px;font-weight:700;margin:4px 0;">${num(nz(f.bs))}</div>
+            <div style="font-size:11px;color:var(--navy-500);">相对基准敏感度</div></div>
+        </div>
+        <div style="font-size:12px;color:var(--navy-600);margin-top:12px;line-height:1.7;background:rgba(217,164,65,0.08);padding:10px 12px;border-radius:6px;">
+          <b>怎么读 A / T 值：</b>A 值是这只基金相对<b>它自己的复合基准</b>（如「沪深300×50%+中债×50%」按原权重合成）
+          每年多赚或少赚多少；T 值衡量超额收益是否来自择时——持续为正说明踩对了节奏，
+          持续为负说明长期在给基准「添乱」。A 值为正但 T 值为负，意味着超额来自选股而非择时。
+        </div>`
+        : `<div style="padding:14px 16px;background:rgba(184,85,58,0.07);border-left:4px solid #B4553A;border-radius:6px;font-size:13px;line-height:1.7;">
+          <b>A 值 / T 值暂不可计算。</b><br />${statusNote(f.as)}<br />
+          门控规则：净值不足 244 期、基准无法解析、基准拟合 R² 偏低时，一律不出数，绝不代填 0。
+        </div>`}`;
+      box.appendChild(at);
+    }
+
+    // ===== 评分维度 =====
+    const dm2 = el('div', { style: 'padding:24px 32px;border-bottom:1px solid var(--border);' });
+    dm2.innerHTML = `<div style="font-size:13px;font-weight:700;color:var(--navy-600);margin-bottom:14px;">③ ${isP ? '被动 6 维' : '主动 7 维'}打分拆解（权重公开）</div>
+      <table style="width:100%;border-collapse:collapse;">
+        <thead><tr style="border-bottom:1px solid var(--border);color:var(--navy-600);">
+          <th style="text-align:left;padding:7px 10px;font-weight:600;">维度</th>
+          <th style="text-align:left;padding:7px 10px;font-weight:600;">依据</th>
+          <th style="text-align:right;padding:7px 10px;font-weight:600;">得分</th>
+        </tr></thead><tbody>
+        ${dims.map(([nm, w]) => dimBar(nm, w, dm[DIMKEY[nm] || nm], hintDim[DIMKEY[nm] || nm] || '')).join('')}
+        </tbody></table>
+      <div style="font-size:11px;color:var(--navy-500);margin-top:12px;line-height:1.7;">
+        全部维度权重公开、加权求和。任一维度数据缺失时按<b>剩余权重归一化</b>计算，同时在「数据完整度」里扣分显示 ——
+        不用估算值顶替。被动基金不评「经理选股能力」，因为它没有主动选股这个动作。
+      </div>`;
+    box.appendChild(dm2);
+
+    // ===== 持仓 =====
+    const hb = el('div', { style: 'padding:24px 32px;border-bottom:1px solid var(--border);' });
+    const hd = f.hd;
+    let hhtml = `<div style="font-size:13px;font-weight:700;color:var(--navy-600);margin-bottom:14px;">④ 你到底买到了什么</div>`;
+    if (hd && hd.holdings && hd.holdings.length) {
+      const top = (hd.holdings[0] && hd.holdings[0].weight) || 1;
+      hhtml += `<div style="font-size:13px;color:var(--navy-700);margin-bottom:10px;">
+        跟踪指数 <b>${hd.index_name || hd.index_code || '—'}</b>（${hd.index_code || '—'}）　成分日期 ${hd.date || '—'}${hd.trade_date ? ' · 交易日 ' + hd.trade_date : ''}　${hd.holdings.length} 只
+      </div>
+      <div style="font-size:11px;color:var(--navy-500);margin-bottom:10px;background:rgba(217,164,65,0.08);padding:8px 12px;border-radius:6px;line-height:1.6;">
+        这是<b>目标指数的成分权重</b>（作为持仓代理），不是基金季报披露的实际持仓。指数会定期调仓，两者会有偏离。
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead><tr style="border-bottom:1px solid var(--border);color:var(--navy-600);">
+          <th style="text-align:left;padding:6px 10px;">#</th><th style="text-align:left;padding:6px 10px;">成分股</th>
+          <th style="text-align:left;padding:6px 10px;">代码</th><th style="text-align:right;padding:6px 10px;">权重</th>
+          <th style="padding:6px 10px;">占比条</th></tr></thead><tbody>
+        ${hd.holdings.slice(0, 30).map((x, i) => `<tr style="border-bottom:1px solid rgba(139,94,60,0.07);">
+          <td style="padding:5px 10px;color:var(--navy-500);">${i + 1}</td>
+          <td style="padding:5px 10px;font-weight:600;">${x.name || '—'}</td>
+          <td style="padding:5px 10px;color:var(--navy-500);font-size:12px;">${x.code || ''}</td>
+          <td style="padding:5px 10px;text-align:right;font-variant-numeric:tabular-nums;">${(x.weight || 0).toFixed(2)}%</td>
+          <td style="padding:5px 10px;width:30%;"><div style="background:rgba(139,94,60,0.10);border-radius:4px;height:6px;"><div style="width:${Math.min(100, (x.weight || 0) / top * 100)}%;height:100%;background:var(--gold);border-radius:4px;"></div></div></td>
+        </tr>`).join('')}
+        </tbody></table>
+      ${hd.holdings.length > 30 ? `<div style="font-size:11px;color:var(--navy-500);margin-top:8px;">仅显示前 30 只，指数共 ${hd.holdings.length} 只成分股。</div>` : ''}`;
+    } else if (isP) {
+      hhtml += `<div style="padding:12px 16px;background:rgba(184,85,58,0.07);border-left:4px solid #B4553A;border-radius:6px;font-size:13px;line-height:1.7;">
+        成分持仓暂不可得：${hd && hd.note ? hd.note : '该基金跟踪的指数成分权重数据缺失（Tushare index_weight 未收录或该指数非纯单指数基金）。'}<br />
+        可在基金公司官网或第三方平台核对最新前十大持仓。
+      </div>`;
+    } else {
+      hhtml += `<div style="padding:12px 16px;background:rgba(217,164,65,0.10);border-left:4px solid var(--gold);border-radius:6px;font-size:13px;line-height:1.7;">
+        <b>主动基金不展示成分股。</b>原因很直接：它的持仓每季度才披露一次且只披露前十大，
+        用「指数成分」冒充「基金持仓」是误导。想看真实持仓，请查该基金最新季报。
+      </div>`;
+    }
+    hb.innerHTML = hhtml;
+    box.appendChild(hb);
+
+    // ===== 经理 =====
+    if (f.mg) {
+      const mb = el('div', { style: 'padding:24px 32px;border-bottom:1px solid var(--border);' });
+      const ss = f.mg.ss || {};
+      const order = [['ret', '任职年化回报'], ['excess', '相对基准超额'], ['roll_win', '滚动胜率'], ['mdd', '任职最大回撤'], ['stab', '超额稳定性'], ['style', '风格一致性']];
+      mb.innerHTML = `<div style="font-size:13px;font-weight:700;color:var(--navy-600);margin-bottom:14px;">⑤ 基金经理能力</div>
+        <div style="padding:14px 16px;background:rgba(139,94,60,0.06);border-radius:8px;margin-bottom:14px;">
+          <div style="font-size:20px;font-weight:700;">${f.mg.n || '—'}</div>
+          <div style="font-size:13px;color:var(--navy-600);margin-top:4px;">
+            任职 ${num(nz(f.mg.ty), 2)} 年${f.mg.ty !== null && f.mg.ty < 3 ? '（未满 3 年，代表性有限）' : ''}
+            ${mgrSummary(f.mg.sub)}
+          </div>
+          ${f.mg.nt ? `<div style="font-size:12px;color:var(--navy-500);margin-top:6px;line-height:1.6;">${f.mg.nt}</div>` : ''}
+        </div>
+        ${Object.keys(ss).length ? `<table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <tbody>${order.filter(([k]) => nz(ss[k]) !== null).map(([k, l]) =>
+            `<tr style="border-bottom:1px solid rgba(139,94,60,0.08);">
+              <td style="padding:7px 10px;color:var(--navy-700);">${l}</td>
+              <td style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums;font-weight:600;">${(k === 'roll_win' || k === 'style') ? ss[k] + '%' : pct(ss[k], 2)}</td></tr>`).join('')}
+          </tbody></table>` : `<div style="font-size:13px;color:var(--navy-600);">子项数据不足，未拆分显示。</div>`}
+        <div style="font-size:11px;color:var(--navy-500);margin-top:10px;line-height:1.6;">
+          经理评分只用<b>现任且在任期内</b>的经理，用其任职以来净值对本基金基准做回归。
+          样本过短不给分。历史离任经理不进现任评分（避免「业绩是前任做的」误判）。
+        </div>`;
+      box.appendChild(mb);
+    }
+
+    // ===== 适合谁 + 数据说明 =====
+    const fb = el('div', { style: 'padding:24px 32px;' });
+    const risk = nz(f.md) === null ? '未知' : (f.md > -30 ? '高波动' : f.md > -15 ? '中高波动' : f.md > -8 ? '中低波动' : '低波动');
+    fb.innerHTML = `<div style="font-size:13px;font-weight:700;color:var(--navy-600);margin-bottom:12px;">⑥ 适合谁买</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:14px;">
+        ${[['风险档次', risk], ['类型', TYPE_LABEL[f.tp] || '—'], ['资产类别', f.pg || '—'], ['最长回撤', pct(nz(f.md), 1)]]
+          .map(([l, v]) => `<div style="padding:11px;background:rgba(139,94,60,0.05);border-radius:8px;">
+            <div style="font-size:11px;color:var(--navy-500);">${l}</div>
+            <div style="font-size:16px;font-weight:700;margin-top:3px;">${v}</div></div>`).join('')}
+      </div>
+      <div style="font-size:13px;color:var(--navy-700);line-height:1.8;">
+        <b>${advice(f)}</b><br />
+        ${risk === '高波动' ? '买入前先确认：这只基金历史上最深亏过 ' + pct(nz(f.md), 1) + '，你能不能在那个位置不卖。' :
+          risk === '中高波动' ? '适合能承受阶段性 20% 上下回撤、计划持有 1 年以上的投资者。' :
+          '回撤相对可控，但仍不等于保本。'}
+      </div>
+      <div style="font-size:11px;color:var(--navy-500);margin-top:14px;padding-top:12px;border-top:1px solid var(--border);line-height:1.7;">
+        <b>数据口径：</b>净值来自 Tushare（${f.tp === '被动'
+          ? '被动基金按设计不做 A/T 回归，其收益来源就是指数本身'
+          : (f.as === 'ok' ? 'A/T 已用自身复合基准回归' : '该基金基准拟合不足，A/T 未出数')}）；
+        发行规模为<b>发行时规模，非当前 AUM</b>（当前规模数据源无权限）；
+        ${f.it ? '基金类型：' + f.it + '；' : ''}数据构建于 ${DB ? DB.built : '—'}。
+        本页分数为「松果内部购买决策分」，非监管机构或第三方基金评级。
+      </div>`;
+    box.appendChild(fb);
+
+    R.appendChild(box);
+  }
+
+  function statusNote(s) {
+    const m = {
+      'short_sample': '净值不足 244 个交易日（约 1 年），样本太短，暂不出数。',
+      'no_nav': '净值数据尚未下载到位。',
+      'bench_mismatch': '基金基准与自身净值序列拟合度偏低（R² 未达门槛），可能基准解析有偏差，暂不出数以免给出错误超额。',
+      'missing_index': '基准所需的指数行情数据缺失。',
+      'no_benchmark': '该基金未披露业绩比较基准。',
+    };
+    return m[s] || '数据不足。';
+  }
+
+  // ---------------------------------------------------------------- 搜索
+  let SUG = [];
+  function buildIndex() {
+    // 索引（fund_scorecard_idx.json）已含场内+场外全市场，且自带 shard 路由字段。
+    const seen = new Set();
+    SUG = [];
+    for (const f of DB.funds) {
+      if (seen.has(f.c)) continue;
+      seen.add(f.c);
+      SUG.push(f);
+    }
+  }
+
+  function search(q) {
+    q = q.trim().toLowerCase();
+    if (!q) return [];
+    const out = [];
+    for (const f of SUG) {
+      const c = (f.c || '').toLowerCase(), n = (f.n || '').toLowerCase(), co = (f.co || '').toLowerCase();
+      let sc = 0;
+      if (c === q) sc = 100;
+      else if (c.startsWith(q)) sc = 90;
+      else if (c.includes(q)) sc = 70;
+      else if (n.includes(q)) sc = 60;
+      else if (co.includes(q) && n.includes(q)) sc = 50;
+      else if (co.includes(q)) sc = 30;
+      else if (f.pg && f.pg.toLowerCase().includes(q)) sc = 25;
+      if (sc > 0) out.push({ ...f, sc });
+    }
+    out.sort((a, b) => b.sc - a.sc);
+    // 份额去重：同一基金 A/C 只保留一个，避免刷屏
+    const seen = new Set(), ded = [];
+    for (const f of out) {
+      const base = (f.n || '').replace(/[-－][A-Ea-e]$/, '').trim();
+      const k = base + '|' + (f.co || '');
+      if (seen.has(k)) continue;
+      seen.add(k); ded.push(f);
+    }
+    return ded.slice(0, 40);
+  }
+
+  let si = -1, curSug = [];
+  function showSug(list) {
+    curSug = list;
+    const box = $('#fs-suggest');
+    if (!list.length) { box.style.display = 'none'; si = -1; return; }
+    box.innerHTML = list.map((f, i) => `<div data-i="${i}" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid rgba(139,94,60,0.08);font-size:13px;">
+      <span style="font-weight:600;">${f.n || ''}</span>
+      <span style="color:var(--navy-500);font-size:12px;"> ${f.c}</span>
+      <span style="color:var(--navy-500);font-size:11px;"> · ${f.tp || ''} · ${f.pg || ''}</span>
+    </div>`).join('');
+    box.style.display = 'block';
+    si = -1;
+    box.querySelectorAll('[data-i]').forEach(d => d.addEventListener('click', () => {
+      const f = list[+d.dataset.i];
+      $('#fs-q').value = f.c;
+      box.style.display = 'none';
+      doRun(f.c);
+    }));
+  }
+
+  // ---- 详情懒加载 ----
+  // 分片号由构建端（Python hashlib.md5）算好写进 fund_scorecard_idx.json 的 shard 字段。
+  // **不要在前端重算 md5**：两套实现的字节序/编码稍有差异就会算到别的片，
+  // 表现为「有的基金点开是空白」，很难查。
+  const SHARDS = {};        // 已加载分片: shardId → {code → fund}
+  const SHARD_URL = {};     // shardId → 文件名
+
+  async function ensureShard(shardId) {
+    if (SHARDS[shardId]) return SHARDS[shardId];
+    if (shardId === undefined || shardId === null) return null;
+    // 注意：shardId 是 md5 首字符（如 'c'），**不是数组下标**。
+    // 早先写成 SHARD_LIST[shardId] 拿数组下标，'c' 越界 → 所有详情都加载失败。
+    const url = SHARD_URL[shardId];
+    if (!url) return null;
+    const r = await fetch(BASE + url);
+    if (!r.ok) return null;
+    const j = await r.json();
+    const map = {};
+    for (const x of j.funds) map[x.c] = x;
+    SHARDS[shardId] = map;
+    return map;
+  }
+
+  // ---------- 同类榜单 ----------
+  // 同一组的基金散落在 16 个分片里，所以要按组把涉及的分片全拉起来。
+  // 组内基金数上限 2 万，只按前 200 只渲染，避免一次画太多 DOM。
+  async function loadPeerFunds(peer) {
+    const metas = DB.funds.filter(x => x.pg === peer);
+    const need = Array.from(new Set(metas.map(x => x.s)));
+    await Promise.all(need.map(ensureShard));
+    const out = [];
+    for (const mt of metas) {
+      const m = SHARDS[mt.s];
+      if (m && m[mt.c]) out.push(m[mt.c]);
+    }
+    return out;
+  }
+
+  const ORD_LABEL = {
+    tt: '总分', pa: '同类排位', pm: '回撤控制', ps: '收益稳定性',
+    pst: '超额稳定性', pt: '择时能力',
+  };
+
+  async function renderRank() {
+    const peer = $('#fs-rank-peer').value;
+    const order = $('#fs-rank-order').value;
+    const box = $('#fs-rank-list');
+    if (!peer) { box.innerHTML = ''; $('#fs-rank-cnt').textContent = ''; return; }
+    box.innerHTML = '<div style="color:var(--navy-500);font-size:13px;padding:12px 0;">正在载入该组数据…</div>';
+    const rows = await loadPeerFunds(peer);
+    // 份额去重：同一只基金的 A/C/E 份额净值、分位、持仓完全一致，
+    // 同组同时上榜会虚增组内数量，也会让「同类排位」看着虚高。
+    // 保留有总分的那个份额（通常 A 类规模最大、成立最早）。
+    const byBase = new Map();
+    for (const r of rows) {
+      const b = (r.n || '').replace(/[-－][A-Ea-e]$/, '').trim() + '|' + (r.co || '');
+      const cur = byBase.get(b);
+      if (!cur) { byBase.set(b, r); continue; }
+      const curHas = cur.tt !== null && cur.tt !== undefined;
+      const newHas = r.tt !== null && r.tt !== undefined;
+      if (newHas && !curHas) byBase.set(b, r);
+    }
+    const uniq = Array.from(byBase.values());
+    const ok = uniq.filter(r => r.tt !== null && r.tt !== undefined);
+    ok.sort((a, b) => (b[order] ?? -1e9) - (a[order] ?? -1e9));
+    $('#fs-rank-cnt').textContent =
+      `该组 ${uniq.length} 只（原始 ${rows.length} 只，已去重 A/C 份额）· 已出分 ${ok.length} 只`;
+    const top = ok.slice(0, 200);
+    box.innerHTML = `
+      <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead><tr style="text-align:left;border-bottom:1px solid var(--border);color:var(--navy-500);">
+          <th style="padding:6px 8px;">#</th><th style="padding:6px 8px;">基金</th>
+          <th style="padding:6px 8px;">类型</th>
+          <th style="padding:6px 8px;">总分</th>
+          <th style="padding:6px 8px;">${order === 'tt' ? '同类排名' : (ORD_LABEL[order] || order)}</th>
+          <th style="padding:6px 8px;">近1年</th><th style="padding:6px 8px;">最大回撤</th>
+          <th style="padding:6px 8px;"></th>
+        </tr></thead>
+        <tbody>${top.map((r, i) => `
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:6px 8px;color:var(--navy-400);">${i + 1}</td>
+            <td style="padding:6px 8px;">${r.n || '—'}<div style="color:var(--navy-400);font-size:11px;">${r.c}</div></td>
+            <td style="padding:6px 8px;color:var(--navy-500);">${r.tp || '—'}</td>
+            <td style="padding:6px 8px;font-weight:700;color:var(--gold);">${r.tt === null || r.tt === undefined ? '—' : Number(r.tt).toFixed(1)}</td>
+            <td style="padding:6px 8px;color:var(--navy-500);">${order === 'tt' ? (i + 1) : (nz(r[order]) === null ? '—' : Number(r[order]).toFixed(1))}</td>
+            <td style="padding:6px 8px;">${pct(nz(r.r1), 1)}</td>
+            <td style="padding:6px 8px;">${pct(nz(r.md), 1)}</td>
+            <td style="padding:6px 8px;"><button class="fs-linkbtn"
+              onclick="window.__fsRun('${r.c}')">看详情</button></td>
+          </tr>`).join('')}</tbody>
+      </table></div>
+      ${ok.length > 200 ? '<div style="font-size:12px;color:var(--navy-400);padding-top:8px;">仅显示前 200 只，请用上方搜索框查具体基金。</div>' : ''}`;
+  }
+
+
+
+  async function doRun(code) {
+    const meta = (DB.funds || []).find(x => x.c === code);
+    if (!meta) {
+      $('#fs-result').innerHTML = `<div class="card" style="max-width:980px;margin:24px auto;padding:20px;color:#B4553A;">
+        没找到代码 ${code} 对应的基金。试试从下拉里点选，或换个关键词。</div>`;
+      return;
+    }
+    $('#fs-result').innerHTML = `<div class="card" style="max-width:980px;margin:24px auto;padding:20px;color:var(--navy-600);">
+      正在载入 ${meta.n || code} 的详细数据…</div>`;
+    const m = await ensureShard(meta.s);
+    const f = m ? m[code] : null;
+    if (!f) {
+      $('#fs-result').innerHTML = `<div class="card" style="max-width:980px;margin:24px auto;padding:20px;color:#B4553A;">
+        ${code} 的详细数据分片加载失败，请刷新页面重试。</div>`;
+      return;
+    }
+    renderResult(f);
+    window.scrollTo({ top: $('#fs-result').offsetTop - 20, behavior: 'smooth' });
+  }
+
+  // ---------------------------------------------------------------- 方法论区
+  function renderMethod() {
+    $('#fs-method').innerHTML = `
+      <p style="margin:0 0 14px;"><b>被动 6 维（权重公开）</b>：同类排位 25% / 回撤控制 20% / 收益稳定性 20% /
+      费率 15% / 规模稳定 10% / 持仓透明度 10%。</p>
+      <p style="margin:0 0 14px;"><b>主动 7 维（权重公开）</b>：长期业绩 20% / 回撤控制 15% / 风险回报效率 15% /
+      超额收益稳定性 15% / 择时能力 10% / 基金经理 15% / 费率与规模 10%。</p>
+      <p style="margin:0 0 14px;"><b>为什么被动和主动要分开评。</b>上海证券 2023 年《基金评价方法》明确指出，
+      被动基金不做传统评级 —— 它的业绩基本由跟踪指数决定，评级经理能力没有意义。
+      所以被动基金<b>不评「经理选股能力」</b>，而评「同类排位、回撤控制、收益稳定性、费率、规模、持仓透明度」，
+      这是买 ETF/联接基金真正会关心的东西。主动基金才谈超额、择时、经理。</p>
+      <p style="margin:0 0 14px;"><b>A 值 / T 值怎么来的。</b>对每只基金<b>自己的复合基准</b>（如
+      「沪深300×50% + 中债×30% + 活期存款×20%」按披露权重合成）做日频回归：
+      A 值 = 回归截距 × 年化，即年化超额收益；T 值 = 滚动回归 t 统计量的均值，衡量超额收益里有多少来自择时。
+      基准必须用<b>全收益指数</b>（已按中证 {原码}CNY01.CSI 规则补齐 509 个全收益指数），
+      否则分红漏算会系统性低估超额 —— 实测沪深300价格年化 7.00%、全收益 9.03%，差 2.02 个百分点。</p>
+      <p style="margin:0 0 14px;"><b>出门控，不出错数。</b>净值不足 244 个交易日、基准无法解析、
+      或基准拟合 R² 未达门槛（权益 0.30 / 债券货币 0.08）时，A/T 一律显示「暂不可计算」并说明原因，
+      <b>绝不填 0 充数</b>。缺失维度按剩余权重归一化，同时在数据完整度里扣分显示。</p>
+      <p style="margin:0;"><b>同类分位去重。</b>同一基金的 A/C/E 等份额净值不同但本质是同一只产品，
+      同类排名按份额族去重，避免一只基金占多个席位拉高或压低分位。</p>`;
+  }
+
+  // ---------------------------------------------------------------- 启动
+  async function boot() {
+    renderMethod();
+    try {
+      const [r1, r2] = await Promise.all([
+        fetch(BASE + 'fund_scorecard_idx.json'),
+        fetch(BASE + 'fund_holdings.json'),
+      ]);
+      DB = await r1.json();
+      HOLD = await r2.json().catch(() => ({}));
+      const mf = await fetch(BASE + 'fund_shards.json').then(r => r.json()).catch(() => null);
+      if (mf && mf.shards) {
+        for (const fn of mf.shards) {
+          // fund_shard_c.json → key 'c'
+          const m = /fund_shard_([0-9a-f])\.json$/.exec(fn);
+          if (m) SHARD_URL[m[1]] = fn;
+        }
+      }
+      buildIndex();
+      const ok = DB.n_scored !== undefined ? DB.n_scored
+                : DB.funds.filter(f => f.tt !== null && f.tt !== undefined).length;
+      const pax = DB.funds.filter(f => f.pg && (f.pg.includes('港股') || f.pg.includes('海外'))).length;
+
+      // 同类组下拉：按基金数降序，只列 ≥30 只的组（太小的组分位不可靠）
+      const pgCount = {};
+      for (const f of DB.funds) {
+        if (f.pg) pgCount[f.pg] = (pgCount[f.pg] || 0) + 1;
+      }
+      const sel = $('#fs-rank-peer');
+      for (const [k, v] of Object.entries(pgCount).sort((a, b) => b[1] - a[1])) {
+        if (v < 30) continue;
+        const o = document.createElement('option');
+        o.value = k; o.textContent = `${k}（${v.toLocaleString()} 只）`;
+        sel.appendChild(o);
+      }
+      $('#fs-rank-peer').addEventListener('change', renderRank);
+      $('#fs-rank-order').addEventListener('change', renderRank);
+      window.__fsRun = doRun;
+      $('#fs-stats').innerHTML = `<span>全市场 <b>${(DB.n_funds || DB.funds.length).toLocaleString()}</b> 只基金</span>
+        <span>已出分 <b>${ok.toLocaleString()}</b> 只</span>
+        <span>可下钻持仓 <b>${(DB.n_holdings || 0).toLocaleString()}</b> 只</span>
+        <span>跨市场基金 <b>${pax.toLocaleString()}</b> 只</span>
+        <span>数据构建 ${DB.built || '—'}</span>`;
+    } catch (e) {
+      $('#fs-stats').innerHTML = `<span style="color:#B4553A;">数据加载失败：${e.message}</span>`;
+    }
+
+    const inp = $('#fs-q');
+    inp.addEventListener('input', () => { if (DB) showSug(search(inp.value)); });
+    inp.addEventListener('focus', () => { if (DB && inp.value.trim()) showSug(search(inp.value)); });
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (si >= 0 && curSug[si]) { $('#fs-q').value = curSug[si].c; $('#fs-suggest').style.display = 'none'; doRun(curSug[si].c); }
+        else doRun(inp.value.trim());
+      } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (!curSug.length) return;
+        si = e.key === 'ArrowDown' ? Math.min(si + 1, curSug.length - 1) : Math.max(si - 1, 0);
+        $('#fs-suggest').querySelectorAll('[data-i]').forEach((d, i) => {
+          d.style.background = i === si ? 'rgba(217,164,65,0.15)' : 'transparent';
+        });
+      } else if (e.key === 'Escape') { $('#fs-suggest').style.display = 'none'; }
+    });
+    document.addEventListener('click', e => {
+      if (!e.target.closest('#fs-q') && !e.target.closest('#fs-suggest')) $('#fs-suggest').style.display = 'none';
+    });
+    $('#fs-run').addEventListener('click', () => {
+      const v = inp.value.trim();
+      if (!v) { inp.focus(); return; }
+      doRun(v);
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+  </script> <p class="inline-disclaimer"> <b>合规提示</b>：本页所有收益、回撤等指标均为<b>历史回测结果</b>（含成本口径），非实盘业绩，
             不代表未来收益，<b>不构成投资建议</b>，亦不构成对任何产品的推荐。投资有风险，入市需谨慎。
 </p> </main> <!-- 底部精简栏：公众号 / 留言 / Pro / 工具 --> <div class="bottom-strip"> <div class="container bottom-strip-grid"> <div class="bs-col"> <div class="bs-title">📬 公众号</div> <div class="bs-text">每周深度文章在「松果商业笔记」</div> <a href="/songguo-invest/services/" class="bs-link">去看看 →</a> </div> <div class="bs-col bs-col-wide"> <div class="bs-title">💬 给「松果投资实验室」留言</div> <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;"> <input id="fb-content" type="text" placeholder="意见 / 建议（必填）" style="flex: 1; min-width: 0; padding: 7px 10px; border: 1px solid var(--border-strong); border-radius: 8px; font-size: 12px; box-sizing: border-box;"> <button id="fb-submit" class="btn btn-gold" style="font-size: 12px; padding: 7px 14px; white-space: nowrap;">提交</button> </div> <div id="fb-msg" style="font-size: 11px; color: var(--text-3); margin-top: 4px; min-height: 14px;">每一条反馈都会看，仅用于产品改进。</div> </div> <div class="bs-col"> <div class="bs-title">🔒 松果投资实验室 Pro</div> <div class="bs-text">组合档案 · 126 个月逐月可查</div> <a href="/songguo-invest/archive/pro/" class="bs-link">看 Pro 档案 →</a> </div> </div> </div> <footer class="site-footer"> <div class="container"> <p class="disclaimer">
 本站为投资方法论的历史回测研究展示，数据为 2012-2026 年 173 个月回测结果（含成本口径），
