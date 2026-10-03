@@ -225,7 +225,12 @@ const fmtPct = (v: number, d = 1) => (v >= 0 ? '+' : '') + (v * 100).toFixed(d) 
   </div>
 
   <!-- 自身特色卡（常规做法 vs 松果，不点名） -->
-  <section class="card" style="max-width: 920px; margin: var(--sp-4) auto 0;" id="vs">
+    <!-- 候选基金接入区：只在 URL 带 ?add=代码 时显示，平时隐藏不占版面 -->
+  <section id="cand-box" class="card"
+           style="max-width: 920px; margin: var(--sp-4) auto 0; display: none;">
+  </section>
+
+<section class="card" style="max-width: 920px; margin: var(--sp-4) auto 0;" id="vs">
     <div class="section-head">
       <div class="section-kicker">基准对比 · 同类工具</div>
       <h2 class="section-title">和市面上的"基金组合配置工具"对比，我们的特色是什么</h2>
@@ -255,6 +260,127 @@ const fmtPct = (v: number, d = 1) => (v >= 0 ? '+' : '') + (v * 100).toFixed(d) 
           { code: '510880', name: '红利ETF（华泰柏瑞）', role: '红利拼图', fee: '0.50', custody: '0.10' },
           { code: '513500', name: '标普500ETF（博时）', role: 'QDII拼图', fee: '0.60', custody: '0.20' },
         ];
+    // ---- 候选基金接入（来自「基金打分卡」的选基结果）----
+    // 打通闭环的打法：打分卡里用户挑好的基金，通过 URL 带过来（?add=代码,代码），
+    // 这里读打分卡的分片数据，给每只候选显示松果总分与评级，
+    // 用户可以把候选替换进四拼图的某一条腿 —— 换完立刻用回测口径的权重算。
+    //
+    // 为什么读分片而不是全量 fund_scorecard.json：
+    // 全量 34MB，配置器只是个轻量拼图工具，不该为此拖慢首屏。
+    // 这里只取候选代码所在的分片，命中即停。
+    const LEG_OVERRIDE: Record<number, any> = {};   // 被打分卡候选替换过的腿
+    const SHARD_URL: Record<string, string> = {};
+    const SHARDS: Record<string, Record<string, any>> = {};   // shardId → {code → fund}
+    const CAND: Record<string, any> = {};
+
+    // 收**分片号**（不是基金代码）。早先这里收基金代码，
+    // 而调用处传的是 Object.keys(byShard) 即分片号 → SHARD_URL[分片号] 为 undefined
+    // → 直接 return null，所有候选都显示「打分卡数据未取到」。
+    async function loadShardFor(sid: string) {
+      if (!sid) return null;
+      if (SHARDS[sid]) return SHARDS[sid];
+      try {
+        const r = await fetch(`/songguo-invest/data/fund_shard_${sid}.json`);
+        if (!r.ok) { SHARDS[sid] = {}; return SHARDS[sid]; }
+        const d = await r.json();
+        // 分片是 {funds:[...], built}，按 code 建索引便于 O(1) 取
+        const idx: Record<string, any> = {};
+        for (const f of (d.funds || [])) idx[f.c] = f;
+        SHARDS[sid] = idx;
+      } catch { SHARDS[sid] = {}; }
+      return SHARDS[sid];
+    }
+
+        // 把候选基金替换进拼图某一条腿。
+    // 替换哪一腿由候选自身的资产类别决定：债 → 债券腿，金/商品 → 黄金腿，
+    // 红利/宽基 → 红利腿，QDII/跨境 → QDII 腿。不让用户猜哪条腿该换，
+    // 但替换后必须显式告诉他换了哪条 —— 组合的资产暴露变了，这是要交代的事。
+    function targetLegFor(f: any) {
+      const blob = `${f.pg || ''} ${f.it || ''} ${f.ft || ''} ${f.n || ''}`;
+      if (/固收|债|货币/.test(blob)) return 0;
+      if (/商品|黄金|REIT/.test(blob)) return 1;
+      if (/跨境|QDII|海外|港股|美股/.test(blob)) return 3;
+      return 2;   // 其余（红利/宽基/行业主题）归红利腿
+    }
+
+    function applyCandidate(code: string) {
+      const f = CAND[code];
+      if (!f) return;
+      const li = targetLegFor(f);
+      const slot = LEG_OVERRIDE[li] || (LEG_OVERRIDE[li] = {});
+      slot.code = code;
+      slot.name = f.n || code;
+      slot.fee = f.fee;
+      slot.custody = null;
+      slot.fromScorecard = true;
+      PIECE_META[li] = { ...PIECE_META[li], ...slot, _ov: true };
+      const cur = PIECE_META[li];
+      LEG_OVERRIDE[li] = { code: cur.code, name: cur.name, fee: cur.fee,
+                            custody: cur.custody, fromScorecard: true };
+      // 重拉实时价（腾讯行情按当前腿的代码）+ 重算份数与市值
+      loadQuote();
+      run();
+      // 同步服务端渲染的那张对照表
+      const tbl = document.querySelectorAll('table tbody tr');
+      const row = tbl[li];
+      if (row && row.children.length >= 3) {
+        const cells = row.children;
+        cells[1].innerHTML = `<b>${cur.name}</b><br/><span class="mono">${code}</span>` +
+          (cur.fromScorecard ? ' <span class="ov-flag">打分卡候选</span>' : '');
+      }
+      alert(`已把「${cur.name}」替换进${cur.role}。\n组合的资产暴露已改变，请回看下方回测口径是否仍适用。`);
+    }
+
+async function initCandidates() {
+      const raw = new URLSearchParams(location.search).get('add') || '';
+      const codes = raw.split(',').map((s) => s.trim()).filter(Boolean).slice(0, 8);
+      if (!codes.length) return;
+      // 代码 → 分片的映射直接读搜索索引里的 s 字段（每个索引条目都带自己的分片号）。
+      // 不另做映射文件：多一份 3 万条的映射就多一份会漂移的真相来源。
+      try {
+        const r = await fetch('/songguo-invest/data/fund_scorecard_idx.json');
+        if (r.ok) {
+          const d = await r.json();
+          const byCode: Record<string, string> = {};
+          for (const f of d.funds || []) byCode[f.c] = f.s;
+          codes.forEach((c) => { if (byCode[c]) SHARD_URL[c] = byCode[c]; });
+        }
+      } catch { /* 拿不到就静默跳过候选区，不影响主流程 */ }
+      if (!Object.keys(SHARD_URL).length) return;
+      const byShard: Record<string, string[]> = {};
+      codes.forEach((c) => { if (SHARD_URL[c]) (byShard[SHARD_URL[c]] ||= []).push(c); });
+      await Promise.all(Object.keys(byShard).map(loadShardFor));
+      codes.forEach((c) => {
+        const f = SHARDS[SHARD_URL[c]]?.[c];
+        if (f) CAND[c] = f;
+      });
+      renderCandidates(codes);
+    }
+
+    function renderCandidates(codes: string[]) {
+      const box = document.getElementById('cand-box');
+      if (!box) return;
+      const rows = codes.map((c) => {
+        const f = CAND[c];
+        if (!f) return `<div class="cand-row">${c} <span class="cand-dim">打分卡数据未取到</span></div>`;
+        const g = f.tt !== null && f.tt !== undefined
+          ? (f.tt >= 80 ? 'A' : f.tt >= 70 ? 'B' : f.tt >= 60 ? 'C' : f.tt >= 50 ? 'D' : 'E')
+          : '—';
+        return `<div class="cand-row">
+          <div class="cand-n">${f.n || '—'}</div>
+          <div class="cand-c">${c}</div>
+          <div class="cand-s">${f.tt !== null && f.tt !== undefined ? f.tt : '—'}<span class="cand-g g${g}">${g}</span></div>
+          <div class="cand-m">同类 ${f.pg || '—'} · ${f.md !== null && f.md !== undefined ? '回撤 ' + f.md + '%' : '回撤 —'}</div>
+          <button class="cand-btn" data-c="${c}">替换拼图腿</button>
+        </div>`;
+      });
+      box.innerHTML = `<div class="cand-head">从「基金打分卡」带来的候选基金（${codes.length} 只）</div>` + rows.join('');
+      box.querySelectorAll('.cand-btn').forEach((b) => {
+        b.addEventListener('click', () => applyCandidate((b as HTMLElement).dataset.c!));
+      });
+      box.style.display = 'block';
+    }
+
     const TIERS = [
       { key: 'conservative', ...tiersData.conservative },
       { key: 'stable', ...tiersData.stable },
@@ -460,7 +586,13 @@ const fmtPct = (v: number, d = 1) => (v >= 0 ? '+' : '') + (v * 100).toFixed(d) 
     // 实时行情：页面加载自动拉取（腾讯 qt.gtimg.cn，返回 v_sh511010="..." 即合法 JS）
     // 成功 → 价格列标注"实时 HH:MM"；失败/被墙 → 保留参考价并标注"参考价 08-25"
     function loadQuote() {
-      const codes = ['sh511010', 'sz159934', 'sh510880', 'sz513500'];
+      // 拼图腿可以被「基金打分卡」的候选替换，所以这里不能写死代码 ——
+      // 早先写死 ['sh511010',...] 时，替换腿之后拉回来的还是原 ETF 的价，
+      // 份数和市值会静默算错。改成从当前 PIECE_META 实时取。
+      const codes = PIECE_META.map((p) => {
+        const c6 = String(p.code).replace(/\D/g, '').padStart(6, '0');
+        return (/^(5|6|9|11|13|50|51|52|56|58)/.test(c6) ? 'sh' : 'sz') + c6;
+      });
       const s = document.createElement('script');
       s.src = `https://qt.gtimg.cn/q=${codes.join(',')}&_t=${Date.now()}`;
       const timeout = setTimeout(() => {
@@ -580,6 +712,9 @@ const fmtPct = (v: number, d = 1) => (v >= 0 ? '+' : '') + (v * 100).toFixed(d) 
 
         // 页面加载自动拉取；计算时若价格仍为参考价则再尝试一次
         loadQuote();
+
+        // 打分卡候选接入：URL 带 ?add=代码 时显示候选区，平时无副作用
+        initCandidates();
         ($('ea-run') as HTMLElement).addEventListener('click', () => {
           const needLive = [0, 1, 2, 3].some((i) => !($(`ea-ps${i}`) as HTMLElement).textContent.includes('实时'));
           if (needLive) loadQuote();
@@ -596,5 +731,32 @@ const fmtPct = (v: number, d = 1) => (v >= 0 ? '+' : '') + (v * 100).toFixed(d) 
     text-align: left;
     line-height: 1.6;
   }
+
+    /* ---- 打分卡候选接入 ---- */
+    .cand-head { font-size: 14px; font-weight: 700; color: var(--navy-700); margin-bottom: 12px; }
+    .cand-row {
+      display: grid; grid-template-columns: 1fr auto; gap: 4px 12px;
+      padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px;
+      margin-bottom: 8px; align-items: center;
+    }
+    .cand-n { font-weight: 700; font-size: 14px; }
+    .cand-c { grid-column: 1; font-size: 12px; color: var(--navy-500); font-family: ui-monospace, monospace; }
+    .cand-s { grid-row: 1 / span 2; grid-column: 2; font-size: 24px; font-weight: 800; text-align: right; }
+    .cand-g { font-size: 12px; margin-left: 6px; padding: 1px 7px; border-radius: 4px; vertical-align: middle; }
+    .cand-g.gA, .cand-g.gB { background: rgba(74,124,89,.15); color: #2F6B44; }
+    .cand-g.gC, .cand-g.gD { background: rgba(201,151,60,.15); color: #8A6A20; }
+    .cand-g.gE { background: rgba(180,70,60,.15); color: #A03A2E; }
+    .cand-m { grid-column: 1 / -1; font-size: 12px; color: var(--navy-600); }
+    .cand-dim { color: var(--navy-500); font-size: 12px; }
+    .cand-btn {
+      grid-column: 1 / -1; justify-self: start; margin-top: 6px;
+      background: none; border: 1px solid var(--gold); color: var(--gold);
+      border-radius: 6px; padding: 5px 14px; font-size: 13px; cursor: pointer;
+    }
+    .cand-btn:hover { background: var(--gold); color: #fff; }
+    .ov-flag {
+      display: inline-block; font-size: 11px; padding: 1px 6px; border-radius: 4px;
+      background: rgba(139,94,60,.12); color: var(--navy-600);
+    }
 </style>
 </Layout>
