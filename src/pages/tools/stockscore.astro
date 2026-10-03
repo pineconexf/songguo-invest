@@ -1,0 +1,324 @@
+---
+import Layout from '../../layouts/Layout.astro';
+
+// 个股打分卡 V1（2026-10-03，spec v1.0）
+// 六维：盈利质量22 / 成长18 / 估值20 / 财务健康15 / 资金动能13 / 概念景气12
+// 后端：POST /api/stockscore（backend/stockscore.py 引擎；与旧「个股体检」并存，互不影响）
+// 铁律：分位优先（禁绝对阈值）；缺失降级不填 0；亏损/金融/医药走 spec §1③ 特例；
+//       LLM 画像只喂分数与口径，无买卖倾向词；页面全文扫描禁词。
+// 样式基座照搬 fund-scorecard.astro / stockcheck.astro（评分条、AI 报告块、低置信披露、档位色带）。
+---
+<Layout
+  title="个股打分卡"
+  description="输入股票代码，六维打分（盈利质量/成长/估值/财务健康/资金动能/概念景气），每维给分位口径与置信度，缺失维度如实标注不填分。全市场横截面分位，规则公开可复算。不构成投资建议。"
+>
+  <section class="hero" style="padding: 56px 48px;">
+    <div class="hero-inner">
+      <span class="eyebrow">Free Tool · 个股打分卡 V1</span>
+      <h1>
+        同一把尺子量全市场，<br /><span class="gold">每个分数都能看到口径</span>
+      </h1>
+      <p class="hero-lead">
+        六个维度、每维若干指标，全部按<b>全市场同日期横截面分位</b>打分——不设拍脑袋的绝对阈值。
+        亏损股的估值维、银行的 PE、缺数据的子项，都<b>如实降级并标注原因，绝不用 0 分凑数</b>。
+        你带走的是可复现的评分依据，不是一句"看好"。
+      </p>
+      <div class="callout" style="margin-top: var(--sp-4);">
+        <b>先读这一句</b>：本工具输出的是<b>财务与交易状态的结构化读数</b>，不是投资建议，
+        不预测涨跌、不含任何买卖意见，也不构成对任何证券的投资意见。
+        所有分数由公开数据按本页写明的口径计算，<b>数据可能有误、口径有局限</b>，请自行复核后再作任何判断。投资有风险，入市需谨慎。
+      </div>
+    </div>
+  </section>
+
+  <section class="card" style="max-width: 860px; margin: 0 auto;">
+    <div class="section-head">
+      <div class="section-kicker">Stock Score · 六维打分</div>
+      <h2 class="section-title">输入股票代码</h2>
+      <p class="section-sub">支持 A 股 6 位代码（如 600519）。首次查询需现建全市场分位宇宙，约 30 秒；10 分钟内同码命中缓存秒回。</p>
+    </div>
+
+    <div class="io-row" style="display:flex; gap: var(--sp-3); align-items: stretch;">
+      <label class="valuator-field" style="flex:1;">
+        <span>股票代码</span>
+        <input id="ss-code" type="text" maxlength="6" placeholder="如 600519" style="letter-spacing: 2px;" />
+      </label>
+      <button id="ss-run" class="btn btn-gold" style="align-self:flex-end; white-space:nowrap;">开始打分 →</button>
+    </div>
+
+    <div id="ss-loading" style="display:none; margin-top: var(--sp-5); text-align:center; padding: var(--sp-5) 0;">
+      <div style="font-size:15px; color: var(--navy-700); font-weight:600;">正在打分中…</div>
+      <div style="font-size:13px; color: var(--navy-600); margin-top:6px;">
+        拉取财务/估值/资金数据 → 全市场分位 → 六维合成 → AI 画像（约 30 秒，请稍候）
+      </div>
+      <div style="margin: 14px auto 0; width: 40px; height: 40px; border: 3px solid rgba(217,164,65,0.25); border-top-color: var(--gold-500); border-radius: 50%; animation: ss-spin 0.8s linear infinite;"></div>
+    </div>
+
+    <div id="ss-result" style="display:none; margin-top: var(--sp-5); border-top: 1px solid rgba(139,94,60,0.15); padding-top: var(--sp-4);">
+      <div style="display:flex; align-items:center; gap: var(--sp-4); flex-wrap: wrap;">
+        <div style="text-align:center;">
+          <div id="ss-badge" style="font-size:36px; font-weight:800; width:96px; height:96px; border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#fff; margin:0 auto;">--</div>
+          <div id="ss-grade" style="font-size:13px; font-weight:700; color: var(--navy-700); margin-top:4px;">--</div>
+        </div>
+        <div style="flex:1; min-width: 220px;">
+          <div id="ss-name" style="font-size:20px; font-weight:800; color: var(--navy-900);">--</div>
+          <div id="ss-quote" style="font-size:13px; color: var(--navy-600); margin-top:4px;">--</div>
+          <div id="ss-subtotals" style="margin-top:8px; display:flex; gap:10px; flex-wrap:wrap;"></div>
+        </div>
+      </div>
+
+      <div id="ss-lowconf" style="margin-top: var(--sp-3);"></div>
+      <div id="ss-dims" style="margin-top: var(--sp-4); display:grid; gap: var(--sp-3);"></div>
+      <div id="ss-excluded" style="margin-top: var(--sp-3);"></div>
+      <div id="ss-industry" style="margin-top: var(--sp-3);"></div>
+      <div id="ss-report" style="margin-top: var(--sp-4);"></div>
+      <div id="ss-srcerr" style="margin-top: var(--sp-3);"></div>
+
+      <div class="callout" style="margin-top: var(--sp-4); background: linear-gradient(135deg, rgba(217,164,65,0.10), rgba(74,124,89,0.08));">
+        <b>单只只是单点。</b> 松果体系把「宏观 → 行业 → 个股」串成决策链路——先看 <a href="/songguo-invest/methodology/">四层体系架构</a>，再结合 <a href="/songguo-invest/tools/macro-signal/">宏观信号</a> 与 <a href="/songguo-invest/tools/industry-compare/">行业比较</a> 综合判断。想看整套打法？关注公众号「松果商业笔记」。
+      </div>
+
+      <div class="callout" style="margin-top: var(--sp-3);">
+        <b>数据说明</b>：行情与财务来自公开数据源（腾讯行情 / 东财数据中心 / 新浪资金流），全部按同日全市场横截面分位打分；
+        缺失维度如实标注 N/A，<b>不以 0 分或均值冒充</b>；AI 画像仅依据分数与口径生成，不含任何买卖倾向表述。
+        <b>结果仅作体系研究参考，不构成投资建议</b>，亦不构成对任何证券的投资意见。投资有风险，入市需谨慎。
+      </div>
+    </div>
+
+    <div id="ss-error" style="display:none; margin-top: var(--sp-4); padding: var(--sp-3); border-radius: 10px; background: rgba(190,60,40,0.08); color: #a03a28; font-size: 14px;"></div>
+  </section>
+
+  <section class="card" style="max-width: 860px; margin: var(--sp-4) auto 0;">
+    <div class="section-head">
+      <div class="section-kicker">方法论与口径</div>
+      <h2 class="section-title">六维权重与降级规则</h2>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table wrap-cells">
+        <thead><tr><th>维度</th><th>权重</th><th>指标</th><th>数据频率</th></tr></thead>
+        <tbody>
+          <tr><td><b>盈利质量</b></td><td>22%</td><td>扣非ROE三年最低 / ROIC / 现金流÷净利润(P2保险丝) / 毛利率水平与稳定性 / 附杜邦三分解展示</td><td>季频</td></tr>
+          <tr><td><b>成长</b></td><td>18%</td><td>营收同比 / 扣非净利同比 / 近3年复合 / 单季加速 / 预告方向</td><td>季频</td></tr>
+          <tr><td><b>估值水平</b></td><td>20%</td><td>PE自身3年分位 / PB自身3年分位 / PEG / 股息率 / 行业中位分位</td><td>日频</td></tr>
+          <tr><td><b>财务健康</b></td><td>15%</td><td>资产负债率 / 有息负债 / 流动·速动比率 / 利息保障 / 现金保险丝</td><td>季频</td></tr>
+          <tr><td><b>资金动能</b></td><td>13%</td><td>主力净流入60日分位(新浪口径) / 融资余额变化 / 量能背离提示（北向2024-09-30停更，不纳入）</td><td>日频</td></tr>
+          <tr><td><b>概念景气</b></td><td>12%</td><td>催化事件命中(结构化规则) / 板块20日位次(快照积累中)——只作拥挤度读数，非质地评价</td><td>日频</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:13px; color:var(--navy-600); line-height:1.8; margin-top:10px;">
+      <b>降级铁律</b>：任何指标缺数据 → 该子项不进分母（维内权重重新归一），整维缺数据 → available=false 并列入未纳入清单，<b>严禁填 0</b>。
+      亏损公司 PE 无定义 → 估值维整维 N/A；银行/证券 → PE、PEG 不计分只用 PB；医药/半导体亏损期 → 估值维 N/A。
+      样本不足、分位极端区、粗档口径 → 置信度打折并明示（&lt;0.6 进低置信清单）。
+      档位：总分 ≥80 优 / ≥65 良 / ≥45 中 / &lt;45 待观察。
+    </p>
+  </section>
+
+  <style is:global>
+    /* is:global：以下 DOM 由 JS 动态生成，scoped 匹配不到 */
+    @keyframes ss-spin { to { transform: rotate(360deg); } }
+    .ss-dim { border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; background: var(--card); }
+    .ss-dim-head { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+    .ss-dim-head .name { width: 110px; color: var(--navy-700); font-weight: 700; flex-shrink: 0; }
+    .ss-dim-head .track { flex: 1; height: 10px; background: rgba(139,94,60,0.12); border-radius: 5px; overflow: hidden; }
+    .ss-dim-head .fill { height: 100%; border-radius: 5px; background: linear-gradient(90deg, var(--gold-500), var(--gold-400)); transition: width 0.8s ease; }
+    .ss-dim-head .fill.low { background: linear-gradient(90deg, #c05a3a, #d97b4a); }
+    .ss-dim-head .fill.na { background: repeating-linear-gradient(45deg, #bbb, #bbb 4px, #ddd 4px, #ddd 8px); }
+    .ss-dim-head .val { width: 118px; text-align: right; font-weight: 700; color: var(--navy-900); flex-shrink: 0; }
+    .ss-metrics { margin-top: 8px; width: 100%; border-collapse: collapse; font-size: 12px; }
+    .ss-metrics th { text-align: left; color: var(--navy-500); font-weight: 600; padding: 3px 8px 3px 0; border-bottom: 1px solid var(--border); }
+    .ss-metrics td { padding: 4px 8px 4px 0; color: var(--navy-700); border-bottom: 1px dashed rgba(139,94,60,0.12); }
+    .ss-metrics .num { font-variant-numeric: tabular-nums; }
+    .ss-pctlband { display: inline-block; width: 54px; height: 8px; border-radius: 4px; overflow: hidden; background: linear-gradient(90deg, #d97b4a, #e8c37a, #7aa87f); position: relative; vertical-align: middle; }
+    .ss-pctlband i { position: absolute; top: -2px; width: 3px; height: 12px; background: var(--navy-900); border-radius: 1px; }
+    .ss-flag { font-size: 12px; color: #a03a28; background: rgba(190,60,40,0.06); border-radius: 8px; padding: 6px 9px; margin-top: 6px; line-height: 1.6; }
+    .ss-thresh { font-size: 11px; color: var(--navy-400); margin-top: 6px; }
+    .ss-chip { display:inline-block; font-size:12px; border:1px solid var(--border); border-radius: 20px; padding: 2px 10px; color: var(--navy-600); }
+    .ss-lowconf-box { font-size:12.5px; color:#8a5a20; background: rgba(217,164,65,0.10); border:1px solid rgba(217,164,65,0.35); border-radius: 10px; padding: 8px 11px; line-height: 1.7; }
+    .ss-excluded-box { font-size:12.5px; color:#a03a28; background: rgba(190,60,40,0.06); border:1px dashed rgba(190,60,40,0.4); border-radius: 10px; padding: 8px 11px; line-height: 1.7; }
+    .ss-dupont { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+    .ss-dupont .item { font-size:12px; background: rgba(74,124,89,0.07); border-radius:8px; padding:4px 10px; color: var(--navy-700); }
+  </style>
+
+  <script>
+    const API_BASE = location.origin; // 同源；本地开发时页面在 localhost:4321，API 在 :8081
+    // 本地优先模式：页面跑在 dev 端口且 8081 有服务时切到本地后端
+    if (['localhost', '127.0.0.1'].includes(location.hostname) && location.port !== '8081') {
+      // 探测一次，成功才切，避免线上误连
+      fetch('http://127.0.0.1:8081/api/health').then(r => r.ok && (window.__SS_BASE__ = 'http://127.0.0.1:8081')).catch(() => {});
+    }
+
+    function esc(s: any): string {
+      return String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] as string));
+    }
+    function show(id: string, on = true) {
+      const el = document.getElementById(id) as HTMLElement;
+      if (el) el.style.display = on ? 'block' : 'none';
+    }
+    function fmt(v: any, digits = 2): string {
+      if (v === null || v === undefined) return '—';
+      if (typeof v !== 'number') return esc(v);
+      return v >= 1000 ? v.toFixed(0) : v.toFixed(digits).replace(/\.?0+$/, '') || '0';
+    }
+
+    async function run() {
+      const code = ((document.getElementById('ss-code') as HTMLInputElement).value || '').trim();
+      if (!/^\d{6}$/.test(code)) { alert('请输入 6 位股票代码，如 600519'); return; }
+      show('ss-loading'); show('ss-result', false); show('ss-error', false);
+      try {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 75000);
+        const base = (window as any).__SS_BASE__ || API_BASE;
+        const res = await fetch(base + '/api/stockscore', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code }),
+          signal: ctrl.signal,
+        });
+        clearTimeout(timer);
+        if (res.status === 429) throw new Error('查询太频繁，请 1 分钟后再试（按 IP 限流）');
+        if (res.status === 404) throw new Error('未获取到该股票数据，请核对代码');
+        if (!res.ok) throw new Error('打分失败 HTTP ' + res.status);
+        render(await res.json());
+      } catch (e: any) {
+        show('ss-loading', false);
+        const msg = e?.name === 'AbortError' ? '查询超时（75 秒），请重试' : (e?.message || '网络错误，请稍后重试');
+        (document.getElementById('ss-error') as HTMLElement).textContent = '⚠️ ' + msg;
+        show('ss-error');
+      }
+    }
+
+    function band(pctl: number | null): string {
+      if (pctl === null || pctl === undefined) return '';
+      const left = Math.max(0, Math.min(100, pctl));
+      return `<span class="ss-pctlband" title="分位 ${left}"><i style="left:calc(${left}% - 1px)"></i></span>`;
+    }
+
+    function render(d: any) {
+      // 头部：档位色带（优=金 / 良=绿 / 中=灰金 / 待观察=砖红）
+      const tierColor: Record<string, string> = {
+        '优': 'linear-gradient(135deg, var(--gold-500), var(--gold-400))',
+        '良': 'linear-gradient(135deg, #4A7C59, #7aa87f)',
+        '中': 'linear-gradient(135deg, #9a7b4f, #c2a878)',
+        '待观察': 'linear-gradient(135deg, #b04a32, #d97b4a)',
+      };
+      const badge = document.getElementById('ss-badge') as HTMLElement;
+      badge.textContent = d.total === null || d.total === undefined ? '--' : String(Math.round(d.total));
+      badge.style.background = tierColor[d.tier] || tierColor['中'];
+      (document.getElementById('ss-grade') as HTMLElement).textContent =
+        `档位 ${d.tier ?? '--'} ｜ 数据截至 ${d.data_asof ?? '--'}`;
+      (document.getElementById('ss-name') as HTMLElement).textContent = `${d.name}（${d.code}）`;
+      const q = d.quote || {};
+      (document.getElementById('ss-quote') as HTMLElement).textContent =
+        `现价 ¥${fmt(q.price)} ｜ PE(TTM) ${fmt(q.pe_ttm)} ｜ PB ${fmt(q.pb)} ｜ 总市值 ${fmt(q.mv_yi, 0)} 亿`;
+
+      // 季频/日频小计
+      const sub = document.getElementById('ss-subtotals') as HTMLElement;
+      sub.innerHTML = [
+        ['季频基本面小计', d.fundamental_score],
+        ['日频交易小计', d.trading_score],
+      ].map(([lab, v]) =>
+        `<span class="ss-chip">${lab}：<b>${v === null || v === undefined ? 'N/A' : fmt(v, 1)}</b></span>`).join('') +
+        `<span class="ss-chip">可用维度：${d.dims_available_n}/6</span>`;
+
+      // 低置信披露（置于分数之前，先说不可靠再说结论）
+      const lcBox = document.getElementById('ss-lowconf') as HTMLElement;
+      if ((d.low_confidence || []).length) {
+        lcBox.className = 'ss-lowconf-box';
+        lcBox.innerHTML = '⚠ <b>低置信项（confidence &lt; 0.6，读数仅供参考）：</b>' +
+          d.low_confidence.map((x: any) =>
+            `<br>· ${esc(x.dim)}${(x['metrics_below_0.6'] || []).length ? '（' + x['metrics_below_0.6'].map(esc).join('、') + '）' : ''}${x.dim_confidence !== undefined ? `　置信 ${fmt(x.dim_confidence, 2)}` : ''}${x.reason ? `　<span style="color:var(--navy-400)">${esc(x.reason)}</span>` : ''}`
+          ).join('');
+        show('ss-lowconf');
+      } else { lcBox.innerHTML = ''; show('ss-lowconf', false); }
+
+      // 六维
+      const dims = document.getElementById('ss-dims') as HTMLElement;
+      dims.innerHTML = (d.dims || []).map((dim: any) => {
+        const pct = dim.available && dim.score !== null ? Math.round(dim.score) : 0;
+        const fillCls = !dim.available ? 'na' : (pct <= 30 ? 'low' : '');
+        const rows = (dim.metrics || []).map((m: any) =>
+          `<tr><td>${esc(m.name)}</td>` +
+          `<td class="num">${fmt(m.value)}${esc(m.unit || '')}</td>` +
+          `<td class="num">${m.pctl === null || m.pctl === undefined ? '—' : fmt(m.pctl, 1) + '%'}</td>` +
+          `<td>${band(m.pctl)}</td>` +
+          `<td class="num">${fmt(m.weight * 100, 0)}%</td>` +
+          `<td class="num">${m.confidence !== undefined && m.confidence < 0.6 ? '⚠' + fmt(m.confidence, 2) : fmt(m.confidence, 2)}</td></tr>`
+        ).join('');
+        const flags = (dim.flags || []).map((f: string) => `<div class="ss-flag">⚑ ${esc(f)}</div>`).join('');
+        const dupont = dim.dupont ? `<div class="ss-dupont">
+            <span class="item">净利率 ${fmt(dim.dupont.margin)}%</span>
+            <span class="item">资产周转 ${fmt(dim.dupont.turnover)}</span>
+            <span class="item">权益乘数 ×${fmt(dim.dupont.equity_mult)}</span>
+            <span class="item" style="color:var(--navy-400)">${esc(dim.dupont.note || '杜邦分解（仅展示，不参与打分）')}</span>
+          </div>` : '';
+        const concepts = dim.concepts && dim.concepts.names ? `<div class="ss-thresh">概念标签（${dim.concepts.n ?? dim.concepts.names.split(',').length} 个）：${esc(dim.concepts.names).slice(0, 300)}</div>` : '';
+        return `<div class="ss-dim">
+          <div class="ss-dim-head">
+            <span class="name">${esc(dim.label)} <span style="color:var(--navy-400);font-weight:400">${Math.round(dim.weight * 100)}%</span></span>
+            <span class="track"><span class="fill ${fillCls}" style="width:${dim.available ? Math.max(pct, 2) : 100}%"></span></span>
+            <span class="val">${dim.available && dim.score !== null ? `${fmt(dim.score, 1)}分→贡 ${fmt(dim.weighted_score, 1)}` : 'N/A'}</span>
+            <span style="font-size:11px;color:var(--navy-400);flex-shrink:0">置信 ${fmt(dim.confidence, 2)}</span>
+          </div>
+          ${rows ? `<table class="ss-metrics"><thead><tr><th>指标</th><th>值</th><th>分位</th><th></th><th>维内权重</th><th>置信</th></tr></thead><tbody>${rows}</tbody></table>` : ''}
+          ${dupont}${flags}${concepts}
+          ${dim.thresh ? `<div class="ss-thresh">口径：${esc(dim.thresh)}</div>` : ''}
+        </div>`;
+      }).join('');
+
+      // 未纳入维度
+      const exBox = document.getElementById('ss-excluded') as HTMLElement;
+      if ((d.excluded || []).length) {
+        exBox.className = 'ss-excluded-box';
+        exBox.innerHTML = '⛔ <b>未纳入维度（不填 0，维权重已归一到剩余维度）：</b>' +
+          d.excluded.map((e: any) => `<br>· ${esc(e.dim)}：${esc(e.reason)}`).join('');
+        show('ss-excluded');
+      } else { exBox.innerHTML = ''; show('ss-excluded', false); }
+
+      // 行业参考层
+      const ind = d.industry;
+      const indBox = document.getElementById('ss-industry') as HTMLElement;
+      if (ind) {
+        indBox.innerHTML = `<div style="font-size:12.5px;color:var(--navy-600);background:rgba(74,124,89,0.06);border-radius:10px;padding:8px 11px;line-height:1.8;">
+          <b>行业参考（${esc(ind.level || '')}）：${esc(ind.name)}${ind.name3 ? ' / ' + esc(ind.name3) : ''}</b>
+          ｜ 行业PE ${fmt(ind.pe_ttm, 1)} 倍，自身3年分位 ${fmt(ind.pe_pctl, 0)}%（PB ${fmt(ind.pb_pctl, 0)}%）
+          ｜ 本票PE在行业内分位 ${fmt(ind.rank_pct, 0)}% ｜ 行业亏损家占比 ${ind.loss_ratio !== undefined && ind.loss_ratio !== null ? (ind.loss_ratio * 100).toFixed(0) + '%' : '—'}
+          ${ind.caveat ? `<br><span style="color:var(--navy-400)">${esc(ind.caveat)}</span>` : ''}</div>`;
+        show('ss-industry');
+      } else { show('ss-industry', false); }
+
+      // AI 画像
+      const r = d.report || {};
+      const li = (arr: any[]) => (arr || []).map((x: string) => `<li>${esc(x)}</li>`).join('');
+      (document.getElementById('ss-report') as HTMLElement).innerHTML = `
+        <div style="font-size:14px; color: var(--navy-800); line-height:1.8; background: rgba(139,94,60,0.05); border-radius:10px; padding: var(--sp-3);">
+          <div style="font-weight:800; color: var(--navy-900); margin-bottom:4px;">AI 打分画像 <span style="font-weight:400;font-size:11px;color:var(--navy-400);">（输入仅分数与口径：${esc(r.input_mode || '')}）</span></div>
+          <p style="margin:0 0 8px;">${esc(r.summary ?? '')}</p>
+          <p style="margin:0 0 8px; font-size:13px; color: var(--navy-700);">${esc(r.profile_analysis ?? '')}</p>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top:8px;">
+            <div><div style="font-size:12px; font-weight:700; color:#4A7C59;">优势</div><ul style="margin:4px 0 0; padding-left:16px; font-size:12px; color: var(--navy-700); line-height:1.7;">${li(r.strengths)}</ul></div>
+            <div><div style="font-size:12px; font-weight:700; color: #a03a28;">短板与风险</div><ul style="margin:4px 0 0; padding-left:16px; font-size:12px; color: var(--navy-700); line-height:1.7;">${li(r.risks)}</ul></div>
+          </div>
+          <p style="margin:10px 0 0; font-size:13px; font-weight:600; color: var(--navy-900);">${esc(r.verdict ?? '')}</p>
+          ${(r.caveats || []).length ? `<div style="margin-top:8px;font-size:12px;color:#8a5a20;line-height:1.7;"><b>口径限制：</b>${li(r.caveats).replace(/<li>/g, '<div>· ').replace(/<\/li>/g, '</div>')}</div>` : ''}
+        </div>`;
+
+      // 取数异常
+      const seBox = document.getElementById('ss-srcerr') as HTMLElement;
+      if ((d.source_errors || []).length) {
+        seBox.innerHTML = `<div style="font-size:12px;color:var(--navy-400);">取数异常记录：${d.source_errors.map((x: any) => esc(typeof x === 'string' ? x : JSON.stringify(x))).join('；')}</div>`;
+        show('ss-srcerr');
+      } else { show('ss-srcerr', false); }
+
+      show('ss-loading', false);
+      show('ss-result');
+      const el = document.getElementById('ss-result') as HTMLElement;
+      window.scrollTo({ top: el.offsetTop - 80, behavior: 'smooth' });
+    }
+
+    document.getElementById('ss-run')?.addEventListener('click', run);
+    (document.getElementById('ss-code') as HTMLInputElement)?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') run();
+    });
+  </script>
+</Layout>

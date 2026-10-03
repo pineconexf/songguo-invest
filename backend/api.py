@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """松果个股体检 API（华纳云部署版）
 POST /api/check  {"code": "600729"} → 完整体检报告 JSON
+POST /api/stockscore {"code": "600519"} → 六维个股打分卡（spec v1.0，2026-10-03）
+  旧「个股体检」保持在线不动；打分卡引擎在 backend/stockscore.py，另开代码。
 
 安全口径（2026-09-15 审计批次0）：
 - 密钥优先级：环境变量 > 本地 .env（生产用 systemd EnvironmentFile 注入）
@@ -239,12 +241,122 @@ def check(req: Req):
     return payload
 
 
+# ============================================================
+# 个股打分卡（spec v1.0 六维，2026-10-03）—— 与旧体检并存、互不影响
+# 引擎：backend/stockscore.py；缓存复用 10 分钟 TTL，键前缀 ss: 隔离
+# ============================================================
+import stockscore as _ss  # noqa: E402
+
+
+def _cache_get_ss(code):
+    return cache_get('ss:' + code)
+
+
+def _cache_put_ss(code, payload):
+    cache_put('ss:' + code, payload)
+
+
+SS_PROMPT = """你是「松果投资体系」个股打分卡的报告生成器。以下是某只 A 股的六维打分卡结果（分数与口径，无任何交易建议信息）。
+
+{facts}
+
+请输出 JSON：
+{{
+  "summary": "一句话定位（60字内：这是一只什么特征的股票，从分数结构出发）",
+  "profile_analysis": "分数归因（150字内：强项维为什么强、短板维为什么短，引用具体指标分位）",
+  "strengths": ["优势1", "优势2", "优势3"],
+  "risks": ["短板与风险1", "短板与风险2", "短板与风险3"],
+  "verdict": "档位定位（120字内：结合季频基本面小计与日频交易小计的分化，说明当前分数主要由哪一侧驱动）",
+  "caveats": ["数据口径限制/未纳入维度/低置信项的具体说明，逐条列出"]
+}}
+
+铁律（合规红线，逐条遵守）：
+1. 只做档位定位、分数归因、短板说明。禁止出现买入、卖出、加仓、减仓、持有、建仓、清仓、目标价、涨跌预测、收益承诺、推荐 等任何词。
+2. 禁止人格化/标签化称谓（如"超级牛股""陷阱股"）。
+3. 未纳入(excluded)与低置信(low_confidence)的维度必须如实写进 caveats，不得掩盖。
+4. 只依据给定数字，不得编造任何指标或事件。"""
+
+
+def _build_ss_prompt(payload):
+    facts = _ss.llm_report_input(payload)
+    ex = '；'.join(f"{e['dim']}：{e['reason']}" for e in payload['excluded']) or '无'
+    lc = '；'.join(f"{x['dim']}：{','.join(x['metrics_below_0.6']) or x['dim_confidence']}"
+                   for x in payload['low_confidence']) or '无'
+    facts += f"\n未纳入维度: {ex}\n低置信项: {lc}"
+    return SS_PROMPT.format(facts=facts)
+
+
+def _sanitize_llm_text(obj):
+    """LLM 输出兜底扫描：命中禁词的句子整句丢弃，绝不带病返回（spec §6 铁律）。"""
+    if isinstance(obj, str):
+        return None if _ss.BANNED_RE.search(obj) else obj
+    if isinstance(obj, list):
+        out = []
+        for x in obj:
+            s = _sanitize_llm_text(x)
+            if s is not None:
+                out.append(s)
+        return out
+    if isinstance(obj, dict):
+        out = {}
+        for k, v in obj.items():
+            s = _sanitize_llm_text(v)
+            if s is not None:
+                out[k] = s
+        return out
+    return obj
+
+
+@app.post('/api/stockscore')
+def stockscore(req: Req):
+    code = re.sub(r'\D', '', req.code or '')
+    if len(code) != 6:
+        raise HTTPException(400, '请输入6位股票代码')
+
+    cached = _cache_get_ss(code)
+    if cached:
+        return cached
+
+    try:
+        payload, status = _ss.compute_stock_score(code)
+    except Exception as e:
+        raise HTTPException(500, f'打分卡计算异常: {type(e).__name__}: {e}')
+    if payload is None:
+        raise HTTPException(404, '未获取到该股票数据，请核对代码')
+
+    # LLM 画像：失败不阻断（打分本体是确定性规则，可独立成立）
+    # _call_llm 内部 3 连发无退避，DeepSeek 突发限流时会全灭；这里再补一轮长退避重试
+    report = None
+    for round_i in range(2):
+        try:
+            report = _sanitize_llm_text(_call_llm(_build_ss_prompt(payload)))
+            break
+        except HTTPException:
+            if round_i == 0:
+                time.sleep(20)
+    if isinstance(report, dict) and report:
+        payload['report'] = report
+    else:
+        payload['report'] = {'summary': None,
+                             'caveats': ['AI 画像生成失败或含违规表述，已拦截；分数本体不受影响']}
+    payload['report']['input_mode'] = '仅分数与口径，无买卖倾向词'
+    _cache_put_ss(code, payload)
+    return payload
+
+
+@app.on_event('startup')
+def _ss_warmup():
+    """启动预热日级横截面宇宙（避免首个请求等 30s）。失败静默，请求路径会自愈重试。"""
+    _ss.warmup_async()
+
+
 # ---------- 匿名工具使用埋点（2026-09-18）----------
 # 只记录：工具名/事件/随机sid/停留秒数。不记录IP、不记录用户输入内容。
 # 数据按日切 JSONL 存 track/，90 天归档压缩。埋点失败静默，绝不影响主服务。
 TRACK_DIR = os.path.join(BASE_DIR, 'track')
 TRACK_TOOLS = {'backtest-compare', 'compound', 'daily-insight', 'etf-allocator', 'fund-ranking',
-               'fund-scorecard', 'industry-compare', 'industry-report', 'macro-signal', 'stockcheck', 'valuator'}
+               'fund-scorecard', 'industry-compare', 'industry-report', 'macro-signal', 'stockcheck', 'valuator',
+               'stockscore'}
 TRACK_EVENTS = {'view', 'run', 'result', 'error', 'dwell'}
 _TRACK_LOCK = threading.Lock()
 
