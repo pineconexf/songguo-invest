@@ -1,0 +1,238 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+  /** 正文尾部合规提示条；about / privacy 已含完整合规声明，可置 false */
+  dataNotice?: boolean;
+}
+
+const {
+  title,
+  description = '松果投资实验室 — 融合东西方智慧、经14年真实回测验证的A股量化价值投资方法论',
+  dataNotice = true,
+} = Astro.props;
+const current = Astro.url.pathname;
+
+const navItems = [
+  { href: '/songguo-invest/', label: '首页' },
+  { href: '/songguo-invest/philosophy/', label: '理念' },
+  { href: '/songguo-invest/methodology/', label: '体系' },
+  { href: '/songguo-invest/strategies/', label: '策略' },
+  { href: '/songguo-invest/archive/', label: '历史档案' },
+  { href: '/songguo-invest/tools/', label: '工具' },
+  { href: '/songguo-invest/services/', label: '服务' },
+  { href: '/songguo-invest/about/', label: '关于' },
+];
+---
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" href="/songguo-invest/favicon.png" />
+    <title>{title} · 松果投资实验室</title>
+    <meta name="description" content={description} />
+    <meta name="robots" content="index, follow" />
+    <!-- 51LA 全站访问统计（S11 流量计数器 · 2026-09-04 启用） -->
+    <script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+    <script>LA.init({ id: "3R652g8Pi9bMsul2", ck: "3R652g8Pi9bMsul2" })</script>
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="nav container">
+        <a href="/songguo-invest/" class="brand">
+          <img src="/songguo-invest/logo-mascot.png" alt="松果投资实验室" class="brand-logo" width="44" height="44" />
+          <span><span class="gold">松果</span>投资实验室</span>
+        </a>
+        <div class="nav-links">
+          {
+            navItems.map((item) => (
+              <a
+                href={item.href}
+                class:list={['nav-link', { active: current === item.href }]}
+              >
+                {item.label}
+              </a>
+            ))
+          }
+        </div>
+      </nav>
+    </header>
+
+    <main class="container main-content">
+      <slot />
+      {
+        dataNotice && (
+          <p class="inline-disclaimer">
+            <b>合规提示</b>：本页所有收益、回撤等指标均为<b>历史回测结果</b>（含成本口径），非实盘业绩，
+            不代表未来收益，<b>不构成投资建议</b>，亦不构成对任何产品的推荐。投资有风险，入市需谨慎。
+          </p>
+        )
+      }
+    </main>
+
+    <!-- 底部精简栏：公众号 / 留言 / Pro / 工具 -->
+    <div class="bottom-strip">
+      <div class="container bottom-strip-grid">
+        <div class="bs-col">
+          <div class="bs-title">📬 公众号</div>
+          <div class="bs-text">每周深度文章在「松果商业笔记」</div>
+          <a href="/songguo-invest/services/" class="bs-link">去看看 →</a>
+        </div>
+        <div class="bs-col bs-col-wide">
+          <div class="bs-title">💬 给「松果投资实验室」留言</div>
+          <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
+            <input id="fb-content" type="text" placeholder="意见 / 建议（必填）" style="flex: 1; min-width: 0; padding: 7px 10px; border: 1px solid var(--border-strong); border-radius: 8px; font-size: 12px; box-sizing: border-box;" />
+            <button id="fb-submit" class="btn btn-gold" style="font-size: 12px; padding: 7px 14px; white-space: nowrap;">提交</button>
+          </div>
+          <div id="fb-msg" style="font-size: 11px; color: var(--text-3); margin-top: 4px; min-height: 14px;">每一条反馈都会看，仅用于产品改进。</div>
+        </div>
+        <div class="bs-col">
+          <div class="bs-title">🔒 松果投资实验室 Pro</div>
+          <div class="bs-text">组合档案 · 126 个月逐月可查</div>
+          <a href="/songguo-invest/archive/pro/" class="bs-link">看 Pro 档案 →</a>
+        </div>
+      </div>
+    </div>
+
+    <footer class="site-footer">
+      <div class="container">
+        <p class="disclaimer">
+          本站为投资方法论的历史回测研究展示，数据为 2012-2026 年 173 个月回测结果（含成本口径），
+          历史表现不代表未来收益，不构成任何投资建议，亦不构成对任何产品的推荐。投资有风险，入市需谨慎。
+        </p>
+        <p class="footer-meta">
+                  © 2026 松果商业笔记 · 数据驱动 · 纪律执行 · 长期主义 ·
+                  <a href="/songguo-invest/privacy/" style="color:inherit; text-decoration:underline;">隐私政策</a>
+                  ·
+                  <a href="https://beian.miit.gov.cn" target="_blank" rel="noopener" style="color:inherit; text-decoration:underline;">浙ICP备2026075755号</a>
+                  <br />
+                  <span style="font-size:12px; color:var(--text-3);">联系公众号：松果商业笔记（微信）</span>
+                </p>
+      </div>
+    </footer>
+
+    <script>
+      // 读者反馈提交：formsubmit.co（https，直达邮箱；失败提示重试）
+      const fbBtn = document.getElementById('fb-submit');
+      if (fbBtn) {
+        fbBtn.addEventListener('click', async () => {
+          const get = (id: string) => ((document.getElementById(id) as HTMLInputElement)?.value || '').trim();
+          const content = get('fb-content');
+          const msg = document.getElementById('fb-msg') as HTMLElement;
+          if (!content) {
+            msg.textContent = '请先填写意见内容';
+            msg.style.color = 'var(--red)';
+            return;
+          }
+          fbBtn.textContent = '提交中…';
+          (fbBtn as HTMLButtonElement).disabled = true;
+          try {
+            const r = await fetch('https://formsubmit.co/ajax/Pinecone.finn@gmail.com', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+              body: JSON.stringify({
+                content,
+                page: location.pathname,
+                _subject: '松果投资实验室·读者留言',
+              }),
+            });
+            const d = await r.json().catch(() => ({}));
+            if (r.ok && d.success === 'true') {
+              msg.textContent = '✅ 感谢留言！我们会认真看每一条反馈。';
+              msg.style.color = 'var(--green)';
+              const input = document.getElementById('fb-content') as HTMLInputElement;
+              if (input) input.value = '';
+            } else {
+              msg.textContent = '提交失败，请稍后再试。';
+              msg.style.color = 'var(--red)';
+            }
+          } catch {
+            msg.textContent = '网络异常，提交失败，可稍后重试。';
+            msg.style.color = 'var(--red)';
+          }
+          fbBtn.textContent = '提交';
+          (fbBtn as HTMLButtonElement).disabled = false;
+        });
+      }
+    </script>
+
+    <style is:global>
+      .inline-disclaimer {
+        margin: var(--sp-5) 0 0;
+        padding: 10px 14px;
+        border-left: 3px solid rgba(139, 94, 60, 0.35);
+        background: rgba(139, 94, 60, 0.045);
+        border-radius: 0 8px 8px 0;
+        font-size: 12.5px;
+        line-height: 1.75;
+        color: var(--text-3);
+      }
+      .inline-disclaimer b {
+        color: var(--text-2);
+      }
+    </style>
+    <script is:inline>
+    // 匿名工具使用埋点（2026-09-18）：view/run/result/error/dwell → 同源 /api/track
+    // 只发：工具名/事件/随机sid/停留秒。不发IP、不发任何用户输入。失败静默。
+    (function () {
+      try {
+        var m = (location.pathname.match(/\/tools\/([a-z0-9-]+)\/?$/) || [])[1];
+        if (!m) return;
+        if (!/pinecone-lab\.cn$/.test(location.hostname)) return; // 仅云站上报，GH镜像不发避免404噪声
+        var P2T = { bc: 'backtest-compare', c: 'compound', ea: 'etf-allocator', fs: 'fund-scorecard',
+                    ic: 'industry-compare', ir: 'industry-report', ms: 'macro-signal', sc: 'stockcheck', v: 'valuator' };
+        var tool = P2T[m] ? m : m; // slug 直接用（白名单在服务端）
+        var sid = (Math.random().toString(36).slice(2, 10) + Date.now().toString(36));
+        var t0 = Date.now();
+        function send(ev, dwell) {
+          try {
+            var body = JSON.stringify({ tool: tool, event: ev, sid: sid, dwell: dwell });
+            var url = location.origin + '/api/track';
+            if (navigator.sendBeacon) {
+              var ok = navigator.sendBeacon(url, new Blob([body], { type: 'application/json' }));
+              if (ok) return;
+            }
+            fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                         body: body, keepalive: true, mode: 'cors' })['catch'](function () {});
+          } catch (e) {}
+        }
+        function dwellSec() { return (Date.now() - t0) / 1000; }
+        var leaving = false;
+        function flushDwell() { if (leaving) return; leaving = true; send('dwell', dwellSec()); }
+        send('view');
+        document.addEventListener('click', function (e) {
+          try {
+            var b = e.target && e.target.closest ? e.target.closest('[id$="-run"]') : null;
+            if (b) {
+              var pre = (b.id || '').replace(/-run$/, '');
+              if (P2T[pre] === tool) send('run'); // 防跨页误记
+            }
+          } catch (err) {}
+        }, true);
+        var res = document.getElementById(tool === 'stockcheck' ? 'sc-result' :
+                  tool === 'valuator' ? 'v-result' : tool === 'macro-signal' ? 'ms-result' :
+                  tool === 'industry-report' ? 'ir-result' : tool === 'industry-compare' ? 'ic-result' :
+                  tool === 'etf-allocator' ? 'ea-result' : tool === 'fund-scorecard' ? 'fs-result' :
+                  tool === 'backtest-compare' ? 'bc-result' : tool === 'compound' ? 'c-result' : null);
+        var shown = false;
+        function vis(el) { return el && getComputedStyle(el).display !== 'none' && el.offsetParent !== null; }
+        if (res) {
+          if (vis(res)) shown = true;
+          try {
+            new MutationObserver(function () {
+              var now = vis(res);
+              if (now && !shown) { shown = true; send('result'); }
+              if (!now) shown = false;
+            }).observe(res, { attributes: true, attributeFilter: ['style', 'class'], subtree: false });
+          } catch (e) {}
+        }
+        document.addEventListener('visibilitychange', function () { if (document.hidden) flushDwell(); });
+        window.addEventListener('pagehide', flushDwell);
+      } catch (e) {}
+    })();
+    </script>
+  </body>
+</html>
