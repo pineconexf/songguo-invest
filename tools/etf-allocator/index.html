@@ -36,7 +36,8 @@
         if (!m) return;
         if (!/pinecone-lab\.cn$/.test(location.hostname)) return; // 仅云站上报，GH镜像不发避免404噪声
         var P2T = { bc: 'backtest-compare', c: 'compound', ea: 'etf-allocator', fs: 'fund-scorecard',
-                    ic: 'industry-compare', ir: 'industry-report', ms: 'macro-signal', sc: 'stockcheck', v: 'valuator' };
+                    ic: 'industry-compare', ir: 'industry-report', ms: 'macro-signal', sc: 'stockcheck', v: 'valuator',
+                    ss: 'stockscore' };
         var tool = P2T[m] ? m : m; // slug 直接用（白名单在服务端）
         var sid = (Math.random().toString(36).slice(2, 10) + Date.now().toString(36));
         var t0 = Date.now();
@@ -66,6 +67,7 @@
           } catch (err) {}
         }, true);
         var res = document.getElementById(tool === 'stockcheck' ? 'sc-result' :
+                  tool === 'stockscore' ? 'ss-result' :
                   tool === 'valuator' ? 'v-result' : tool === 'macro-signal' ? 'ms-result' :
                   tool === 'industry-report' ? 'ir-result' : tool === 'industry-compare' ? 'ic-result' :
                   tool === 'etf-allocator' ? 'ea-result' : tool === 'fund-scorecard' ? 'fs-result' :

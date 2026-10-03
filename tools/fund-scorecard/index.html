@@ -47,6 +47,17 @@
     return n;
   };
   const nz = v => (v === null || v === undefined || Number.isNaN(v) || v === '') ? null : v;
+
+  // 净值截止日：DB.built 是「我什么时候跑的」，客户真正关心的是「净值到哪天」。
+  // 两者可能差 1-3 天（基金净值 T+1~T+2 才披露，节假日更多）。
+  // 缺这个字段时回落到 built，避免页面显示空白。
+  const fmtDate = s => (typeof s === 'string' && s.length === 8 && /^\d+$/.test(s))
+    ? s.slice(0, 4) + '-' + s.slice(4, 6) + '-' + s.slice(6, 8) : s;
+  let NAV_AS_OF = '';
+  const _syncAsOf = () => {
+    NAV_AS_OF = fmtDate((DB && (DB.nav_as_of || DB.built)) || '');
+  };
+  _syncAsOf();
   const pct = (v, d = 1) => v === null ? '—' : (v > 0 ? '+' : '') + v.toFixed(d) + '%';
   const num = (v, d = 2) => v === null ? '—' : v.toFixed(d);
 
@@ -395,7 +406,7 @@
           ? '被动基金按设计不做 A/T 回归，其收益来源就是指数本身'
           : (f.as === 'ok' ? 'A/T 已用自身复合基准回归' : '该基金基准拟合不足，A/T 未出数')}）；
         发行规模为<b>发行时规模，非当前 AUM</b>（当前规模数据源无权限）；
-        ${f.it ? '基金类型：' + f.it + '；' : ''}数据构建于 ${DB ? DB.built : '—'}。
+        ${f.it ? '基金类型：' + f.it + '；' : ''}${NAV_AS_OF ? '净值截至 ' + NAV_AS_OF + '；' : ''}数据构建于 ${DB ? DB.built : '—'}。
         本页分数为「松果内部购买决策分」，非监管机构或第三方基金评级。
       </div>`;
     box.appendChild(fb);
@@ -684,6 +695,7 @@
         fetch(BASE + 'fund_holdings.json'),
       ]);
       DB = await r1.json();
+      _syncAsOf();          // DB 就绪后才能取到真实的净值截止日
       HOLD = await r2.json().catch(() => ({}));
       const mf = await fetch(BASE + 'fund_shards.json').then(r => r.json()).catch(() => null);
       if (mf && mf.shards) {
@@ -723,7 +735,8 @@
         <span>已出分 <b>${ok.toLocaleString()}</b> 只</span>
         <span>可下钻持仓 <b>${(DB.n_holdings || 0).toLocaleString()}</b> 只</span>
         <span>跨市场基金 <b>${pax.toLocaleString()}</b> 只</span>
-        <span>数据构建 ${DB.built || '—'}</span>`;
+        <span title="基金净值由基金公司披露，通常 T+1~T+2 发布，节假日更慢；这是页面所有业绩数字的实际数据截止日">净值截至 ${NAV_AS_OF || '—'}</span>
+        <span>构建 ${DB.built || '—'}</span>`;
     } catch (e) {
       $('#fs-stats').innerHTML = `<span style="color:#B4553A;">数据加载失败：${e.message}</span>`;
     }
@@ -774,7 +787,8 @@
         if (!m) return;
         if (!/pinecone-lab\.cn$/.test(location.hostname)) return; // 仅云站上报，GH镜像不发避免404噪声
         var P2T = { bc: 'backtest-compare', c: 'compound', ea: 'etf-allocator', fs: 'fund-scorecard',
-                    ic: 'industry-compare', ir: 'industry-report', ms: 'macro-signal', sc: 'stockcheck', v: 'valuator' };
+                    ic: 'industry-compare', ir: 'industry-report', ms: 'macro-signal', sc: 'stockcheck', v: 'valuator',
+                    ss: 'stockscore' };
         var tool = P2T[m] ? m : m; // slug 直接用（白名单在服务端）
         var sid = (Math.random().toString(36).slice(2, 10) + Date.now().toString(36));
         var t0 = Date.now();
@@ -804,6 +818,7 @@
           } catch (err) {}
         }, true);
         var res = document.getElementById(tool === 'stockcheck' ? 'sc-result' :
+                  tool === 'stockscore' ? 'ss-result' :
                   tool === 'valuator' ? 'v-result' : tool === 'macro-signal' ? 'ms-result' :
                   tool === 'industry-report' ? 'ir-result' : tool === 'industry-compare' ? 'ic-result' :
                   tool === 'etf-allocator' ? 'ea-result' : tool === 'fund-scorecard' ? 'fs-result' :
