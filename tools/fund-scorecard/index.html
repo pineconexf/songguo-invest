@@ -598,13 +598,40 @@
     if (t) t.textContent = msg;
   }
 
+// 代码归一：客户会直接输 6 位裸代码（如 511010），
+  // 但库里的键带交易所后缀（511010.SH）。此前用严格相等导致查不到。
+  // 同时兼容「511010.sh」「SH511010」等常见写法。
+  function findMeta(raw) {
+    const funds = DB.funds || [];
+    let code = String(raw || '').trim().toUpperCase().replace(/\s+/g, '');
+    let hit = funds.find(x => x.c === code);
+    if (hit) return hit;
+    const bare = code.replace(/\.(SH|SZ|BJ|OF)$/, '');
+    hit = funds.find(x => x.c === bare);                       // 场外纯数字码
+    if (hit) return hit;
+    if (/^\d{6}$/.test(bare)) {
+      // 交易所前缀：沪市 5xx/6xx/9xx/11x-13x/15x/16x/18x，深市 0xx/1xx/2xx/3xx/12x。
+      // 不硬猜前缀（猜错会静默查不到），直接用唯一性匹配：
+      // 全库只有一只 6 位码相同就认它，多只则交给下拉点选。
+      const cands = funds.filter(x => x.c.slice(0, 6) === bare);
+      if (cands.length === 1) return cands[0];
+      if (cands.length > 1) {
+        // 场外（.OF）与场内同名时，优先场外：客户输 6 位码多指天天基金
+        const of = cands.find(x => /\.OF$/.test(x.c));
+        return of || null;
+      }
+    }
+    return null;
+  }
+
   async function doRun(code) {
-    const meta = (DB.funds || []).find(x => x.c === code);
+    const meta = findMeta(code);
     if (!meta) {
       $('#fs-result').innerHTML = `<div class="card" style="max-width:980px;margin:24px auto;padding:20px;color:#B4553A;">
         没找到代码 ${code} 对应的基金。试试从下拉里点选，或换个关键词。</div>`;
       return;
     }
+    code = meta.c;
     $('#fs-result').innerHTML = `<div class="card" style="max-width:980px;margin:24px auto;padding:20px;color:var(--navy-600);">
       正在载入 ${meta.n || code} 的详细数据…</div>`;
     const m = await ensureShard(meta.s);
