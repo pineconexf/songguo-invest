@@ -369,7 +369,14 @@
 
     // ===== 适合谁 + 数据说明 =====
     const fb = el('div', { style: 'padding:24px 32px;' });
-    const risk = nz(f.md) === null ? '未知' : (f.md > -30 ? '高波动' : f.md > -15 ? '中高波动' : f.md > -8 ? '中低波动' : '低波动');
+    // 回撤越深 = 风险越高，所以档位必须按「回撤绝对值」从大到小排。
+    // 旧写法 `f.md > -30 ? '高波动'` 把条件写反了：回撤 -5%（很安全）
+    // 满足 -5 > -30，反而被判成「高波动」，与页面自身展示的数字直接打架。
+    // 现按 |mdd| 分档：>30 高 / >15 中高 / >8 中低 / 其余 低。
+    const risk = nz(f.md) === null ? '未知'
+      : (Math.abs(f.md) > 30 ? '高波动'
+        : Math.abs(f.md) > 15 ? '中高波动'
+        : Math.abs(f.md) > 8 ? '中低波动' : '低波动');
     fb.innerHTML = `<div style="font-size:13px;font-weight:700;color:var(--navy-600);margin-bottom:12px;">⑥ 适合谁买</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:14px;">
         ${[['风险档次', risk], ['类型', TYPE_LABEL[f.tp] || '—'], ['资产类别', f.pg || '—'], ['最长回撤', pct(nz(f.md), 1)]]
