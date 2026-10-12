@@ -28,6 +28,12 @@ if python -c "import socket;socket.create_connection(('127.0.0.1',10808),1).clos
   echo "ℹ 本地代理 10808 可用，git push/ls-remote 走代理"
 fi
 
+# ⚠️ 2026-10-12 加固③：git 默认无网络超时，GitHub 连接被 reset 时 push 会无限挂起；
+# cron 600s 超时用 SIGKILL 硬杀 bash → EXIT trap 不触发 → 仓库卡在 gh-pages 连锁故障。
+# 治本：低速超时让 git 自行退出（bash 活着 → trap return_main 生效）
+export GIT_HTTP_LOW_SPEED_LIMIT=1000
+export GIT_HTTP_LOW_SPEED_TIME=30
+
 echo "① 构建..."
 npm run build
 
@@ -61,6 +67,12 @@ push_with_retry() {
   local ref="$1" sha local_sha attempt
   sha=$(git rev-parse "$ref")
   for attempt in 1 2 3; do
+    # 2026-10-12 加固④：push 前先 ls-remote 探活（同走代理+低速超时），远端不可达时秒败，
+    # 不进入 push 挂死（配合加固③，git 30s 无进展自行退出）
+    if ! git $GIT_PROXY_ARGS ls-remote origin "$ref" >/dev/null 2>&1; then
+      echo "⚠ 远端不可达（ls-remote 探活失败），第 $attempt 次尝试，3s 后重试..."
+      sleep 3; continue
+    fi
     if git $GIT_PROXY_ARGS push origin "$ref" 2>&1 | tail -2; then
       local_sha=$(git $GIT_PROXY_ARGS ls-remote origin "$ref" 2>/dev/null | cut -f1)
       if [ "$local_sha" = "$sha" ]; then echo "✓ $ref 已确认推送 ($sha)"; return 0; fi
