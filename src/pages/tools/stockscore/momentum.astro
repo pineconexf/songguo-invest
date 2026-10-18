@@ -1,0 +1,38 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+
+// 个股打分卡 V3 · 势能页（M 组，22 分）
+// 产业链景气 / 预期修正 / 资金动能——只读「现在有没有风」，不改变「买不买」
+---
+<Layout
+  title="个股打分卡 V3 · 势能"
+  description="势能组详解：产业链景气、预期修正（研报 EPS 预测漂移 + 单季扣非同比，与 V35 H3/A+ 同源）、资金动能（A/B 级可靠性分级，主窗口 20 日）。不构成投资建议。"
+>
+  <section class="hero" style="padding: 52px 48px 40px;">
+    <div class="hero-inner">
+      <span class="eyebrow">Free Tool · 个股打分卡 V3 · M 势能</span>
+      <h1>
+        风在不在，<br /><span class="gold">以及它已经吹了多远</span>
+      </h1>
+      <p class="hero-lead">
+        三个维度只读时点，不改质地判断。这一页最特别的是<b>资金动能的可靠性分级</b>：
+        A 级是融资余额和龙虎榜（交易所真实披露），B 级是主力净流入（按单笔金额分档推算，
+        <b>主力可以拆单规避</b>），C 级北向资金已停更、永久剔除。主窗口统一 20 日，与月度调仓同频。
+      </p>
+      <div class="callout" style="margin-top: var(--sp-4);">
+        <b>预期修正不另造口径</b>：单季扣非同比、营收同比一律复用 V35/V37 的判定字段，
+        保证「打分卡说亮旗」和「策略说删票」永远一致。研报覆盖不足 3 篇时，覆盖度与预测漂移子项
+        直接 N/A——否则会系统性惩罚松果最爱的冷门中小盘。
+      </div>
+    </div>
+  </section>
+
+  <section style="padding: 0 24px;">
+    <div id="ss3-root"></div>
+  </section>
+</Layout>
+
+<script>
+  import { mountV3 } from '../../../scripts/stockscore-v3.js';
+  mountV3('momentum');
+</script>

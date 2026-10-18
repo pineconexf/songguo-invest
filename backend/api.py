@@ -350,13 +350,42 @@ def _ss_warmup():
     _ss.warmup_async()
 
 
+# ============================================================
+# 个股打分卡 V3（2026-10-18）：3 组 8 维 / 闸门 / 松果可投性 / 四页
+# 引擎 backend/stockscore_v3.py，复用 V1 的数据层与日级横截面宇宙。
+# 解说文本为确定性规则生成（非 LLM），保证可复现、无合规词风险。
+# ============================================================
+import stockscore_v3 as _ss3  # noqa: E402
+
+
+@app.post('/api/stockscore_v3')
+def stockscore_v3(req: Req):
+    code = re.sub(r'\D', '', req.code or '')
+    if len(code) != 6:
+        raise HTTPException(400, '请输入6位股票代码')
+
+    cached = cache_get('ss3:' + code)
+    if cached:
+        return cached
+
+    try:
+        payload, status = _ss3.compute_v3(code)
+    except Exception as e:
+        raise HTTPException(500, f'V3 打分异常: {type(e).__name__}: {e}')
+    if payload is None:
+        raise HTTPException(404, '未获取到该股票数据，请核对代码')
+
+    cache_put('ss3:' + code, payload)
+    return payload
+
+
 # ---------- 匿名工具使用埋点（2026-09-18）----------
 # 只记录：工具名/事件/随机sid/停留秒数。不记录IP、不记录用户输入内容。
 # 数据按日切 JSONL 存 track/，90 天归档压缩。埋点失败静默，绝不影响主服务。
 TRACK_DIR = os.path.join(BASE_DIR, 'track')
 TRACK_TOOLS = {'backtest-compare', 'compound', 'daily-insight', 'etf-allocator', 'fund-ranking',
                'fund-scorecard', 'industry-compare', 'industry-report', 'macro-signal', 'stockcheck', 'valuator',
-               'stockscore'}
+               'stockscore', 'stockscore_v3'}
 TRACK_EVENTS = {'view', 'run', 'result', 'error', 'dwell'}
 _TRACK_LOCK = threading.Lock()
 

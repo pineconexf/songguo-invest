@@ -31,3 +31,11 @@ backend/__pycache__/
 
 # 例外：样例文件要入库（真实 .env 仍然忽略）
 !backend/.env.example
+
+# 后端临时产物（打分卡验证/演示/调试输出，不入库）
+backend/_v3_out/
+backend/_verify_out/
+backend/_validate_out/
+backend/*.log
+backend/.venv/
+backend/scripts/__pycache__/

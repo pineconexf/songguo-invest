@@ -1,0 +1,37 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+
+// 个股打分卡 V3 · 质地页（Q 组，52 分）
+// 四个维度合在一起回答「是不是好公司」：盈利质量 / 核心竞争力 / 成长质量 / 财务健康
+---
+<Layout
+  title="个股打分卡 V3 · 质地"
+  description="质地组四维详解：盈利质量、核心竞争力（纵向链条位置 / 横向同行地位 / 自身壁垒）、成长质量、财务健康。每个子指标给出数值、分位口径与置信度。不构成投资建议。"
+>
+  <section class="hero" style="padding: 52px 48px 40px;">
+    <div class="hero-inner">
+      <span class="eyebrow">Free Tool · 个股打分卡 V3 · Q 质地</span>
+      <h1>
+        先回答一件事：<br /><span class="gold">它是不是一家好公司</span>
+      </h1>
+      <p class="hero-lead">
+        四个维度合在一起看。<b>核心竞争力</b>拆成三块——纵向看它在链条上的位置与议价力，
+        横向看它在同行里的地位与技术代差，自身看它的壁垒属于哪一类。
+        这三块经常给出相反的答案，拆开才能看出「它在同行里最强，但在链条上被夹着」。
+      </p>
+      <div class="callout" style="margin-top: var(--sp-4);">
+        技术代差、毛利溢价是<b>代理指标</b>。真正的护城河（转换成本、网络效应、心智占领）拿不到结构化数据，
+        我们只能算它的影子——把这句话写在页面上，比给一个看起来很精确的假分数诚实。
+      </div>
+    </div>
+  </section>
+
+  <section style="padding: 0 24px;">
+    <div id="ss3-root"></div>
+  </section>
+</Layout>
+
+<script>
+  import { mountV3 } from '../../../scripts/stockscore-v3.js';
+  mountV3('quality');
+</script>

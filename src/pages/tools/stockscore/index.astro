@@ -1,0 +1,83 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+
+// 个股打分卡 V3（2026-10-18）· 总览页
+// 3 组 8 维 = 100：Q 质地 52 / V 价格 26 / M 势能 22，再过闸门
+// 后端：POST /api/stockscore_v3（backend/stockscore_v3.py 引擎，复用 V1 数据层与日级横截面宇宙）
+// 四页独立路由：/tools/stockscore/ · /quality · /price · /momentum（同一份 payload，详略不同）
+// V1 已归档至 /tools/stockscore-v1-legacy/（六维口径，仅供对照，不再维护）
+---
+<Layout
+  title="个股打分卡 V3 · 总览"
+  description="输入 A 股代码，八维打分（盈利质量/核心竞争力/成长质量/财务健康/估值安全边际/产业链景气/预期修正/资金动能），分质地、价格、势能三组，附闸门与松果可投性标签。全市场横截面分位，缺失维度如实标注不填分。不构成投资建议。"
+>
+  <section class="hero" style="padding: 52px 48px 40px;">
+    <div class="hero-inner">
+      <span class="eyebrow">Free Tool · 个股打分卡 V3</span>
+      <h1>
+        一个总分，<br /><span class="gold">四页把话说透</span>
+      </h1>
+      <p class="hero-lead">
+        八个维度分成三组：<b>质地</b>回答是不是好公司、<b>价格</b>回答现在贵不贵、<b>势能</b>回答有没有风。
+        红旗不进权重，只做闸门——命中即封顶，不被平均掉。
+        另加一个<b>松果可投性标签</b>，回答「按松果的打法，这票在不在射程内」。
+      </p>
+      <div class="callout" style="margin-top: var(--sp-4);">
+        <b>先读这一句</b>：本工具输出的是<b>财务与交易状态的结构化读数</b>，不是投资建议，
+        不预测涨跌、不含任何买卖意见，也不构成对任何证券的投资意见。
+        所有分数由公开数据按各页写明的口径计算，<b>数据可能有误、口径有局限</b>，请自行复核后再作任何判断。
+      </div>
+    </div>
+  </section>
+
+  <section style="padding: 0 24px;">
+    <div id="ss3-root"></div>
+  </section>
+
+  <section class="card" style="max-width: 1000px; margin: 8px auto 48px;">
+    <div class="section-head">
+      <div class="section-kicker">Method · 口径</div>
+      <h2 class="section-title">三组八维，权重与闸门</h2>
+    </div>
+    <div style="overflow-x: auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:13.5px;">
+        <thead>
+          <tr style="background:#f8f9fb;">
+            <th style="text-align:left;padding:10px 12px;border-bottom:1px solid #e2e6ec;">组</th>
+            <th style="text-align:left;padding:10px 12px;border-bottom:1px solid #e2e6ec;">维度（权重）</th>
+            <th style="text-align:left;padding:10px 12px;border-bottom:1px solid #e2e6ec;">回答的问题</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding:10px 12px;border-bottom:1px solid #eef1f4;"><b>Q 质地 52</b></td>
+            <td style="padding:10px 12px;border-bottom:1px solid #eef1f4;">盈利质量 16 / 核心竞争力 16 / 成长质量 12 / 财务健康 8</td>
+            <td style="padding:10px 12px;border-bottom:1px solid #eef1f4;">是不是好公司（对应 V35 的 11 步筛选门槛）</td>
+          </tr>
+          <tr>
+            <td style="padding:10px 12px;border-bottom:1px solid #eef1f4;"><b>V 价格 26</b></td>
+            <td style="padding:10px 12px;border-bottom:1px solid #eef1f4;">估值与安全边际 26</td>
+            <td style="padding:10px 12px;border-bottom:1px solid #eef1f4;">现在贵不贵（对应 VC 区间与 FCF/EV 排序）</td>
+          </tr>
+          <tr>
+            <td style="padding:10px 12px;border-bottom:1px solid #eef1f4;"><b>M 势能 22</b></td>
+            <td style="padding:10px 12px;border-bottom:1px solid #eef1f4;">产业链景气 8 / 预期修正 8 / 资金动能 6</td>
+            <td style="padding:10px 12px;border-bottom:1px solid #eef1f4;">现在有没有风（对应调仓时点与拥挤度）</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:13px;color:#67737f;line-height:1.8;margin-top:14px;">
+      <b>总分</b> = 0.52×Q + 0.26×V + 0.22×M，再过闸门。<br />
+      <b>闸门</b>：🔴 不可接受的尾部风险（连续亏损、商誉占净资产过高）→ 总分封顶 59；
+      🟡 业绩与质量信号（H3 双降、A+ 旗、现金流/应收/存货恶化）→ 命中 2 条降一档、1 条仅标注。<br />
+      <b>铁律</b>：缺失子项不进分母、整维缺失标 N/A 不填 0；每个分数带置信度，低于 0.6 进低置信清单。<br />
+      <b>资金口径</b>：A 级（融资余额、龙虎榜，真实披露）/ B 级（主力净流入，大单推算，拆单会失真）/ C 级（北向，已停更不纳入）；主窗口 20 日，与月度调仓同频。
+    </p>
+  </section>
+</Layout>
+
+<script>
+  import { mountV3 } from '../../../scripts/stockscore-v3.js';
+  mountV3('index');
+</script>
