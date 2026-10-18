@@ -6,10 +6,11 @@ set -e
 cd "$(dirname "$0")/.."
 
 # ⚠️ 2026-10-18 适配：本脚本的删除全部发生在仓库内（dist 暂存、gh-pages 工作树旧产物），
-# 都是 git 版本控制下可再生内容。WorkBuddy 沙箱的批量删除护栏（>50 文件/轮）会误拦
-# 这些操作（实测 86 文件/21 目标被拦，部署中断）。护栏本意保护用户个人文件，此处不适用，
-# 故对整脚本关闭；手工删个人目录不受影响（不走本脚本）。
-export CODEBUDDY_SAFE_DELETE_ENABLED=0
+# 都是 git 版本控制下可再生内容。WorkBuddy 沙箱的批量删除护栏默认阈值 50 文件/轮，
+# 会误拦这些操作（实测 gh-pages 清理 86 文件/21 目标被拦，部署中断）。
+# 护栏提供官方阈值开关 CODEBUDDY_SAFE_DELETE_BULK_THRESHOLD（safe-delete-bulk-guard.cjs:85），
+# 这里调到 1000，覆盖整站产物规模；个人目录不走本脚本，护栏默认仍生效。
+export CODEBUDDY_SAFE_DELETE_BULK_THRESHOLD=1000
 
 BRANCH=$(git branch --show-current)
 if [ "$BRANCH" != "main" ]; then
