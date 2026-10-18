@@ -101,9 +101,31 @@ function groupOf(key) {
   return 'Q';
 }
 
+// 四个页面是独立路由，tab 必须真的跳路由。早期版本用同页 ?view= 切换，
+// 结果停在 /momentum/ 也能显示质地内容，URL 与内容不一致、无法收藏分享。
+const VIEW_NAMES = ['index', 'quality', 'price', 'momentum'];
+
+/** 从当前 URL 判断激活的视图：先看 ?view=（兼容旧链接），再看路径末段。 */
+function activeView() {
+  let v = null;
+  try { v = new URLSearchParams(location.search).get('view'); } catch (e) { /* file:// 等场景 */ }
+  if (v && VIEW_NAMES.indexOf(v) >= 0) return v;
+  const m = location.pathname.match(/\/stockscore(?:\/(index|quality|price|momentum))?\/?$/);
+  return (m && m[1]) || 'index';
+}
+
+/** 四个路由的共同前缀，如 /songguo-invest/tools/stockscore 或 /tools/stockscore */
+function routeBase() {
+  const p = location.pathname.replace(/\/+$/, '');
+  const m = p.match(/^(.*\/stockscore)(?:\/(?:index|quality|price|momentum))?$/);
+  return m ? m[1] : p;
+}
+
 function navBar(code, active) {
+  const base = routeBase();
+  const cur = active || activeView();
   return '<div class="nav">' + VIEWS.map(([k, label]) =>
-    `<a class="${k === active ? 'on' : ''}" href="?code=${encodeURIComponent(code)}&view=${k}">${label}</a>`
+    `<a class="${k === cur ? 'on' : ''}" href="${base}${k === 'index' ? '' : '/' + k}/?code=${encodeURIComponent(code)}">${label}</a>`
   ).join('') + '</div>';
 }
 
@@ -259,7 +281,8 @@ export async function mountV3(view) {
     const go = () => {
       const v = (document.getElementById('ss3code').value || '').replace(/\D/g, '');
       if (v.length !== 6) { alert('请输入 6 位 A 股代码'); return; }
-      location.search = `?code=${v}&view=${view}`;
+      // 视图由当前路由决定，只带 code；view= 是旧同页切换遗留，不再写入
+      location.search = `?code=${v}`;
     };
     document.getElementById('ss3go').onclick = go;
     document.getElementById('ss3code').addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
@@ -277,7 +300,7 @@ export async function mountV3(view) {
     if (!res.ok) {
       const t = await res.text();
       root.innerHTML = `<div class="card"><div class="fl r">查询失败：${esc(t.slice(0, 200))}</div>
-        <div class="note"><a href="?view=${view}">重新输入代码</a></div></div>`;
+        <div class="note"><a href="${location.pathname}">重新输入代码</a></div></div>`;
       return;
     }
     const p = await res.json();

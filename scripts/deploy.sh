@@ -69,22 +69,31 @@ push_with_retry() {
   for attempt in 1 2 3; do
     # 2026-10-12 加固④：push 前先 ls-remote 探活（同走代理+低速超时），远端不可达时秒败，
     # 不进入 push 挂死（配合加固③，git 30s 无进展自行退出）
-    if ! git $GIT_PROXY_ARGS ls-remote origin "$ref" >/dev/null 2>&1; then
-      echo "⚠ 远端不可达（ls-remote 探活失败），第 $attempt 次尝试，3s 后重试..."
+    # 2026-10-17 加固⑥：全部网络命令加 `timeout 120`。实测 GIT_HTTP_LOW_SPEED_* 只覆盖「已连接但低速」，
+    # 对 connect/SSL 阶段挂起无效（10-17 直连 GitHub 时 ls-remote 卡满 900s）。单次上限 120s，
+    # 三次尝试最坏 ~6min，总耗时摁在 cron 外层 900s 预算内；并把管道退出码改用 PIPESTATUS 取真值。
+    if ! timeout 120 git $GIT_PROXY_ARGS ls-remote origin "$ref" >/dev/null 2>&1; then
+      echo "⚠ 远端不可达（ls-remote 探活失败/超时），第 $attempt 次尝试，3s 后重试..."
       sleep 3; continue
     fi
-    if git $GIT_PROXY_ARGS push origin "$ref" 2>&1 | tail -2; then
-      local_sha=$(git $GIT_PROXY_ARGS ls-remote origin "$ref" 2>/dev/null | cut -f1)
+    timeout 120 git $GIT_PROXY_ARGS push origin "$ref" 2>&1 | tail -2
+    if [ "${PIPESTATUS[0]}" -eq 0 ]; then
+      local_sha=$(timeout 120 git $GIT_PROXY_ARGS ls-remote origin "$ref" 2>/dev/null | cut -f1)
       if [ "$local_sha" = "$sha" ]; then echo "✓ $ref 已确认推送 ($sha)"; return 0; fi
     fi
     echo "⚠ push $ref 第 $attempt 次失败/未确认，3s 后重试..."; sleep 3
   done
   echo "❌ push $ref 三次失败，部署未完成（本地已 commit，远端未更新）"; return 1
 }
-push_with_retry gh-pages
+# ⚠️ 2026-10-17 加固⑤：状态安全优先于网络操作——先把仓库切回 main，再做两次 push。
+# 实测（10-17 09:41 宏观信号周更）：push_with_retry gh-pages 里 push 本身已成功，但紧随其后的 ls-remote
+# 校验直连 GitHub 挂死，900s 被外层 TerminateProcess 硬杀 → EXIT trap 不触发 → 仓库留在 gh-pages，
+# 后续 4 条站点 cron（服务页/云端同步/资讯解读/打分卡）连带失败。顺序调换后，即使 push 阶段被强杀，
+# 仓库也已处于安全分支。
 git checkout -q main
 if [ "$STASHED" = "1" ]; then
   git stash pop -q && echo "✓ 已恢复部署前的未提交改动" || echo "⚠ stash 恢复失败，请手动 git stash list 处理"
 fi
+push_with_retry gh-pages
 push_with_retry main
 echo "✅ 部署完成: https://pineconexf.github.io/songguo-invest/"
