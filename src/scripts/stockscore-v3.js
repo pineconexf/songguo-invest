@@ -277,10 +277,14 @@ async function apiBase() {
     window.__SS_BASE__ = 'https://pinecone-lab.cn';
     return window.__SS_BASE__;
   }
-  try {
-    const r = await fetch('http://127.0.0.1:8081/api/health');
-    if (r.ok) { window.__SS_BASE__ = 'http://127.0.0.1:8081'; return window.__SS_BASE__; }
-  } catch (e) { /* 生产同源 */ }
+  // 只有本地开发（astro dev 4321）才探测本机后端；线上页面发这个请求属混合内容，
+  // 浏览器会拦并报错，没有任何收益。
+  if (/^(localhost|127\.0\.0\.1|\[::1\])$/i.test(location.hostname)) {
+    try {
+      const r = await fetch('http://127.0.0.1:8081/api/health');
+      if (r.ok) { window.__SS_BASE__ = 'http://127.0.0.1:8081'; return window.__SS_BASE__; }
+    } catch (e) { /* 生产同源 */ }
+  }
   return location.origin;
 }
 
