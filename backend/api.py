@@ -358,6 +358,16 @@ def _ss_warmup():
 # 解说文本为确定性规则生成（非 LLM），保证可复现、无合规词风险。
 # ============================================================
 import stockscore_v3 as _ss3  # noqa: E402
+import stockscore_resolve as _ssr  # noqa: E402
+
+
+@app.get('/api/stockscore_resolve')
+def stockscore_resolve(q: str = ''):
+    """股票代码/名称 → 候选代码。供打分卡输入框使用（名称模糊匹配，三源合并）。"""
+    try:
+        return _ssr.resolve(q)
+    except Exception as e:
+        raise HTTPException(500, f'解析异常: {type(e).__name__}: {e}')
 
 
 @app.post('/api/stockscore_v3')

@@ -64,9 +64,16 @@ max-width:1000px;margin:0 auto;padding:0 4px 48px;color:var(--ink);font-size:14.
 .ss3 .chk div.ok{border-color:var(--green-b);background:var(--green-l);color:var(--green)}
 .ss3 .chk div.no{border-color:var(--red-b);background:var(--red-l);color:#8a4a41}
 .ss3 .form{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-.ss3 .form input{font-size:15px;padding:10px 14px;border:1px solid var(--line);border-radius:8px;width:190px;font-variant-numeric:tabular-nums}
+.ss3 .form input{font-size:15px;padding:10px 14px;border:1px solid var(--line);border-radius:8px;width:250px;font-variant-numeric:tabular-nums}
 .ss3 .form button{font-size:14px;font-weight:700;padding:10px 20px;border-radius:8px;border:1px solid var(--green);background:var(--green);color:#fff;cursor:pointer}
 .ss3 .form button:disabled{opacity:.55;cursor:default}
+.ss3 .cands{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.ss3 .cand{display:grid;grid-template-columns:84px 1fr auto;gap:12px;align-items:center;text-align:left;
+padding:12px 16px;border:1px solid var(--line);border-radius:9px;background:#fff;cursor:pointer;font:inherit;font-size:14px;color:var(--ink)}
+.ss3 .cand:hover,.ss3 .cand:focus{border-color:var(--green);background:var(--green-l);outline:none}
+.ss3 .cand .cd{font-variant-numeric:tabular-nums;font-weight:700;color:var(--ink2)}
+.ss3 .cand .cn{font-weight:600}
+.ss3 .cand .cm{font-size:12px;color:var(--faint)}
 .ss3 .foot{font-size:11px;color:var(--faint);line-height:1.8;border-top:1px solid var(--line);padding-top:16px;margin-top:24px}
 @media(max-width:720px){.ss3 .g3{grid-template-columns:1fr}.ss3 .row{grid-template-columns:110px 1fr 46px}}
 `;
@@ -247,10 +254,20 @@ function render(p, view) {
 }
 
 function formHtml() {
-  return `<div class="card"><h2 class="s">输入股票代码</h2>
-    <div class="form"><input id="ss3code" maxlength="6" inputmode="numeric" placeholder="如 600519">
+  return `<div class="card"><h2 class="s">输入股票代码或名称</h2>
+    <div class="form"><input id="ss3code" placeholder="如 600519 或 贵州茅台" autocomplete="off" spellcheck="false">
     <button id="ss3go">开始打分</button></div>
-    <div class="note">支持 A 股 6 位代码。首次查询需现建全市场横截面宇宙（约 1-2 分钟，期间会自动重试）；10 分钟内同码命中缓存秒回。</div></div>`;
+    <div id="ss3hint" class="note">支持 6 位代码、股票全称或简称（贵州茅台 / 茅台 / 农行）。
+      首次查询需现建全市场横截面宇宙（约 1-2 分钟，期间会自动重试）；10 分钟内同码命中缓存秒回。</div></div>`;
+}
+
+function candidateHtml(cs) {
+  const rows = cs.map((c) => `<button class="cand" data-code="${esc(c.code)}">
+      <span class="cd">${esc(c.code)}</span><span class="cn">${esc(c.name)}</span>
+      <span class="cm">${esc(c.market || '')}</span></button>`).join('');
+  return `<div class="card"><h2 class="s">找到 ${cs.length} 只，请选择</h2>
+    <div class="cands">${rows}</div>
+    <div class="note"><a href="${location.pathname}">← 重新输入</a>　也可以直接输入 6 位代码精确定位。</div></div>`;
 }
 
 async function apiBase() {
@@ -302,6 +319,63 @@ async function fetchScore(base, code, onRetry) {
   throw new Error('多次重试仍失败');
 }
 
+/** 输入页：代码直通，名称走 /api/stockscore_resolve 解析（唯一/精确命中自动跳转，多候选让用户选）。 */
+function mountForm(root, prefill) {
+  const input = document.getElementById('ss3code');
+  const btn = document.getElementById('ss3go');
+  const hint = document.getElementById('ss3hint');
+  const defaultHint = hint.innerHTML;
+
+  const reset = (msg) => {
+    btn.disabled = false;
+    input.disabled = false;
+    hint.innerHTML = msg || defaultHint;
+    input.focus();
+  };
+
+  const go = async () => {
+    const v = (input.value || '').trim();
+    if (!v) { input.focus(); return; }
+    // 代码直通：600519 / sh600519 / 600519.SH
+    if (/^(sh|sz|bj)?\d{6}(\.(sh|sz|bj))?$/i.test(v)) {
+      location.search = '?code=' + v.replace(/\D/g, '');
+      return;
+    }
+    btn.disabled = true;
+    input.disabled = true;
+    hint.innerHTML = '正在识别「' + esc(v) + '」…';
+    try {
+      const base = await apiBase();
+      const res = await fetch(base + '/api/stockscore_resolve?q=' + encodeURIComponent(v));
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const d = await res.json();
+      const cs = d.candidates || [];
+      if (!cs.length) {
+        reset(d.hint === 'latin'
+          ? '暂只支持中文名称或 6 位代码（拼音暂不支持）。'
+          : '未找到「' + esc(v) + '」，换个写法试试，或直接输入 6 位代码。');
+        return;
+      }
+      // 唯一候选，或第一个就是精确同名 → 直接进打分，不用多点一次
+      if (cs.length === 1 || d.exact) {
+        location.search = '?code=' + cs[0].code;
+        return;
+      }
+      root.innerHTML = candidateHtml(cs);
+      Array.prototype.forEach.call(root.querySelectorAll('.cand'), (b) => {
+        b.onclick = () => { location.search = '?code=' + b.dataset.code; };
+      });
+    } catch (e) {
+      reset('识别服务暂时不可用（' + esc(e.message) + '），请直接输入 6 位代码。');
+    }
+  };
+
+  btn.onclick = go;
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
+  if (prefill) { input.value = prefill; go(); }
+  else input.focus();
+}
+
 export async function mountV3(view) {
   const root = document.getElementById('ss3-root');
   if (!root) return;
@@ -314,18 +388,13 @@ export async function mountV3(view) {
   root.className = 'ss3';
 
   const params = new URLSearchParams(location.search);
-  const code = (params.get('code') || '').replace(/\D/g, '');
+  const raw = (params.get('code') || params.get('q') || '').trim();
+  const isCode = /^(sh|sz|bj)?\d{6}(\.(sh|sz|bj))?$/i.test(raw);
+  const code = isCode ? raw.replace(/\D/g, '') : '';
 
   if (!code) {
     root.innerHTML = formHtml();
-    const go = () => {
-      const v = (document.getElementById('ss3code').value || '').replace(/\D/g, '');
-      if (v.length !== 6) { alert('请输入 6 位 A 股代码'); return; }
-      // 视图由当前路由决定，只带 code；view= 是旧同页切换遗留，不再写入
-      location.search = `?code=${v}`;
-    };
-    document.getElementById('ss3go').onclick = go;
-    document.getElementById('ss3code').addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
+    mountForm(root, raw);      // ?q=贵州茅台 这类链接自动识别
     return;
   }
 
