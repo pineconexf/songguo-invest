@@ -250,16 +250,56 @@ function formHtml() {
   return `<div class="card"><h2 class="s">输入股票代码</h2>
     <div class="form"><input id="ss3code" maxlength="6" inputmode="numeric" placeholder="如 600519">
     <button id="ss3go">开始打分</button></div>
-    <div class="note">支持 A 股 6 位代码。首次查询需现建全市场横截面宇宙，约 30 秒；10 分钟内同码命中缓存秒回。</div></div>`;
+    <div class="note">支持 A 股 6 位代码。首次查询需现建全市场横截面宇宙（约 1-2 分钟，期间会自动重试）；10 分钟内同码命中缓存秒回。</div></div>`;
 }
 
 async function apiBase() {
   if (window.__SS_BASE__) return window.__SS_BASE__;
+  // GitHub Pages 镜像站没有后端（/api 无代理），直连云站 API（后端 CORS 已放行 github.io）
+  if (/\.github\.io$/i.test(location.hostname)) {
+    window.__SS_BASE__ = 'https://pinecone-lab.cn';
+    return window.__SS_BASE__;
+  }
   try {
     const r = await fetch('http://127.0.0.1:8081/api/health');
     if (r.ok) { window.__SS_BASE__ = 'http://127.0.0.1:8081'; return window.__SS_BASE__; }
   } catch (e) { /* 生产同源 */ }
   return location.origin;
+}
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * 冷启动保护：日级横截面宇宙约需 1-2 分钟，而 nginx 读超时 60s 会先回 504。
+ * 后端请求线程不会因客户端断开而中止，宇宙仍在后台建完 —— 所以隔一会儿重试必然命中缓存。
+ */
+async function fetchScore(base, code, onRetry) {
+  const MAX = 6;
+  for (let i = 1; i <= MAX; i++) {
+    let res;
+    try {
+      res = await fetch(base + '/api/stockscore_v3', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code }),
+      });
+    } catch (e) {
+      if (i === MAX) throw e;
+      onRetry(i, '网络中断');
+      await sleep(20000);
+      continue;
+    }
+    if (res.ok) return res.json();
+    // 502/504 = 网关超时（宇宙还在建）；500 也可能是并发重建，一并重试
+    if ([500, 502, 503, 504].indexOf(res.status) >= 0 && i < MAX) {
+      onRetry(i, 'HTTP ' + res.status);
+      await sleep(20000);
+      continue;
+    }
+    const t = await res.text();
+    throw new Error('HTTP ' + res.status + '：' + t.slice(0, 160));
+  }
+  throw new Error('多次重试仍失败');
 }
 
 export async function mountV3(view) {
@@ -289,23 +329,16 @@ export async function mountV3(view) {
     return;
   }
 
-  root.innerHTML = '<div class="card"><div class="note">正在计算（首次约 30 秒，之后同码秒回）…</div></div>';
+  root.innerHTML = '<div class="card"><div class="note">正在计算（首次约 1-2 分钟建全市场宇宙，之后同码 10 分钟内秒回）…</div></div>';
   try {
     const base = await apiBase();
-    const res = await fetch(base + '/api/stockscore_v3', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code }),
+    const p = await fetchScore(base, code, (i, why) => {
+      root.innerHTML = `<div class="card"><div class="note">后端正在建全市场横截面宇宙（${esc(why)}），` +
+        `已自动重试 ${i}/6 次，请稍候…首次约 1-2 分钟，完成后 10 分钟内同码秒回。</div></div>`;
     });
-    if (!res.ok) {
-      const t = await res.text();
-      root.innerHTML = `<div class="card"><div class="fl r">查询失败：${esc(t.slice(0, 200))}</div>
-        <div class="note"><a href="${location.pathname}">重新输入代码</a></div></div>`;
-      return;
-    }
-    const p = await res.json();
     root.innerHTML = render(p, view);
   } catch (e) {
-    root.innerHTML = `<div class="card"><div class="fl r">网络异常：${esc(e.message)}</div></div>`;
+    root.innerHTML = `<div class="card"><div class="fl r">查询失败：${esc(e.message)}</div>
+      <div class="note"><a href="${location.pathname}">重新输入代码</a></div></div>`;
   }
 }

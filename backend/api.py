@@ -44,6 +44,8 @@ DS_KEY = load_ds_key()
 ALLOW_ORIGINS = [
     'https://pinecone-lab.cn',
     'https://www.pinecone-lab.cn',
+    # GitHub Pages 镜像站没有后端，前端直连云站 API（2026-10-19）
+    'https://pineconexf.github.io',
     'http://localhost:4321',
     'http://127.0.0.1:4321',
 ]
