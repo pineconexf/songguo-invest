@@ -309,16 +309,49 @@ def _shift_days(n):
     return time.strftime('%Y-%m-%d', time.gmtime(time.time() + 28800 - n * 86400))
 
 
+UNIV_CACHE = os.path.join(BASE_DIR, 'data', 'universe_cache.json')
+
+
+def _save_universe(u):
+    """日级宇宙落盘。每次重启都重建要 84-143 秒，落盘后当天重启秒起。"""
+    try:
+        tmp = UNIV_CACHE + '.tmp'
+        with open(tmp, 'w', encoding='utf-8') as f:
+            json.dump(u, f, ensure_ascii=False)
+        os.replace(tmp, UNIV_CACHE)
+    except (OSError, TypeError, ValueError):
+        pass                     # 存不下不影响运行，下次照常重建
+
+
+def _load_universe():
+    try:
+        with open(UNIV_CACHE, encoding='utf-8') as f:
+            u = json.load(f)
+        if u.get('date') == _today() and u.get('mid'):
+            return u
+    except (OSError, ValueError):
+        pass
+    return None
+
+
 def universe(force=False):
     with _uni_lock:
         if force or _uni.get('date') != _today() or not _uni.get('mid'):
             if _uni_building['flag'] and not force:
                 return _uni            # 别的线程在重建：先用旧宇宙（stale 可接受，标注日期）
+            # 内存空 → 先看当天有没有落盘（重启后不必再花 2 分钟重建）
+            if not force and not _uni.get('mid'):
+                cached = _load_universe()
+                if cached:
+                    _uni.clear()
+                    _uni.update(cached)
+                    return _uni
             _uni_building['flag'] = True
             try:
                 fresh = _build_universe()
                 _uni.clear()
                 _uni.update(fresh)
+                _save_universe(fresh)
             finally:
                 _uni_building['flag'] = False
         return _uni
@@ -327,7 +360,8 @@ def universe(force=False):
 def warmup_async():
     def _run():
         try:
-            universe(force=True)
+            # force=False：当天已有落盘就直接读，重启不再白等 2 分钟
+            universe()
         except Exception:
             pass
     threading.Thread(target=_run, daemon=True).start()

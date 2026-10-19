@@ -19,6 +19,7 @@
 import json
 import os
 import re
+import sys
 import threading
 import time
 
@@ -184,10 +185,17 @@ def _read_cache(code, asof):
     k = (code, asof)
     with _lock:
         if k in _mem:
-            return _mem[k]
+            obj = _mem[k]
+            # 规则兜底只保 10 分钟：模型只是临时抖动时，别让这只票一整天都是兜底文案
+            if obj.get('source') == 'rule' and time.time() - obj.get('generated_at', 0) > 600:
+                _mem.pop(k, None)
+            else:
+                return obj
     try:
         with open(_cache_path(code, asof), encoding='utf-8') as f:
             obj = json.load(f)
+        if obj.get('source') == 'rule' and time.time() - obj.get('generated_at', 0) > 600:
+            return None
         with _lock:
             _mem[k] = obj
         return obj
@@ -230,7 +238,7 @@ def _call_llm(facts, key):
             {'role': 'user', 'content': facts},
         ],
         'temperature': 0.5,
-        'max_tokens': 1400,
+        'max_tokens': 2400,
         'response_format': {'type': 'json_object'},
     }
     last = None
@@ -245,6 +253,10 @@ def _call_llm(facts, key):
                 continue
             raw = r.json()['choices'][0]['message']['content'].strip()
             raw = re.sub(r'^```(?:json)?|```$', '', raw, flags=re.M).strip()
+            # 模型偶尔会在 JSON 前后加一句人话，或被截断：取最外层花括号再试
+            i, j = raw.find('{'), raw.rfind('}')
+            if i >= 0 and j > i:
+                raw = raw[i:j + 1]
             return json.loads(raw)
         except Exception as e:                      # noqa: BLE001
             last = f'{type(e).__name__}: {e}'
@@ -274,7 +286,9 @@ def get_or_build(payload, key):
 
     try:
         raw = _call_llm(_facts(payload), key)
-    except Exception:                                # noqa: BLE001
+    except Exception as e:                           # noqa: BLE001
+        # 打到 journal，方便排查是限流、超时还是 JSON 截断；不进用户响应
+        print(f'[narrative] {code} LLM 失败，回落规则文案：{e}', file=sys.stderr)
         out = dict(base, **_fallback(payload))
         _write_cache(code, asof, out)                # 兜底也缓存，避免反复打模型
         return out

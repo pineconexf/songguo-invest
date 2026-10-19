@@ -42,3 +42,10 @@ backend/scripts/__pycache__/
 
 # 部署暂存目录（deploy.sh 用，2026-10-18）
 .deploy_tmp/
+
+# 打分卡运行期缓存（15MB 级，服务端生成，不入库）
+backend/data/universe_cache.json
+backend/data/narrative/
+backend/data/board_snapshots/
+backend/data/collect_boards.log
+_tmp/
