@@ -65,8 +65,16 @@ if [ -n "$(git status --porcelain -uno)" ]; then
   git stash push -q -m "$STASH_NAME" && STASHED=1
 fi
 
-TMP="$LOCALAPPDATA/Temp/sg_dist_deploy"
-mkdir -p "$TMP" && rm -rf "$TMP"/* && cp -r dist/* "$TMP"/
+# ⚠️ 2026-10-18 修复：原来暂存在 %LOCALAPPDATA%\Temp（工作区外），在沙箱里 cp 会被
+# 静默丢弃且返回 0 —— TMP 里留着上一次的旧产物，再拷回 gh-pages 与 HEAD 完全一致，
+# git 报「nothing to commit」，部署假成功（实测 10-19 复现：TMP 里是 10-17 的产物）。
+# 改为仓库内暂存目录（已 gitignore），并校验暂存内容确实是本次构建。
+TMP="$PWD/.deploy_tmp"
+rm -rf "$TMP"; mkdir -p "$TMP"
+cp -r dist/. "$TMP"/
+if [ ! -f "$TMP/tools/stockscore/momentum/index.html" ]; then
+  echo "❌ 暂存内容缺少 V3 势能页，构建产物不完整或 cp 未生效，终止"; exit 1
+fi
 echo "② dist 暂存完成: $(ls "$TMP" | wc -l) 项"
 
 echo "③ 更新 gh-pages 分支..."

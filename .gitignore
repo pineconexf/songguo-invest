@@ -39,3 +39,6 @@ backend/_validate_out/
 backend/*.log
 backend/.venv/
 backend/scripts/__pycache__/
+
+# 部署暂存目录（deploy.sh 用，2026-10-18）
+.deploy_tmp/
