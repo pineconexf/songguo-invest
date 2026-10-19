@@ -391,6 +391,29 @@ def stockscore_v3(req: Req):
     return payload
 
 
+# ---------- 白话解读（LLM 只解释分数，不产生分数）----------
+import stockscore_narrative as _ssn  # noqa: E402
+
+
+@app.post('/api/stockscore_v3_narrative')
+def stockscore_v3_narrative(req: Req):
+    code = re.sub(r'\D', '', req.code or '')
+    if len(code) != 6:
+        raise HTTPException(400, '请输入6位股票代码')
+
+    payload = cache_get('ss3:' + code)
+    if not payload:
+        payload, _ = _ss3.compute_v3(code)
+        if payload is None:
+            raise HTTPException(404, '未获取到该股票数据，请核对代码')
+        cache_put('ss3:' + code, payload)
+
+    try:
+        return _ssn.get_or_build(payload, DS_KEY)
+    except Exception as e:
+        raise HTTPException(503, f'解读生成失败: {type(e).__name__}: {e}')
+
+
 # ---------- 匿名工具使用埋点（2026-09-18）----------
 # 只记录：工具名/事件/随机sid/停留秒数。不记录IP、不记录用户输入内容。
 # 数据按日切 JSONL 存 track/，90 天归档压缩。埋点失败静默，绝不影响主服务。

@@ -67,6 +67,13 @@ max-width:1000px;margin:0 auto;padding:0 4px 48px;color:var(--ink);font-size:14.
 .ss3 .form input{font-size:15px;padding:10px 14px;border:1px solid var(--line);border-radius:8px;width:250px;font-variant-numeric:tabular-nums}
 .ss3 .form button{font-size:14px;font-weight:700;padding:10px 20px;border-radius:8px;border:1px solid var(--green);background:var(--green);color:#fff;cursor:pointer}
 .ss3 .form button:disabled{opacity:.55;cursor:default}
+.ss3 .say{background:linear-gradient(180deg,#fcfdfc,#f6faf8);border-color:var(--green-b);border-left:3px solid var(--green)}
+.ss3 .say .k{font-size:11.5px;font-weight:800;letter-spacing:.1em;color:var(--green);margin-bottom:10px}
+.ss3 .say .v{font-size:15px;line-height:1.95;color:var(--ink);margin:0 0 10px}
+.ss3 .say .v.lead{font-size:15.5px;font-weight:600}
+.ss3 .say .v.loading{color:var(--faint);font-weight:400}
+.ss3 .scale{margin-top:8px;padding-top:11px;border-top:1px dashed var(--line);font-size:12.5px;color:var(--ink2)}
+.ss3 .scale span{display:block;margin-top:4px;font-size:11.5px;color:var(--faint)}
 .ss3 .cands{display:flex;flex-direction:column;gap:8px;margin-top:4px}
 .ss3 .cand{display:grid;grid-template-columns:84px 1fr auto;gap:12px;align-items:center;text-align:left;
 padding:12px 16px;border:1px solid var(--line);border-radius:9px;background:#fff;cursor:pointer;font:inherit;font-size:14px;color:var(--ink)}
@@ -233,6 +240,43 @@ const NOTE_M = '资金动能按真实性分三级：A 级=融资余额/龙虎榜
   'B 级=主力净流入（按单笔金额分档推算，<b>主力可拆单规避</b>，占 2.5 分，只读异动不读意图）；' +
   'C 级=北向资金（2024-09-30 起停止实时披露，永久剔除）。主窗口统一 20 日，与月度调仓同频。';
 
+const SCALE_HTML = `80+ 优秀 · 65–79 良 · 45–64 中 · 45 以下待观察
+  <span>分数是和全市场同类公司比出来的位置，不是考试分，也不预测涨跌</span>`;
+
+/** 每页只展示与这一栏相关的那段白话解读（后端一次生成五段，前端按页取）。 */
+const SAY_KEYS = { index: ['verdict', 'overview'], quality: ['quality'], price: ['price'], momentum: ['momentum'] };
+
+async function loadNarrative(base, code, view) {
+  const box = document.getElementById('ss3say');
+  if (!box) return;
+  const keys = SAY_KEYS[view] || SAY_KEYS.index;
+  box.innerHTML = `<div class="card say"><div class="k">白话解读</div>
+    <div class="v loading">正在把这张表翻译成人话…</div></div>`;
+  try {
+    const res = await fetch(base + '/api/stockscore_v3_narrative', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code }),
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const d = await res.json();
+    const body = keys.map((k, i) => {
+      const t = d[k];
+      return t ? `<p class="v${i === 0 ? ' lead' : ''}">${esc(t)}</p>` : '';
+    }).join('');
+    if (!body) throw new Error('empty');
+    box.innerHTML = `<div class="card say">
+      <div class="k">白话解读${d.source === 'llm' ? ' · AI 生成' : ''}</div>
+      ${body}
+      <div class="scale">${SCALE_HTML}</div>
+      <div class="note">以上是机器对分数的解释，不构成投资建议。</div></div>`;
+  } catch (e) {
+    // 解读失败不打断主内容，但保留刻度说明——否则读者不知道 65 分是高是低
+    box.innerHTML = `<div class="card say"><div class="k">分数怎么读</div>
+      <div class="scale">${SCALE_HTML}</div></div>`;
+  }
+}
+
 function render(p, view) {
   let inner;
   if (view === 'quality') {
@@ -250,7 +294,7 @@ function render(p, view) {
     缺失子项不进分母、整维缺失标 N/A 不填 0；每个分数带置信度，&lt;0.6 进低置信清单。<br>
     本页所有数字由公开数据按页面写明口径计算，数据可能有误、口径有局限，请自行复核。
     结构化读数不构成投资建议，不预测涨跌，不含任何买卖意见。${errs}</div>`;
-  return identBar(p) + navBar(p.code, view) + inner + foot;
+  return identBar(p) + navBar(p.code, view) + '<div id="ss3say"></div>' + inner + foot;
 }
 
 function formHtml() {
@@ -410,6 +454,7 @@ export async function mountV3(view) {
         `已自动重试 ${i}/6 次，请稍候…首次约 1-2 分钟，完成后 10 分钟内同码秒回。</div></div>`;
     });
     root.innerHTML = render(p, view);
+    loadNarrative(base, code, view);   // 不 await：分数先出来，白话解读随后补上
   } catch (e) {
     root.innerHTML = `<div class="card"><div class="fl r">查询失败：${esc(e.message)}</div>
       <div class="note"><a href="${location.pathname}">重新输入代码</a></div></div>`;

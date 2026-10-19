@@ -985,21 +985,44 @@ def compute_v3(code):
     return payload, 200
 
 
+def _f(v, nd=1):
+    """数字格式化：None → N/A，浮点去掉长尾（此前页面上出现过 PE 20.33942726 这种）。"""
+    if v is None:
+        return 'N/A'
+    try:
+        return f'{float(v):.{nd}f}'
+    except (TypeError, ValueError):
+        return str(v)
+
+
+def _scale(total):
+    t = total or 0
+    if t >= 80:
+        return '属于优秀那一档'
+    if t >= 65:
+        return '属于良这一档，比多数公司好，但没到最顶尖'
+    if t >= 45:
+        return '属于中等，有明显长处也有明显短板'
+    return '偏弱，短板比较集中'
+
+
 def _build_pages(**k):
-    """四页解说内容（规则生成，非 LLM 自由发挥）。"""
+    """四页解说内容（规则生成，非 LLM 自由发挥）。
+
+    2026-10-19：数字统一保留 1 位、句子改口语（原版直接插浮点，
+    页面上出现「PE 20.33942726」，普通股民看不懂也没法读）。
+    """
     d = {x['key']: x for x in k['dims']}
     g = k['groups']
+    qs = lambda key: _f((g.get(key) or {}).get('score'), 0)  # noqa: E731
     p1 = {
         'title': '总览',
-        'headline': (f"质地 {g['Q']['score'] if g['Q']['available'] else 'N/A'} / "
-                     f"价格 {g['V']['score'] if g['V']['available'] else 'N/A'} / "
-                     f"势能 {g['M']['score'] if g['M']['available'] else 'N/A'}；"
+        'headline': (f"质地 {qs('Q')} / 价格 {qs('V')} / 势能 {qs('M')}；"
                      f"红旗 {len(k['gate']['red'])} 条、黄旗 {len(k['gate']['yellow'])} 条；"
                      f"按松果口径属于【{k['tag']['label']}】"),
         'blocks': [
-            {'h': '结论', 't': f"总分 {k['total']:.1f}（{k['tier']}）。"
-                               f"{k['tag']['desc']}。"},
-            {'h': '闸门', 't': ('未触发一票否决项' if not k['gate']['red']
+            {'h': '结论', 't': f"总分 {_f(k['total'])}，{_scale(k['total'])}。{k['tag']['desc']}。"},
+            {'h': '闸门', 't': ('没有触发一票否决的红旗项' if not k['gate']['red']
                                 else '；'.join(k['gate']['red'])) +
                                ('；黄旗：' + '；'.join(k['gate']['yellow']) if k['gate']['yellow'] else '')},
             {'h': '未接入项', 't': '、'.join(k['gate']['not_wired']) + '（如实标注，不填 0）'},
@@ -1009,31 +1032,40 @@ def _build_pages(**k):
     cc = d.get('core_competence') or {}
     gr = d.get('growth') or {}
     fh = d.get('financial_health') or {}
+    roic_txt = (f"每投 100 块钱一年能赚回 {_f(k['roic'])} 块" if k.get('roic') is not None
+                else 'ROIC 暂缺')
+    gm_txt = (f"毛利率 {_f(k['gm'])}%，比同行中位数{'高' if (k.get('gm') or 0) >= (k.get('gm_med') or 0) else '低'} "
+              f"{_f(abs((k.get('gm') or 0) - (k.get('gm_med') or 0)))} 个百分点"
+              if k.get('gm') is not None and k.get('gm_med') is not None else '毛利率数据暂缺')
     p2 = {
         'title': '质地', 'score': g['Q']['score'],
-        'headline': f"Q {g['Q']['score']}｜盈利质量 {q.get('score')} · 核心竞争力 {cc.get('score')} · "
-                    f"成长质量 {gr.get('score')} · 财务健康 {fh.get('score')}",
+        'headline': f"Q {_f(g['Q']['score'])}｜盈利质量 {_f(q.get('score'))} · 核心竞争力 {_f(cc.get('score'))} · "
+                    f"成长质量 {_f(gr.get('score'))} · 财务健康 {_f(fh.get('score'))}",
         'blocks': [
-            {'h': '强在哪', 't': f"盈利质量 {q.get('score')}（ROIC {k['roic']}%，"
-                               f"CFO/净利 {round(k['nco_mean'],2) if k['nco_mean'] else 'N/A'}）；"
-                               f"核心竞争力 {cc.get('score')}（毛利率 {k['gm']}% vs 行业中位 {k['gm_med']}%）"},
-            {'h': '弱在哪', 't': f"成长质量 {gr.get('score')}（单季扣非同比 "
-                               f"{k['dnp_yoy'] if k['dnp_yoy'] is not None else 'N/A'}%）"},
-            {'h': '纵-横-己', 't': f"纵向议价力：应收 {k['ar_days']} 天 − 应付 {k['ap_days']} 天 "
-                               f"= 净占用 {round(k['net_days'],1) if k['net_days'] is not None else 'N/A'} 天；"
-                               f"卡点判定 {k['choke'] if k['choke'] is not None else '未判定'}"},
+            {'h': '强在哪', 't': f"盈利质量 {_f(q.get('score'))} 分：{roic_txt}；{gm_txt}。"},
+            {'h': '弱在哪', 't': (f"成长质量 {_f(gr.get('score'))} 分：最近一个季度扣非利润同比 "
+                                f"{_f(k['dnp_yoy'])}%，增长{'在放缓' if (k.get('dnp_yoy') or 0) < 0 else '还算稳'}。"
+                                if k.get('dnp_yoy') is not None else
+                                f"成长质量 {_f(gr.get('score'))} 分：单季同比数据暂缺。")},
+            {'h': '纵-横-己', 't': f"应收 {_f(k['ar_days'], 0)} 天、应付 {_f(k['ap_days'], 0)} 天，"
+                               f"净占用上下游资金 {_f(k['net_days'], 1)} 天（负数=占用别人的钱）；"
+                               f"卡点判定 {k['choke'] if k['choke'] is not None else '未判定'}。"},
         ],
     }
     v = d.get('valuation') or {}
     p3 = {
         'title': '价格', 'score': g['V']['score'],
-        'headline': (f"V {g['V']['score']}｜PE {k['pe']} · PB {k['pb']} · "
-                     f"FCF收益率 {k['fcf_yield']}%" if g['V']['available']
+        'headline': (f"V {_f(g['V']['score'])}｜PE {_f(k['pe'])} 倍 · PB {_f(k['pb'])} 倍 · "
+                     f"FCF 收益率 {_f(k['fcf_yield'])}%" if g['V']['available']
                      else f"V N/A｜{v.get('na_reason', '估值维不可用')}"),
         'blocks': [
-            {'h': '估值位置', 't': f"PE {k['pe']}、PB {k['pb']}，分位见各子项"},
-            {'h': '松果安全边际', 't': f"FCF收益率 {k['fcf_yield']}%（FCFF÷市值代理口径，"
-                                  f"未扣净债；完整 EV 口径待接）"},
+            {'h': '估值位置', 't': (f"市盈率 {_f(k['pe'])} 倍、市净率 {_f(k['pb'])} 倍。"
+                                f"通俗说，市场愿意为它每 1 块钱的年利润付 {_f(k['pe'])} 块钱。"
+                                if k.get('pe') is not None else
+                                '亏损或数据缺失，PE 无定义，这一维按 N/A 处理。')},
+            {'h': '松果安全边际', 't': f"FCF 收益率 {_f(k['fcf_yield'])}%：按松果口径，它每年能自由支配的现金"
+                                  f"大约相当于市值的 {_f(k['fcf_yield'])}%，这个数越高说明越便宜"
+                                  f"（FCFF÷市值代理口径，未扣净债）。"},
         ],
     }
     cp = d.get('chain_prosperity') or {}
@@ -1043,14 +1075,15 @@ def _build_pages(**k):
     chain_blocks = list(ch.get('narration') or [])
     p4 = {
         'title': '势能', 'score': g['M']['score'],
-        'headline': f"M {g['M']['score']}｜产业链景气 {cp.get('score')} · "
-                    f"预期修正 {er.get('score')} · 资金动能 {cm.get('score')}",
+        'headline': f"M {_f(g['M']['score'])}｜产业链景气 {_f(cp.get('score'))} · "
+                    f"预期修正 {_f(er.get('score'))} · 资金动能 {_f(cm.get('score'))}",
         'blocks': chain_blocks + [
-            {'h': '风从哪来', 't': f"行业20日市值变动 {k['rel20']}%"},
-            {'h': '预期', 't': f"近120日研报 {k['reps']} 篇；单季扣非同比 {k['dnp_yoy']}%"},
-            {'h': '资金（带可靠性）', 't': f"融资余额20日 {k['rz20']}%（A级）· "
-                                    f"龙虎榜净买入 {round(k['bb']/1e8,2) if k['bb'] else 'N/A'} 亿（A级）· "
-                                    f"主力净流入20日 {round(k['net20'],2) if k['net20'] is not None else 'N/A'} 亿（B级·拆单失真）"},
+            {'h': '风从哪来', 't': f"所在行业近 20 个交易日市值变动 {_f(k['rel20'])}%。"},
+            {'h': '预期', 't': f"近 120 天有 {k['reps'] if k.get('reps') is not None else 'N/A'} 篇研报覆盖；"
+                            f"单季扣非同比 {_f(k['dnp_yoy'])}%。"},
+            {'h': '资金（带可靠性）', 't': f"融资余额近 20 日 {_f(k['rz20'])}%（A 级·真实披露）· "
+                                    f"龙虎榜净买入 {_f((k['bb'] or 0) / 1e8, 2) if k.get('bb') else 'N/A'} 亿（A 级）· "
+                                    f"主力净流入 20 日 {_f(k['net20'], 2)} 亿（B 级·大单推算，可能被拆单规避）"},
         ],
     }
     return {'overview': p1, 'quality': p2, 'price': p3, 'momentum': p4}
