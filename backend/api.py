@@ -414,6 +414,164 @@ def stockscore_v3_narrative(req: Req):
         raise HTTPException(503, f'解读生成失败: {type(e).__name__}: {e}')
 
 
+# ---------- 深度分析 + 元宝总结版（2026-10-20）----------
+# 链路：外部深度数据自动补漏（研报抽取）→ 估值与预期/风险与安全确定性计算
+#       → 六段深度分析（逐段生成+数字回验+矛盾检测+critic）→ 元宝口播总结版
+import stockscore_research as _ssres  # noqa: E402
+import stockscore_modules as _ssmod  # noqa: E402
+import stockscore_deep as _ssdeep  # noqa: E402
+import stockscore_summary as _sssum  # noqa: E402
+
+
+def _ss_core(code):
+    """取 v3 payload + facts（缓存优先）。"""
+    payload = cache_get('ss3:' + code)
+    if not payload:
+        payload, _ = _ss3.compute_v3(code)
+        if payload is None:
+            raise HTTPException(404, '未获取到该股票数据，请核对代码')
+        cache_put('ss3:' + code, payload)
+    import stockscore_facts as _ssf
+    fk = _ssf.build_facts(code)
+    return payload, fk
+
+
+def _ss_context(code):
+    """一次性取齐 4 个数据源 + 统一 coverage 口径。
+
+    坑（2026-10-20 修）：之前 4 个端点（modules/deep/summary/talk）
+    各自算 coverage，其中只有 deep 传了 industry_raw，另外三处没传。
+    结果同一只票在「深度」页显示 A 级、在「模块」和「口播」页显示 B 级——
+    页面之间自相矛盾。coverage 是全局口径，必须一处算、处处用。
+
+    这里统一返回 (payload, fk, research, industry_raw, industry_facts, cov)。
+    """
+    payload, fk = _ss_core(code)
+    research = {}
+    try:
+        research = _ssres.get_research(code, time.strftime('%Y%m%d'), DS_KEY)
+    except Exception:
+        research = {}
+    industry_raw = None
+    industry_facts = []
+    try:
+        import stockscore_industry as _ssind
+        industry_raw = _ssind.get_industry(code)
+        industry_facts = _ssind.facts_for_writer(industry_raw)
+    except Exception:
+        industry_raw = {'error': '行业结构数据层不可得'}
+    cov = _ssres.coverage_level(research, industry_raw)
+    return payload, fk, research, industry_raw, industry_facts, cov
+
+
+@app.post('/api/stockscore_v3_research')
+def stockscore_v3_research(req: Req):
+    """外部深度数据自动补漏：抓研报 → 抽取 → 回验 → coverage 分级。"""
+    code = re.sub(r'\D', '', req.code or '')
+    if len(code) != 6:
+        raise HTTPException(400, '请输入6位股票代码')
+    try:
+        return _ssres.get_research(code, time.strftime('%Y%m%d'), DS_KEY)
+    except Exception as e:
+        raise HTTPException(503, f'外部数据抓取失败: {type(e).__name__}: {e}')
+
+
+@app.post('/api/stockscore_v3_modules')
+def stockscore_v3_modules(req: Req):
+    """估值与预期 + 风险与安全：纯确定性计算，不含 LLM。"""
+    code = re.sub(r'\D', '', req.code or '')
+    if len(code) != 6:
+        raise HTTPException(400, '请输入6位股票代码')
+    payload, fk, research, industry_raw, industry_facts, cov = _ss_context(code)
+    vb = _ssmod.build_valuation_block(code, research=research)
+    kb = _ssmod.build_risk_block(code, research=research)
+    return {
+        'code': code,
+        'name': payload.get('name', code),
+        'total': payload.get('total'),
+        'tier': payload.get('tier'),
+        'valuation': {'facts': vb['facts'], 'gaps': vb['gaps']},
+        'risk': {'facts': kb['facts'], 'flags': kb['flags'], 'gaps': kb['gaps']},
+        'coverage': cov,
+    }
+
+
+@app.post('/api/stockscore_v3_deep')
+def stockscore_v3_deep(req: Req):
+    """六段深度分析：逐段生成 + 数字回验 + 矛盾清单 + critic。"""
+    code = re.sub(r'\D', '', req.code or '')
+    if len(code) != 6:
+        raise HTTPException(400, '请输入6位股票代码')
+    payload, fk, research, industry_raw, industry_facts, cov = _ss_context(code)
+    vb = _ssmod.build_valuation_block(code, research=research)
+    kb = _ssmod.build_risk_block(code, research=research)
+    try:
+        return _ssdeep.get_or_build(
+            code, payload.get('name', code),
+            [fk.get('facts') or [], vb['facts'], kb['facts']],
+            research, payload=payload, key=DS_KEY, coverage=cov)
+    except Exception as e:
+        raise HTTPException(503, f'深度分析生成失败: {type(e).__name__}: {e}')
+
+
+@app.post('/api/stockscore_v3_summary')
+def stockscore_v3_summary(req: Req):
+    """元宝总结版：手机端/语音用的口播稿（≤1200字）。"""
+    code = re.sub(r'\D', '', req.code or '')
+    if len(code) != 6:
+        raise HTTPException(400, '请输入6位股票代码')
+    payload, fk, research, industry_raw, industry_facts, cov = _ss_context(code)
+    vb = _ssmod.build_valuation_block(code, research=research)
+    kb = _ssmod.build_risk_block(code, research=research)
+    deep = None
+    try:
+        deep = _ssdeep.get_or_build(
+            code, payload.get('name', code),
+            [fk.get('facts') or [], vb['facts'], kb['facts']],
+            research, payload=payload, key=DS_KEY, coverage=cov)
+    except Exception:
+        deep = None
+    try:
+        return _sssum.get_or_build(code, payload.get('name', code), payload,
+                                    vb, kb, research, fk.get('facts') or [],
+                                    DS_KEY, deep=deep, coverage=cov,
+                                    industry_facts=industry_facts)
+    except Exception as e:
+        raise HTTPException(503, f'总结版生成失败: {type(e).__name__}: {e}')
+
+
+@app.post('/api/stockscore_v3_talk')
+def stockscore_v3_talk(req: Req):
+    """元宝口播版·快速通道（手机端专用）。
+
+    与 /api/stockscore_v3_summary 的区别：**不等待深度分析生成**。
+    坑（2026-10-20 实测）：summary 端点内部会调 deep.get_or_build，
+    六段深度分析 + 两轮审读重写要 2-4 分钟，手机上等不起。
+    这里的口播稿只用打分卡/估值/风险/研报四类数字源，十几秒出稿。
+
+    deep 已缓存时会用（免费），没缓存就直接跳过——口播稿照样成立。
+    """
+    code = re.sub(r'\D', '', req.code or '')
+    if len(code) != 6:
+        raise HTTPException(400, '请输入6位股票代码')
+    payload, fk, research, industry_raw, industry_facts, cov = _ss_context(code)
+    vb = _ssmod.build_valuation_block(code, research=research)
+    kb = _ssmod.build_risk_block(code, research=research)
+    # 只取已缓存的 deep，不触发生成
+    deep = None
+    try:
+        deep = _ssdeep.get_cached(code)
+    except Exception:
+        deep = None
+    try:
+        return _sssum.get_or_build(code, payload.get('name', code), payload,
+                                    vb, kb, research, fk.get('facts') or [],
+                                    DS_KEY, deep=deep, coverage=cov,
+                                    industry_facts=industry_facts)
+    except Exception as e:
+        raise HTTPException(503, f'口播版生成失败: {type(e).__name__}: {e}')
+
+
 # ---------- 匿名工具使用埋点（2026-09-18）----------
 # 只记录：工具名/事件/随机sid/停留秒数。不记录IP、不记录用户输入内容。
 # 数据按日切 JSONL 存 track/，90 天归档压缩。埋点失败静默，绝不影响主服务。

@@ -49,3 +49,11 @@ backend/data/narrative/
 backend/data/board_snapshots/
 backend/data/collect_boards.log
 _tmp/
+
+# 打分卡三层运行期缓存（2026-10-20：可再生，不入库）
+backend/data/deep/
+backend/data/summary/
+backend/data/research/
+backend/data/industry/
+# 注意：backend/data/industry_taxonomy.json 是静态分类表，需要入库，勿被上面规则误伤
+!backend/data/industry_taxonomy.json

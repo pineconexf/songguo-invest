@@ -1,0 +1,21 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+
+// 个股打分卡 · 元宝口播版（手机端）
+// 2026-10-20
+// 独立轻量页：只调 /api/stockscore_v3_talk（快速通道，不等深度分析生成），
+// 十几秒出稿。手机上复制或直接分享到元宝。
+---
+<Layout
+  title="个股打分卡 · 元宝口播版"
+  description="个股深度分析的口播稿，≤1200 字纯口语，无操作建议。手机端直接生成，复制或分享到元宝朗读。"
+>
+  <section style="padding: 0;">
+    <div id="ss3-root"></div>
+  </section>
+</Layout>
+
+<script>
+  import { mountTalk } from '../../../scripts/stockscore-talk.js';
+  mountTalk();
+</script>

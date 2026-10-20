@@ -242,8 +242,10 @@ def _call_llm(facts, key):
         'response_format': {'type': 'json_object'},
     }
     last = None
+    budget = 2400
     for attempt in range(3):
         try:
+            body['max_tokens'] = budget
             r = requests.post(LLM_URL, json=body, timeout=TIMEOUT,
                               headers={'Authorization': f'Bearer {key}',
                                        'Content-Type': 'application/json'})
@@ -251,7 +253,16 @@ def _call_llm(facts, key):
                 last = f'HTTP {r.status_code} {r.text[:120]}'
                 time.sleep(2 + attempt * 3)
                 continue
-            raw = r.json()['choices'][0]['message']['content'].strip()
+            choice = (r.json().get('choices') or [{}])[0]
+            raw = (choice.get('message') or {}).get('content') or ''
+            # 坑（2026-10-20 实测）：deepseek-v4-flash 会把 max_tokens 花在
+            # reasoning_content 上，正文 content 返回空串、finish_reason='length'。
+            # 修法：空内容且被截断时加倍预算重试，而不是直接判失败。
+            if not raw.strip() and choice.get('finish_reason') == 'length' \
+                    and budget < 16000:
+                budget = min(budget * 2, 16000)
+                continue
+            raw = raw.strip()
             raw = re.sub(r'^```(?:json)?|```$', '', raw, flags=re.M).strip()
             # 模型偶尔会在 JSON 前后加一句人话，或被截断：取最外层花括号再试
             i, j = raw.find('{'), raw.rfind('}')

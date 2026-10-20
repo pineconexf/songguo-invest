@@ -90,6 +90,7 @@ const VIEWS = [
   ['quality', '质地', 'quality'],
   ['price', '价格', 'price'],
   ['momentum', '势能', 'momentum'],
+  ['deep', '深度', 'deep'],
 ];
 
 const esc = (s) => String(s == null ? '' : s)
@@ -117,21 +118,21 @@ function groupOf(key) {
 
 // 四个页面是独立路由，tab 必须真的跳路由。早期版本用同页 ?view= 切换，
 // 结果停在 /momentum/ 也能显示质地内容，URL 与内容不一致、无法收藏分享。
-const VIEW_NAMES = ['index', 'quality', 'price', 'momentum'];
+const VIEW_NAMES = ['index', 'quality', 'price', 'momentum', 'deep'];
 
 /** 从当前 URL 判断激活的视图：先看 ?view=（兼容旧链接），再看路径末段。 */
 function activeView() {
   let v = null;
   try { v = new URLSearchParams(location.search).get('view'); } catch (e) { /* file:// 等场景 */ }
   if (v && VIEW_NAMES.indexOf(v) >= 0) return v;
-  const m = location.pathname.match(/\/stockscore(?:\/(index|quality|price|momentum))?\/?$/);
+  const m = location.pathname.match(/\/stockscore(?:\/(index|quality|price|momentum|deep))?\/?$/);
   return (m && m[1]) || 'index';
 }
 
-/** 四个路由的共同前缀，如 /songguo-invest/tools/stockscore 或 /tools/stockscore */
+/** 五个路由的共同前缀，如 /songguo-invest/tools/stockscore 或 /tools/stockscore */
 function routeBase() {
   const p = location.pathname.replace(/\/+$/, '');
-  const m = p.match(/^(.*\/stockscore)(?:\/(?:index|quality|price|momentum))?$/);
+  const m = p.match(/^(.*\/stockscore)(?:\/(?:index|quality|price|momentum|deep))?$/);
   return m ? m[1] : p;
 }
 

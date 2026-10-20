@@ -1,0 +1,355 @@
+{
+  "runs": [
+    {
+      "ts": 1792463192,
+      "label": "2026-10-20 10:26",
+      "items": [
+        {
+          "code": "688279",
+          "name": "峰岹科技",
+          "ok": true,
+          "n_facts": 21,
+          "n_gaps": 1,
+          "placeholder": true,
+          "verdict": "degrade",
+          "metrics": {
+            "density": 2.72,
+            "coverage": 0.6,
+            "coverage_hit": [
+              "biz_base",
+              "biz_segment",
+              "capital_return",
+              "cashflow",
+              "valuation",
+              "risk"
+            ],
+            "coverage_missing": [
+              "biz_option",
+              "space",
+              "competition",
+              "moat"
+            ],
+            "traceability": 1.0,
+            "traceability_hit": 52,
+            "traceability_total": 52,
+            "banned": [],
+            "gaps_declared": 0.0,
+            "gaps_undeclared": [
+              "ROIC"
+            ],
+            "length": 687,
+            "specificity": 0
+          },
+          "failed": [
+            "必答槽位覆盖 60% < 75%（缺 biz_option、space、competition、moat）",
+            "事实缺口未声明：ROIC"
+          ]
+        },
+        {
+          "code": "600519",
+          "name": "贵州茅台",
+          "ok": true,
+          "n_facts": 19,
+          "n_gaps": 1,
+          "placeholder": true,
+          "verdict": "degrade",
+          "metrics": {
+            "density": 2.85,
+            "coverage": 0.6,
+            "coverage_hit": [
+              "biz_base",
+              "biz_segment",
+              "capital_return",
+              "cashflow",
+              "valuation",
+              "risk"
+            ],
+            "coverage_missing": [
+              "biz_option",
+              "space",
+              "competition",
+              "moat"
+            ],
+            "traceability": 1.0,
+            "traceability_hit": 41,
+            "traceability_total": 41,
+            "banned": [],
+            "gaps_declared": 0.0,
+            "gaps_undeclared": [
+              "ROIC"
+            ],
+            "length": 592,
+            "specificity": 0
+          },
+          "failed": [
+            "必答槽位覆盖 60% < 75%（缺 biz_option、space、competition、moat）",
+            "事实缺口未声明：ROIC",
+            "正文 592 字 < 600 字，展开不足"
+          ]
+        },
+        {
+          "code": "300750",
+          "name": "宁德时代",
+          "ok": true,
+          "n_facts": 23,
+          "n_gaps": 1,
+          "placeholder": true,
+          "verdict": "degrade",
+          "metrics": {
+            "density": 2.75,
+            "coverage": 0.6,
+            "coverage_hit": [
+              "biz_base",
+              "biz_segment",
+              "capital_return",
+              "cashflow",
+              "valuation",
+              "risk"
+            ],
+            "coverage_missing": [
+              "biz_option",
+              "space",
+              "competition",
+              "moat"
+            ],
+            "traceability": 1.0,
+            "traceability_hit": 50,
+            "traceability_total": 50,
+            "banned": [],
+            "gaps_declared": 0.0,
+            "gaps_undeclared": [
+              "ROIC"
+            ],
+            "length": 742,
+            "specificity": 1
+          },
+          "failed": [
+            "必答槽位覆盖 60% < 75%（缺 biz_option、space、competition、moat）",
+            "事实缺口未声明：ROIC"
+          ]
+        },
+        {
+          "code": "601398",
+          "name": "工商银行",
+          "ok": true,
+          "n_facts": 13,
+          "n_gaps": 5,
+          "placeholder": true,
+          "verdict": "degrade",
+          "metrics": {
+            "density": 2.26,
+            "coverage": 0.6,
+            "coverage_hit": [
+              "biz_base",
+              "biz_segment",
+              "capital_return",
+              "cashflow",
+              "valuation",
+              "risk"
+            ],
+            "coverage_missing": [
+              "biz_option",
+              "space",
+              "competition",
+              "moat"
+            ],
+            "traceability": 1.0,
+            "traceability_hit": 30,
+            "traceability_total": 30,
+            "banned": [],
+            "gaps_declared": 0.0,
+            "gaps_undeclared": [
+              "经营现金流",
+              "资本开支",
+              "自由现金流",
+              "预付款项",
+              "ROIC"
+            ],
+            "length": 511,
+            "specificity": 0
+          },
+          "failed": [
+            "必答槽位覆盖 60% < 75%（缺 biz_option、space、competition、moat）",
+            "事实缺口未声明：经营现金流、资本开支、自由现金流、预付款项、ROIC",
+            "正文 511 字 < 600 字，展开不足"
+          ]
+        },
+        {
+          "code": "601088",
+          "name": "中国神华",
+          "ok": true,
+          "n_facts": 23,
+          "n_gaps": 1,
+          "placeholder": true,
+          "verdict": "degrade",
+          "metrics": {
+            "density": 2.79,
+            "coverage": 0.6,
+            "coverage_hit": [
+              "biz_base",
+              "biz_segment",
+              "capital_return",
+              "cashflow",
+              "valuation",
+              "risk"
+            ],
+            "coverage_missing": [
+              "biz_option",
+              "space",
+              "competition",
+              "moat"
+            ],
+            "traceability": 1.0,
+            "traceability_hit": 47,
+            "traceability_total": 47,
+            "banned": [],
+            "gaps_declared": 0.0,
+            "gaps_undeclared": [
+              "ROIC"
+            ],
+            "length": 728,
+            "specificity": 0
+          },
+          "failed": [
+            "必答槽位覆盖 60% < 75%（缺 biz_option、space、competition、moat）",
+            "事实缺口未声明：ROIC"
+          ]
+        },
+        {
+          "code": "000651",
+          "name": "格力电器",
+          "ok": true,
+          "n_facts": 22,
+          "n_gaps": 1,
+          "placeholder": true,
+          "verdict": "degrade",
+          "metrics": {
+            "density": 2.89,
+            "coverage": 0.6,
+            "coverage_hit": [
+              "biz_base",
+              "biz_segment",
+              "capital_return",
+              "cashflow",
+              "valuation",
+              "risk"
+            ],
+            "coverage_missing": [
+              "biz_option",
+              "space",
+              "competition",
+              "moat"
+            ],
+            "traceability": 1.0,
+            "traceability_hit": 42,
+            "traceability_total": 42,
+            "banned": [],
+            "gaps_declared": 0.0,
+            "gaps_undeclared": [
+              "ROIC"
+            ],
+            "length": 674,
+            "specificity": 1
+          },
+          "failed": [
+            "必答槽位覆盖 60% < 75%（缺 biz_option、space、competition、moat）",
+            "事实缺口未声明：ROIC"
+          ]
+        },
+        {
+          "code": "002594",
+          "name": "比亚迪",
+          "ok": true,
+          "n_facts": 20,
+          "n_gaps": 1,
+          "placeholder": true,
+          "verdict": "degrade",
+          "metrics": {
+            "density": 2.94,
+            "coverage": 0.6,
+            "coverage_hit": [
+              "biz_base",
+              "biz_segment",
+              "capital_return",
+              "cashflow",
+              "valuation",
+              "risk"
+            ],
+            "coverage_missing": [
+              "biz_option",
+              "space",
+              "competition",
+              "moat"
+            ],
+            "traceability": 1.0,
+            "traceability_hit": 37,
+            "traceability_total": 37,
+            "banned": [],
+            "gaps_declared": 0.0,
+            "gaps_undeclared": [
+              "ROIC"
+            ],
+            "length": 604,
+            "specificity": 0
+          },
+          "failed": [
+            "必答槽位覆盖 60% < 75%（缺 biz_option、space、competition、moat）",
+            "事实缺口未声明：ROIC"
+          ]
+        },
+        {
+          "code": "600276",
+          "name": "恒瑞医药",
+          "ok": true,
+          "n_facts": 20,
+          "n_gaps": 1,
+          "placeholder": true,
+          "verdict": "degrade",
+          "metrics": {
+            "density": 2.86,
+            "coverage": 0.6,
+            "coverage_hit": [
+              "biz_base",
+              "biz_segment",
+              "capital_return",
+              "cashflow",
+              "valuation",
+              "risk"
+            ],
+            "coverage_missing": [
+              "biz_option",
+              "space",
+              "competition",
+              "moat"
+            ],
+            "traceability": 1.0,
+            "traceability_hit": 43,
+            "traceability_total": 43,
+            "banned": [],
+            "gaps_declared": 0.0,
+            "gaps_undeclared": [
+              "ROIC"
+            ],
+            "length": 617,
+            "specificity": 0
+          },
+          "failed": [
+            "必答槽位覆盖 60% < 75%（缺 biz_option、space、competition、moat）",
+            "事实缺口未声明：ROIC"
+          ]
+        }
+      ],
+      "summary": {
+        "n": 8,
+        "pass_rate": 0.0,
+        "degrade_rate": 1.0,
+        "reject_rate": 0.0,
+        "avg_density": 2.757,
+        "avg_coverage": 0.6,
+        "avg_traceability": 1.0,
+        "avg_facts": 20.1,
+        "avg_gaps": 1.5
+      }
+    }
+  ]
+}
