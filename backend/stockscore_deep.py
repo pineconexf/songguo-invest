@@ -48,7 +48,7 @@ CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'de
 # 生成逻辑版本号：任何影响正文的改动都要 +1，让旧缓存自动失效
 # 2026-10-20 v8：coverage 改为由调用方统一传入（研报通道 + 行业结构层），
 # 避免 deep 页与 modules/口播页报出不同等级。
-PIPELINE_VERSION = 15   # v15: prompt 规则22(核心数字不跨段重复)/23(禁价格高低措辞)/24(TTM结论要说清季度构成); v14: 段内禁自相矛盾
+PIPELINE_VERSION = 18   # v18: unresolved 改为「终态全部 high」+ stuck 单列; v17: 加机械闸(audit_structure 序号断号 / audit_numbers 市值÷PE≠净利); v16: 重写闭环三修(fix 下传/结构性medium进队列/未解明示); v15: prompt 规则22(核心数字不跨段重复)/23(禁价格高低措辞)/24(TTM结论要说清季度构成); v14: 段内禁自相矛盾
 _lock = threading.Lock()
 _mem = {}
 
@@ -479,6 +479,60 @@ def verify_numbers(text, whitelist, sec_facts):
             seen.add(b)
             uniq.append(b)
     return {'bad': uniq, 'ok': not uniq}
+
+
+def audit_structure(text):
+    """机械结构审计（零 token）：序号断号。
+    窄口径，只认列举标记，避免「第三季度」「第一梯队」这类误报。
+    起因（2026-10-20）：让 6 段全重写后，business 段生成「商业模式上有两个硬约束。二是投入前置…」，
+    「一是」整条丢了；复审靠 LLM 才发现，白烧一轮 token。"""
+    probs, t = [], text or ''
+    for ch in '二三四五':
+        if ('%s是' % ch) in t and '一是' not in t:
+            probs.append('列举出现「%s是」但缺「一是」，序号断号' % ch)
+            break
+    for ch in '二三四五':
+        if ('第%s条' % ch) in t and '第一条' not in t:
+            probs.append('列举出现「第%s条」但缺「第一条」，序号断号' % ch)
+            break
+    for ch in '二三四五':
+        if ('第%s点' % ch) in t and '第一点' not in t:
+            probs.append('列举出现「第%s点」但缺「第一点」，序号断号' % ch)
+            break
+    if '其次' in t and '首先' not in t:
+        probs.append('出现「其次」但缺「首先」，序号断号')
+    if '再次' in t and '其次' not in t:
+        probs.append('出现「再次」但缺「其次」，序号断号')
+    return probs
+
+
+def audit_numbers(text):
+    """机械数字自洽审计（零 token）：只查「市值 ÷ PE 应等于净利」这一个三角。
+    起因（2026-10-20）：valuation 段写总市值 83.27 亿、又引研报 PE 56 倍，
+    两者隐含净利约 1.49 亿，与文中归母净利差 26%+，没人解释。窄口径换低误报。"""
+    probs, t = [], text or ''
+
+    def _f(x):
+        try:
+            return float(x)
+        except Exception:
+            return None
+
+    mv = re.search(r'总市值[^0-9\-]{0,10}(-?[\d.]+)\s*亿', t)
+    pe = (re.search(r'PE[^0-9\-]{0,14}([\d.]+)\s*倍', t)
+          or re.search(r'市盈率[^0-9\-]{0,14}([\d.]+)\s*倍', t))
+    npf = re.search(r'(?:归母净利润|净利润)[^0-9\-]{0,14}(-?[\d.]+)\s*亿', t)
+    if mv and pe and npf:
+        m, p, n = _f(mv.group(1)), _f(pe.group(1)), _f(npf.group(1))
+        if m and p and n and m > 0 and p > 0 and n > 0:
+            implied = m / p
+            gap = abs(implied - n) / n
+            if gap > 0.25:
+                probs.append(
+                    '市值 %.2f 亿 ÷ PE %.1f 倍 = 隐含净利 %.2f 亿，'
+                    '与文中净利 %.2f 亿差 %.0f%%，未说明口径'
+                    % (m, p, implied, n, gap * 100))
+    return probs
 
 
 def _guard_banned(text):
@@ -916,15 +970,27 @@ def build_deep(code, name, facts_blocks, research, payload=None, key=None,
     # 另加收敛判断：某轮复审的 high 数量没下降 → 停，避免无意义烧 token。
     rewritten = False
     rounds_used = 0
+    stuck = []          # 连续两轮复现的 issue 指纹 → 判定「改不动」，页面上明示
     if regenerate and key:
         sec_by_key = {s['key']: s for s in SECTIONS}
         sec_by_title = {s['title']: s for s in SECTIONS}
         prev_high = None
+        prev_fps = set()
         for _round in range(3):
             rounds_used = _round + 1
             high_by_sec = {}
+            # 2026-10-20 改（三处）：
+            # ① 结构性问题（越界/注水/表述不清/缺口掩盖）即使是 medium 也进队列。
+            #    旧代码只挑 high，于是 5 条 medium 在结构上不可能被修。
+            # ② 把 critic 的 fix 一并传给写手。旧代码只传 problem，写手知道有病不知道药方，
+            #    整段重生成会再踩同一个坑（688508 实测：moat 段打了「已按审读意见重写」标记，
+            #    「商誉 0.6% → 技术自研」一字未改）。
+            # ③（在循环尾部）收敛判断不假装收敛：复现两轮的 issue 记成未解并明示。
+            STRUCT_FIX = {'越界', '注水', '表述不清', '缺口掩盖', '逻辑矛盾'}
             for it in (critic.get('issues') or []):
-                if it.get('severity') != 'high':
+                sev = (it.get('severity') or '').strip().lower()
+                typ = (it.get('type') or '').strip()
+                if sev != 'high' and typ not in STRUCT_FIX:
                     continue
                 tgt = (it.get('target') or '').strip()
                 sec = sec_by_key.get(tgt) or sec_by_title.get(tgt)
@@ -936,8 +1002,10 @@ def build_deep(code, name, facts_blocks, research, payload=None, key=None,
                             break
                 if not sec:
                     continue
-                high_by_sec.setdefault(sec['key'], []).append(
-                    (it.get('problem') or '').strip())
+                prob = (it.get('problem') or '').strip()
+                fix = (it.get('fix') or '').strip()
+                entry = ('%s → 改法：%s' % (prob, fix)) if fix else prob
+                high_by_sec.setdefault(sec['key'], []).append(entry)
             # 数字回验不通过的段落也要重写。
             # 坑（2026-10-20 实测）：原来 verify_numbers 只把 bad 记到段上，
             # 但没人拿它当触发条件——自造派生数字（19.69、4.6）算出来了却没人管。
@@ -948,6 +1016,13 @@ def build_deep(code, name, facts_blocks, research, payload=None, key=None,
                         '这些是自行推算的派生值，'
                         '请删掉或者换成清单里已有的口径。'
                         % '、'.join(s['unverified_numbers'][:6]))
+            # 2026-10-20 加：机械结构闸（零 token）。序号断号、段内「市值÷PE≠净利」
+            # 这两类都不用 LLM 就能查出来，先拦一道，省掉「复审烧一轮 → 才发现 → 再重写」。
+            for s in sections:
+                _p2 = audit_structure(s['text']) + audit_numbers(s['text'])
+                if _p2:
+                    high_by_sec.setdefault(s['key'], []).append(
+                        '机械检查发现以下硬问题，必须修掉：' + '；'.join(_p2[:3]))
             if not high_by_sec:
                 break
             for sec_key, probs in high_by_sec.items():
@@ -994,11 +1069,38 @@ def build_deep(code, name, facts_blocks, research, payload=None, key=None,
             # 收敛判断：复审出的 high 数量没比上一轮少 → 不再往下改。
             # 判据是「数量」，不是「有没有」：改不动的问题会稳定在同一个数量上，
             # 继续重写只是把同样的文字换个说法，token 翻倍。
-            high_now = len([it for it in (critic.get('issues') or [])
-                            if it.get('severity') == 'high'])
+            # 2026-10-20 改：break 不等于「已改好」。把连续两轮复现的 issue 记进 stuck，
+            # 后面在段落 note 与 payload 里明示——旧代码只 break，页面看不出还有 high 挂着。
+            cur_fps = {}
+            for it in (critic.get('issues') or []):
+                if (it.get('severity') or '').strip().lower() != 'high':
+                    continue
+                fp = '%s|%s' % ((it.get('type') or '').strip(),
+                                (it.get('target') or '').strip())
+                cur_fps[fp] = it
+            _known = {x['fp'] for x in stuck}
+            for fp, it in cur_fps.items():
+                if fp in prev_fps and fp not in _known:
+                    stuck.append({'fp': fp, 'type': it.get('type'),
+                                  'target': it.get('target'),
+                                  'problem': it.get('problem'),
+                                  'fix': it.get('fix')})
+            high_now = len(cur_fps)
             if prev_high is not None and high_now >= prev_high:
                 break
             prev_high = high_now
+            prev_fps = set(cur_fps)
+
+    if stuck:
+        # 连续两轮改不完的意见 + 终态仍是 high 的意见 → 在受影响段落上明示，不假装收敛
+        _stuck_tgt = {(x.get('target') or '').strip() for x in stuck}
+        _stuck_tgt |= {(x.get('target') or '').strip()
+                       for x in (critic.get('issues') or [])
+                       if (x.get('severity') or '').strip().lower() == 'high'}
+        for s in sections:
+            if s.get('key') in _stuck_tgt or s.get('title') in _stuck_tgt:
+                if '未解' not in (s.get('note') or ''):
+                    s['note'] = ((s.get('note') or '') + '（仍有审读意见未解）').strip()
 
     tier_note = ''
     if payload:
@@ -1016,6 +1118,21 @@ def build_deep(code, name, facts_blocks, research, payload=None, key=None,
     out['rewritten'] = rewritten
     out['rewrite_rounds'] = rounds_used
     out['sections_rewritten'] = [s['key'] for s in sections if s.get('_rewritten')]
+    # 终态仍未解的 high 意见：不管复现几轮，输出时它们就是没解决，如实披露
+    out['unresolved'] = [{'type': x.get('type'), 'target': x.get('target'),
+                          'problem': x.get('problem'), 'fix': x.get('fix'),
+                          'severity': x.get('severity')}
+                         for x in (critic.get('issues') or [])
+                         if (x.get('severity') or '').strip().lower() == 'high']
+    # 连续两轮改不动的（诊断用，告诉我们是「写手不听话」还是「问题本身改不掉」）
+    out['stuck'] = [{k: v for k, v in x.items() if k != 'fp'} for x in stuck]
+    # 终检：机械闸仍未通过的段落（明示，不假装干净）
+    _si = []
+    for s in sections:
+        _p = audit_structure(s['text']) + audit_numbers(s['text'])
+        if _p:
+            _si.append({'key': s['key'], 'issues': _p})
+    out['structure_issues'] = _si
     out['research_note'] = (research or {}).get('note') or ''
     out['research_reports'] = (research or {}).get('report_count', 0)
     out['unverified_numbers'] = sorted({n for s in sections for n in s.get('unverified_numbers', [])})
