@@ -48,7 +48,7 @@ CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'de
 # 生成逻辑版本号：任何影响正文的改动都要 +1，让旧缓存自动失效
 # 2026-10-20 v8：coverage 改为由调用方统一传入（研报通道 + 行业结构层），
 # 避免 deep 页与 modules/口播页报出不同等级。
-PIPELINE_VERSION = 18   # v18: unresolved 改为「终态全部 high」+ stuck 单列; v17: 加机械闸(audit_structure 序号断号 / audit_numbers 市值÷PE≠净利); v16: 重写闭环三修(fix 下传/结构性medium进队列/未解明示); v15: prompt 规则22(核心数字不跨段重复)/23(禁价格高低措辞)/24(TTM结论要说清季度构成); v14: 段内禁自相矛盾
+PIPELINE_VERSION = 21   # v21: 跨段重复只判叙述段(numbers/valuation豁免)+机械复检纳入重复+重写防塌陷; v20: 收敛前机械复检+未解标记不再依赖 stuck; v19: 跨段重复机械闸(cross_section_repeats, 12字shingle/>=3段判定); v18: unresolved 改为「终态全部 high」+ stuck 单列; v17: 加机械闸(audit_structure 序号断号 / audit_numbers 市值÷PE≠净利); v16: 重写闭环三修(fix 下传/结构性medium进队列/未解明示); v15: prompt 规则22(核心数字不跨段重复)/23(禁价格高低措辞)/24(TTM结论要说清季度构成); v14: 段内禁自相矛盾
 _lock = threading.Lock()
 _mem = {}
 
@@ -533,6 +533,59 @@ def audit_numbers(text):
                     '与文中净利 %.2f 亿差 %.0f%%，未说明口径'
                     % (m, p, implied, n, gap * 100))
     return probs
+
+
+def _norm_cn(t):
+    """去空白与标点，只留中文/字母/数字，供跨段重复比对。"""
+    return re.sub(r'[^\u4e00-\u9fa5A-Za-z0-9]', '', t or '')
+
+
+def cross_section_repeats(sections, min_secs=3, limit=6,
+                          skip=('numbers', 'valuation')):
+    """跨段重复检测（零 token）：12 字 shingle 同时在 >=3 个「叙述段」出现 → 判注水。
+    2 段共享视为正常引用，不报，压低误伤。
+    numbers/valuation 不参与判定：这两段的本职就是复核业务段用过的数字，
+    把它们算成注水会逼写手删掉检验内容（v20 实测：numbers 段被砍到 197 字，
+    三节「数字检验」只剩一句过渡，直接崩）。
+    起因（2026-10-20）：business 段「研报口径新品数据」在业务/市场/壁垒三节重复三遍，
+    prompt 规则 22 只覆盖「核心数字不跨段重复」，定性描述没人管。
+    返回 [(片段, [出现在哪些段...]), ...]，按涉及段数降序。"""
+    SH = 12
+    use = [s for s in sections if s['key'] not in skip]
+    norms = {s['key']: _norm_cn(s['text']) for s in use}
+    idx = {}
+    for s in use:
+        t = norms[s['key']]
+        seen = set()
+        for i in range(0, len(t) - SH + 1):
+            g = t[i:i + SH]
+            if g in seen:
+                continue
+            seen.add(g)
+            idx.setdefault(g, []).append(s['key'])
+    reps = [(g, ks) for g, ks in idx.items()
+            if len(ks) >= min_secs
+            # 至少 8 个汉字才算「一句话」；否则命中的是 PowerModule系列 这类产品名，
+            # 产品名跨段出现是正常的，报出来只会逼写手删掉必要信息。
+            and sum(1 for c in g if '\u4e00' <= c <= '\u9fa5') >= 8]
+    reps.sort(key=lambda x: (-len(x[1]), x[0]))
+    # 同一句话会切出 12 个相邻 shingle，用 8 字重叠判同源，只报一条
+    picked = []
+    for g, ks in reps:
+        dup = False
+        for p, _ in picked:
+            if g[:8] in p or p[:8] in g:
+                dup = True
+                break
+            if any(g[i:i + 8] in p for i in range(0, len(g) - 7)):
+                dup = True
+                break
+        if dup:
+            continue
+        picked.append((g, ks))
+        if len(picked) >= limit:
+            break
+    return picked
 
 
 def _guard_banned(text):
@@ -1023,6 +1076,16 @@ def build_deep(code, name, facts_blocks, research, payload=None, key=None,
                 if _p2:
                     high_by_sec.setdefault(s['key'], []).append(
                         '机械检查发现以下硬问题，必须修掉：' + '；'.join(_p2[:3]))
+            # 跨段重复（注水）：12 字片段出现在 >=3 段 → 保留最先出现的段，其余要求改写。
+            # prompt 规则 22 只覆盖「核心数字不跨段重复」，定性描述的重复一直没人管。
+            _dup = {}
+            for _g, _ks in cross_section_repeats(sections):
+                for _k in _ks[1:]:
+                    _dup.setdefault(_k, []).append(_g)
+            for _k, _gs in _dup.items():
+                high_by_sec.setdefault(_k, []).append(
+                    '以下片段在你前面的段落里已经写过（注水），必须换个角度写或直接删掉：'
+                    + '；'.join(_gs[:3]))
             if not high_by_sec:
                 break
             for sec_key, probs in high_by_sec.items():
@@ -1042,8 +1105,11 @@ def build_deep(code, name, facts_blocks, research, payload=None, key=None,
                     sec, all_facts, research_facts, name, code,
                     coverage, key, used_idx=rewrite_used,
                     industry_facts=industry_facts,
-                    extra_note=('编辑审读发现以下问题，请修正：'
-                                + '；'.join(probs[:3])) if probs else '')
+                    extra_note=(('编辑审读发现以下问题，请修正：' + '；'.join(probs[:3])
+                                 + '只改有问题的表述；本段原有的论证链和已核对的数据必须保留，'
+                                   '篇幅不得明显少于现在（约 %d 字以上）。'
+                                   % max(300, int(len(sec.get('text') or '') * 0.8)))
+                                if probs else ''))
                 text, _ = _guard_banned(text)
                 for s in sections:
                     if s['key'] == sec_key:
@@ -1086,21 +1152,33 @@ def build_deep(code, name, facts_blocks, research, payload=None, key=None,
                                   'problem': it.get('problem'),
                                   'fix': it.get('fix')})
             high_now = len(cur_fps)
+            # 机械闸复检（零 token）：LLM 层「改不动」不等于可以收工——最后一轮重写
+            # 常新引入硬伤（v19 实测：moat 生出「第二条」缺「第一条」，numbers 冒出未核数
+            # 11826.7）。这类还能再修一轮，别浪费。
+            _hard = (any(s.get('unverified_numbers') for s in sections)
+                     or any(audit_structure(s['text']) + audit_numbers(s['text'])
+                            for s in sections)
+                     or bool(cross_section_repeats(sections)))
             if prev_high is not None and high_now >= prev_high:
-                break
+                if not _hard or (_round + 1) >= 3:
+                    break
             prev_high = high_now
             prev_fps = set(cur_fps)
 
-    if stuck:
-        # 连续两轮改不完的意见 + 终态仍是 high 的意见 → 在受影响段落上明示，不假装收敛
-        _stuck_tgt = {(x.get('target') or '').strip() for x in stuck}
-        _stuck_tgt |= {(x.get('target') or '').strip()
-                       for x in (critic.get('issues') or [])
-                       if (x.get('severity') or '').strip().lower() == 'high'}
-        for s in sections:
-            if s.get('key') in _stuck_tgt or s.get('title') in _stuck_tgt:
-                if '未解' not in (s.get('note') or ''):
-                    s['note'] = ((s.get('note') or '') + '（仍有审读意见未解）').strip()
+    # 终态还有没解决的（不管是「改不动」还是「最后一轮重写新引入的」）→ 段 note 明示。
+    # 旧写法挂在 `if stuck:` 上，v19 实测翻车：stuck=0（没连续两轮复现）但仍有 2 条 high，
+    # 页面却一个未解标记都没有 —— 等于把没解决的说成解决了。
+    _mark_tgt = {(x.get('target') or '').strip() for x in stuck}
+    _mark_tgt |= {(x.get('target') or '').strip()
+                  for x in (critic.get('issues') or [])
+                  if (x.get('severity') or '').strip().lower() == 'high'}
+    for _s in sections:
+        if audit_structure(_s['text']) + audit_numbers(_s['text']) or _s.get('unverified_numbers'):
+            _mark_tgt.add(_s['key'])
+    for s in sections:
+        if s.get('key') in _mark_tgt or s.get('title') in _mark_tgt:
+            if '未解' not in (s.get('note') or ''):
+                s['note'] = ((s.get('note') or '') + '（仍有审读意见未解）').strip()
 
     tier_note = ''
     if payload:
@@ -1132,6 +1210,10 @@ def build_deep(code, name, facts_blocks, research, payload=None, key=None,
         _p = audit_structure(s['text']) + audit_numbers(s['text'])
         if _p:
             _si.append({'key': s['key'], 'issues': _p})
+    _rep = cross_section_repeats(sections)
+    if _rep:
+        _si.append({'key': 'cross_section',
+                    'issues': ['「%s」重复出现在：%s' % (g, '、'.join(ks)) for g, ks in _rep]})
     out['structure_issues'] = _si
     out['research_note'] = (research or {}).get('note') or ''
     out['research_reports'] = (research or {}).get('report_count', 0)
