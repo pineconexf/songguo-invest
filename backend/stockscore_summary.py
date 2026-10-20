@@ -31,7 +31,7 @@ CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'su
 # 生成逻辑版本号：prompt/禁词/口径一改就 +1，旧缓存自动失效
 # 2026-10-20 v5：coverage 口径统一（研报通道 + 行业结构层），
 # 且行业结构事实进 prompt——旧缓存的 coverage 是按旧口径算的，会和页面其它处打架。
-PIPELINE_VERSION = 5
+PIPELINE_VERSION = 6
 
 # 口播版字数上限（元宝总结版规格：≤1200 字）
 MAX_CHARS = 1200
@@ -180,6 +180,11 @@ SUMMARY_SYSTEM = """你在给一个语音助手写"这段股票分析的口播�
 9. **绝对不许用历史分位倒算涨跌空间**。不许写"市盈率回到历史最低对应多少空间"、
    "跌到某个位置意味着多少跌幅"这类话。分位只说明"现在在刻度哪一格"，停在刻度上。
 10. 结尾必须交代这块分析的数据缺口在哪，缺什么直说。
+11. **财务数字一律以「事实清单」里的最新报告期口径为准**（收入、扣非净利、现金流、毛利率都是）。
+    券商研报常常用的是更早一期（中报）的数字，期次不一样时：
+    要么不写这个研报数字，要么明确说「研报口径是 X 期，最新是 Y 期」。
+    不许把两期的数字混着当同一件事说——通勤听的人分辨不出期次，只会记住那个数。
+12. 事实清单里标了「不成立」「数据不可得」「仅供参考」的，相应内容不许当作结论说出来。
 
 只输出 JSON：{"text":"口播稿全文"}"""
 
@@ -203,6 +208,35 @@ def build_summary(code, name, payload, vb, kb, research, facts, key,
                      % (payload.get('total'), payload.get('tier'),
                         (payload.get('tag') or {}).get('desc') or ''))
     lines.append('外部深度数据覆盖度：%s 级' % coverage)
+
+    # 事实清单（最新财报口径）—— 2026-10-20 补
+    # 坑：之前 facts 参数传进来了却根本没进 prompt，LLM 只能从研报要点里抓财务数，
+    # 结果口播稿写的是研报中报口径的扣非（0.32亿/-53.3%），
+    # 而不是最新三季报口径（0.11亿/-84.3%）——同一页两个口径打架。
+    fk_lines = []
+    _flat = []
+    if isinstance(facts, dict):
+        for _bk in ('valuation', 'profit_quality', 'roe', 'growth', 'quality'):
+            _b = facts.get(_bk) or {}
+            _flat.extend(_b.get('facts') or [])
+    elif isinstance(facts, list):
+        _flat = facts
+    # 关键财务事实优先入稿（顺序即优先级），其余按顺序补足。
+    # 截断式取前 N 条会把排在中后段的扣非/现金流事实切掉——那正是最容易和研报口径打架的。
+    _KEYS = ('np_parent', 'ded_ttm', 'ded_ttm_yoy', 'np_parent_yoy',
+             'roic', 'roe', 'gm', 'ocf', 'fcf', 'debt', 'interest',
+             'rev', 'qoq')
+    _pri, _rest = [], []
+    for _f in _flat:
+        if not isinstance(_f, dict) or not _f.get('text'):
+            continue
+        _k = str(_f.get('key') or '')
+        (_pri if any(t in _k for t in _KEYS) else _rest).append(_f)
+    for _f in (_pri + _rest)[:26]:
+        fk_lines.append('- %s：%s' % (_f.get('label') or _f.get('key'), _f['text']))
+    if fk_lines:
+        lines.append('\n【事实清单（最新财报口径，以此为准）】\n'
+                     + '\n'.join(fk_lines))
 
     # 估值与预期要点
     vk = ('pctl_PE_TTM_10', 'pctl_PB_MRQ_10', 'pctl_PS_TTM_10', 'dv_ttm',
