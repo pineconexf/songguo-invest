@@ -30,8 +30,13 @@ import Layout from '../../../layouts/Layout.astro';
 
 <script>
   // 保留 query（?code=），跳到总览页
+  // 坑（2026-10-21）：不能用绝对路径 '/tools/stockscore/'——
+  // GitHub Pages 线上 base 是 /songguo-invest（子路径），
+  // 绝对路径会 404。本地 serve_dist 剥掉前缀后反而"能用"，本地测不出来。
   (function () {
-    var q = location.search;
-    location.replace('/tools/stockscore/' + (q || ''));
+    var p = location.pathname.replace(/\/+$/, '');
+    var m = p.match(/^(.*\/stockscore)\/deep$/);
+    var base = m ? m[1] : p.replace(/\/deep$/, '');
+    location.replace(base + '/' + (location.search || ''));
   })();
 </script>
