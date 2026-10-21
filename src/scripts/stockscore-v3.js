@@ -222,11 +222,18 @@ function dimBlock(d) {
   }).join('');
   const flags = (d.flags || []).map((f) => `<div class="fl n">${esc(f)}</div>`).join('');
   const thresh = d.thresh ? `<div class="note">口径：${esc(d.thresh)}</div>` : '';
+  // 杜邦三因子（ROE = 净利率 × 总资产周转率 × 权益乘数）
+  // 只有盈利质量维有：它把 ROE 拆开，读者能看出「ROE 低是利润率低还是周转低」。
+  const dp = d.dupont;
+  const dpHtml = dp
+    ? `<div class="note">杜邦拆解（ROE = 净利率 × 周转率 × 权益乘数）：净利率 ${num(dp.margin, 1)}%`
+      + ` × 总资产周转率 ${num(dp.turnover, 2)} 次 × 权益乘数 ${num(dp.equity_mult, 2)}</div>`
+    : '';
   return `<div class="dimhead"><h3>${esc(d.label)}</h3>` +
     `<div class="sc">${num(d.score, 1)}<small>权重 ${Math.round(d.weight * 100)}% · 置信 ${d.confidence}</small></div></div>` +
     '<table><thead><tr><th>子指标</th><th style="text-align:right">数值</th>' +
     '<th style="text-align:right">分位/刻度</th><th style="text-align:right">维内权重</th>' +
-    `<th style="text-align:right">置信</th></tr></thead><tbody>${rows}</tbody></table>${flags}${thresh}`;
+    `<th style="text-align:right">置信</th></tr></thead><tbody>${rows}</tbody></table>${dpHtml}${flags}${thresh}`;
 }
 
 function blocksHtml(list) {
