@@ -155,4 +155,4 @@
         window.addEventListener('pagehide', leave);
       } catch (e) {}
     })();
-    </script></body> </html> <script type="module">(function(){var e=location.search;location.replace(`/tools/stockscore/`+(e||``))})();</script>
+    </script></body> </html> <script type="module">(function(){var e=location.pathname.replace(/\/+$/,``),t=e.match(/^(.*\/stockscore)\/deep$/),n=t?t[1]:e.replace(/\/deep$/,``);location.replace(n+`/`+(location.search||``))})();</script>
