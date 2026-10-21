@@ -19,6 +19,7 @@
   build_risk_block(code, ...)       -> 风险与安全 facts 块
 """
 import math
+import re
 
 import stockscore_facts as F
 import stockscore_research as RS
@@ -101,6 +102,33 @@ def _is_distorted(metric, value):
     if v == 0:
         return True
     return v > lim
+
+
+# ==================================================================
+# 出口闸门：剔除变相目标价/涨跌预测
+# 坑（2026-10-21 公网验收实测发现）：LLM 层禁词闸门很严，
+# 但**确定性事实层**（本模块，规则生成不经 LLM）没人管 ——
+# 「下行空间 67.3%」「回归中位空间 27.1%」这种变相目标价直接上了页面。
+# 光靠逐点改代码会漏（下次加新 fact 又冒出来），所以在模块出口统一拦一道。
+# 为什么不静默改写：改写会生成"看似合规实则仍倒算幅度"的句子。
+# 直接丢掉这条事实，让页面少一条，而不是多一条假合规。
+_PREDICT_FACT_RE = re.compile(
+    r'(下行|上行|上涨|下跌|反弹|回撤|回归)?\s*空间\s*(约|大概|为)?\s*\d|'
+    r'对应\s*\d+(\.\d+)?\s*%\s*(的)?\s*(上涨|下行|上行|涨幅|跌幅|空间)|'
+    r'(上涨|下行|上行)\s*空间\s*(约|大概|为)?\s*\d|'
+    r'目标价|合理价位|估值区间|预期回报|'
+    r'若\s*PE\b.{0,20}(回到|涨到|跌到)\s*\d')
+
+
+def _strip_predict_facts(facts):
+    """剔除带变相目标价/涨跌预测的 fact。返回新列表。"""
+    out = []
+    for f in facts or []:
+        blob = '%s %s' % (f.get('label') or '', f.get('text') or '')
+        if _PREDICT_FACT_RE.search(blob):
+            continue
+        out.append(f)
+    return out
 
 
 def build_valuation_block(code, research=None, extra=None, vp=None):
@@ -266,7 +294,7 @@ def build_valuation_block(code, research=None, extra=None, vp=None):
                   'text': _method_fit(code, dv, ebitda, fi, vp),
                   'source': '判定'})
 
-    return {'facts': facts, 'gaps': gaps, 'detail': detail}
+    return {'facts': _strip_predict_facts(facts), 'gaps': gaps, 'detail': detail}
 
 
 def _method_fit(code, dv, ebitda, fi, vp):
@@ -478,25 +506,35 @@ def build_risk_block(code, research=None, extra=None, fin=None, mr=None):
                                  ('中等（5%~20%）' if ratio > 5 else '缓冲有限（<5%）')),
                       'source': '计算:资产负债表 + daily_basic'})
 
-    # 历史分位下行空间
+    # 历史估值刻度（2026-10-21 改：删掉"空间"表述）
+    # 坑（2026-10-21 公网验收实测发现）：原来这里直接产出
+    # 「下行空间(至历史最低分位) 67.3%」「回归中位空间 27.1%」。
+    # 这是**变相目标价**——用分位倒算涨跌幅度，哪怕不含"目标价"字样，
+    # 实质仍是价格预测，违反「深度分析不许写目标价/预测涨跌」铁律。
+    # 而且它在确定性事实层（不经 LLM 禁词过滤），所以所有禁词闸门都抓不到它。
+    # 改法：只保留**刻度**（当前值在历史区间的位置），不倒算任何幅度。
+    # 幅度信息不是不能用，是不能以"空间/涨跌"的形式给 ——
+    # 要给就等用户自己拿刻度去算，页面不做引导。
     vp = F.valuation_percentile(code)
     m5 = ((vp or {}).get('PE_TTM') or {}).get('5') or ((vp or {}).get('PE_TTM') or {}).get('3')
     if m5 and m5.get('value') and m5.get('min'):
         cur, lo = m5['value'], m5['min']
         if cur > 0 and lo > 0:
-            down = (1 - lo / cur) * 100
-            detail['downside_to_min'] = round(down, 1)
-            facts.append({'key': 'downside', 'label': '下行空间(至历史最低分位)',
-                          'value': round(down, 1),
-                          'text': 'PE(TTM) 当前 %s，历史区间最低 %s，'
-                                  '若回到历史最低位对应下行空间约 %s%%'
-                                  % (_n(cur, 2), _n(lo, 2), _n(down, 1)),
+            # 保留「当前值相对历史最低/中位/最高的相对位置」，不含涨跌幅度
+            detail['downside_to_min'] = round((1 - lo / cur) * 100, 1)
+            facts.append({'key': 'downside', 'label': 'PE 相对历史最低位(倍数比)',
+                          'value': round(cur / lo, 2),
+                          'text': 'PE(TTM) 当前 %s，历史区间最低 %s（当前为最低位的 %s 倍）；'
+                                  '这是刻度，不是涨跌预测'
+                                  % (_n(cur, 2), _n(lo, 2), _n(cur / lo, 2)),
                           'source': '计算:RPT_VALUEANALYSIS_DET'})
         med = m5.get('median')
         if med and cur > 0:
-            facts.append({'key': 'to_median', 'label': '回归中位空间', 'value': round((1 - med / cur) * 100, 1),
-                          'text': 'PE(TTM) 历史中位 %s，回到中位对应 %s%% 空间'
-                                  % (_n(med, 2), _n((1 - med / cur) * 100, 1)),
+            facts.append({'key': 'to_median', 'label': 'PE 相对历史中位(倍数比)',
+                          'value': round(cur / med, 2),
+                          'text': 'PE(TTM) 历史中位 %s，当前为中位的 %s 倍；'
+                                  '这是刻度，不是涨跌预测'
+                                  % (_n(med, 2), _n(cur / med, 2)),
                           'source': '计算:RPT_VALUEANALYSIS_DET'})
 
     # ---------- 4. 流动性与拥挤 ----------
@@ -555,7 +593,7 @@ def build_risk_block(code, research=None, extra=None, fin=None, mr=None):
             facts.append({'key': 'res_val_%d' % i, 'label': '研报估值观点', 'value': None,
                           'text': it.get('point') or '', 'source': '券商研报正文'})
 
-    return {'facts': facts, 'flags': flags, 'gaps': gaps, 'detail': detail}
+    return {'facts': _strip_predict_facts(facts), 'flags': flags, 'gaps': gaps, 'detail': detail}
 
 
 def _risk_metrics(code, bal, cfl, fin):

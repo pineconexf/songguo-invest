@@ -513,16 +513,52 @@ def _ss_research(code):
 def _ss_modules(code, research):
     """取估值块 + 风险块。日级缓存（确定性结果，当天算一次）。"""
     mods = cache_get('ss3m:' + code)
-    if mods:
-        return mods['vb'], mods['kb']
-    import concurrent.futures as _cf
-    with _cf.ThreadPoolExecutor(max_workers=2) as _pool:
-        _f_vb = _pool.submit(_ssmod.build_valuation_block, code, research=research)
-        _f_kb = _pool.submit(_ssmod.build_risk_block, code, research=research)
-        vb = _f_vb.result()
-        kb = _f_kb.result()
-    cache_put('ss3m:' + code, {'vb': vb, 'kb': kb})
+    if not mods:
+        import concurrent.futures as _cf
+        with _cf.ThreadPoolExecutor(max_workers=2) as _pool:
+            _f_vb = _pool.submit(_ssmod.build_valuation_block, code, research=research)
+            _f_kb = _pool.submit(_ssmod.build_risk_block, code, research=research)
+            vb = _f_vb.result()
+            kb = _f_kb.result()
+        # 出口闸门：确定性层的文字也要过禁词（见 _ss_banned_guard 说明）
+        _ss_banned_guard(vb)
+        _ss_banned_guard(kb)
+        cache_put('ss3m:' + code, {'vb': vb, 'kb': kb})
+    else:
+        vb, kb = mods['vb'], mods['kb']
     return vb, kb
+
+
+# 变相目标价/涨跌预测的出口闸门。
+# 坑（2026-10-21 公网验收实测发现）：LLM 层的禁词闸门很严，
+# 但**确定性事实层**（估值块/风险块，规则生成不经 LLM）没人管 ——
+# 于是「下行空间 67.3%」「回归中位空间 27.1%」这种变相目标价直接上了页面。
+# 光靠逐点改代码会漏（下次加新 fact 又冒出来），所以在出口统一拦一道。
+# 判定口径：出现"空间/上涨/下行" + 数字百分比 → 判为变相预测，丢弃整条。
+_BANNED_PREDICT_FACT = re.compile(
+    r'(下行|上行|上涨|下跌|反弹|回撤)?\s*空间\s*(约|大概|为)?\s*\d|'
+    r'对应\s*\d+(\.\d+)?\s*%\s*(的)?\s*(上涨|下行|上行|涨幅|跌幅|空间)|'
+    r'(上涨|下行|上行)\s*空间\s*(约|大概|为)?\s*\d|'
+    r'目标价|合理价位|估值区间|预期回报')
+
+
+def _ss_banned_guard(block):
+    """在确定性层出口扫变相目标价，命中就丢弃该条 fact（不静默改写）。
+
+    为什么不静默改写：改写会生成"看似合规实则仍倒算幅度"的句子，
+    比如把"下行空间 67.3%"改成"下行空间较小"——照样是价格预测。
+    直接丢掉这条事实，让页面少一条，而不是多一条假合规。
+    """
+    if not isinstance(block, dict):
+        return
+    facts = block.get('facts') or []
+    keep = []
+    for f in facts:
+        blob = '%s %s' % (f.get('label') or '', f.get('text') or '')
+        if _BANNED_PREDICT_FACT.search(blob):
+            continue
+        keep.append(f)
+    block['facts'] = keep
 
 
 def _ss_start_deep_job(code, force=False):
