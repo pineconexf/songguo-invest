@@ -63,28 +63,45 @@ class Req(BaseModel):
     code: str = Field(..., max_length=16, description='6 位 A 股代码')
 
 
-# ---------- 同码结果缓存（TTL 10 分钟） ----------
+# ---------- 同码结果缓存（分级 TTL） ----------
+# 坑（2026-10-21 公网验收实测发现）：原来只有一个 10 分钟 TTL，
+# 但下面几层注释都写着「日级缓存」—— 实际实现是 10 分钟，承诺与实现不符。
+# 后果：10 分钟后 facts/research/industry/modules 全部重算，
+# bundle 从 0.3s 掉回 30-40s（实测 688508 隔 73s 就掉到 41.85s）。
+#
+# 修法：每条目自带 TTL。
+#   - ss3: payload（打分横截面）→ 日级：财报是季度更新，行情敏感性由
+#     stockscore.universe() 的日级刷新承担；10 分钟 TTL 只是让用户每 10 分钟
+#     白等 40s 重算，没有信息增益。
+#   - ss3f:/ss3r:/ss3i:/ss3m:（facts/研报/行业/估值风险块）→ 24 小时：当日不变
+# 需要强制刷新时打 /api/stockscore_v3_refresh（清该股全部缓存）。
 _CACHE = {}
-_CACHE_TTL = 600
+_CACHE_TTL = 600            # 默认 10 分钟
+_CACHE_TTL_DAY = 86400      # 日级 24 小时
 _CACHE_MAX = 500
 _CACHE_LOCK = threading.Lock()
 
 
-def cache_get(code):
+def cache_get(code, ttl=None):
+    """取缓存。ttl=None 用默认 10 分钟；ttl=_CACHE_TTL_DAY 取日级条目。"""
     with _CACHE_LOCK:
         item = _CACHE.get(code)
         if not item:
             return None
-        ts, payload = item
-        if time.time() - ts > _CACHE_TTL:
+        ts, payload = item[0], item[1]
+        eff_ttl = item[2] if len(item) > 2 else _CACHE_TTL
+        if ttl is not None:
+            eff_ttl = ttl
+        if time.time() - ts > eff_ttl:
             _CACHE.pop(code, None)
             return None
         return payload
 
 
-def cache_put(code, payload):
+def cache_put(code, payload, ttl=None):
+    """写缓存。ttl=_CACHE_TTL_DAY 表示当日不变的数据层。"""
     with _CACHE_LOCK:
-        _CACHE[code] = (time.time(), payload)
+        _CACHE[code] = (time.time(), payload, ttl or _CACHE_TTL)
         if len(_CACHE) > _CACHE_MAX:  # 上限保护，防内存无限增长
             for k in sorted(_CACHE, key=lambda k: _CACHE[k][0])[:200]:
                 _CACHE.pop(k, None)
@@ -376,7 +393,7 @@ def stockscore_v3(req: Req):
     if len(code) != 6:
         raise HTTPException(400, '请输入6位股票代码')
 
-    cached = cache_get('ss3:' + code)
+    cached = cache_get('ss3:' + code, ttl=_CACHE_TTL_DAY)
     if cached:
         return cached
 
@@ -387,7 +404,7 @@ def stockscore_v3(req: Req):
     if payload is None:
         raise HTTPException(404, '未获取到该股票数据，请核对代码')
 
-    cache_put('ss3:' + code, payload)
+    cache_put('ss3:' + code, payload, ttl=_CACHE_TTL_DAY)
     return payload
 
 
@@ -401,12 +418,12 @@ def stockscore_v3_narrative(req: Req):
     if len(code) != 6:
         raise HTTPException(400, '请输入6位股票代码')
 
-    payload = cache_get('ss3:' + code)
+    payload = cache_get('ss3:' + code, ttl=_CACHE_TTL_DAY)
     if not payload:
         payload, _ = _ss3.compute_v3(code)
         if payload is None:
             raise HTTPException(404, '未获取到该股票数据，请核对代码')
-        cache_put('ss3:' + code, payload)
+        cache_put('ss3:' + code, payload, ttl=_CACHE_TTL_DAY)
 
     try:
         return _ssn.get_or_build(payload, DS_KEY)
@@ -479,7 +496,7 @@ def _ss_industry(code):
     坑（2026-10-21 实测）：行业结构要拉申万成分股实算，是重活；
     但它**当日不变**，所以缓存住，别让 bundle 和预热各算一遍。
     """
-    raw = cache_get('ss3i:' + code)
+    raw = cache_get('ss3i:' + code, ttl=_CACHE_TTL_DAY)
     facts = []
     if not raw:
         try:
@@ -488,7 +505,7 @@ def _ss_industry(code):
             facts = _ssind.facts_for_writer(raw)
         except Exception:
             raw = {'error': '行业结构数据层不可得'}
-        cache_put('ss3i:' + code, raw)
+        cache_put('ss3i:' + code, raw, ttl=_CACHE_TTL_DAY)
     else:
         try:
             import stockscore_industry as _ssind
@@ -500,19 +517,19 @@ def _ss_industry(code):
 
 def _ss_research(code):
     """取研报抽取结果。日级缓存。"""
-    research = cache_get('ss3r:' + code)
+    research = cache_get('ss3r:' + code, ttl=_CACHE_TTL_DAY)
     if not research:
         try:
             research = _ssres.get_research(code, time.strftime('%Y%m%d'), DS_KEY)
         except Exception:
             research = {}
-        cache_put('ss3r:' + code, research)
+        cache_put('ss3r:' + code, research, ttl=_CACHE_TTL_DAY)
     return research
 
 
 def _ss_modules(code, research):
     """取估值块 + 风险块。日级缓存（确定性结果，当天算一次）。"""
-    mods = cache_get('ss3m:' + code)
+    mods = cache_get('ss3m:' + code, ttl=_CACHE_TTL_DAY)
     if not mods:
         import concurrent.futures as _cf
         with _cf.ThreadPoolExecutor(max_workers=2) as _pool:
@@ -523,7 +540,7 @@ def _ss_modules(code, research):
         # 出口闸门：确定性层的文字也要过禁词（见 _ss_banned_guard 说明）
         _ss_banned_guard(vb)
         _ss_banned_guard(kb)
-        cache_put('ss3m:' + code, {'vb': vb, 'kb': kb})
+        cache_put('ss3m:' + code, {'vb': vb, 'kb': kb}, ttl=_CACHE_TTL_DAY)
     else:
         vb, kb = mods['vb'], mods['kb']
     return vb, kb
@@ -613,20 +630,20 @@ def _ss_start_deep_job(code, force=False):
 
 def _ss_core(code):
     """取 v3 payload + facts（缓存优先）。"""
-    payload = cache_get('ss3:' + code)
+    payload = cache_get('ss3:' + code, ttl=_CACHE_TTL_DAY)
     if not payload:
         payload, _ = _ss3.compute_v3(code)
         if payload is None:
             raise HTTPException(404, '未获取到该股票数据，请核对代码')
-        cache_put('ss3:' + code, payload)
+        cache_put('ss3:' + code, payload, ttl=_CACHE_TTL_DAY)
     import stockscore_facts as _ssf
     # 坑（2026-10-21 实测）：build_facts 要 9.5s（拉 F10 财务多期），
     # 但 facts 是**当日不变**的静态事实层 —— 用日级缓存，
     # 避免预热、bundle、deep 三条线各算一遍。
-    fk = cache_get('ss3f:' + code)
+    fk = cache_get('ss3f:' + code, ttl=_CACHE_TTL_DAY)
     if not fk:
         fk = _ssf.build_facts(code)
-        cache_put('ss3f:' + code, fk)
+        cache_put('ss3f:' + code, fk, ttl=_CACHE_TTL_DAY)
     return payload, fk
 
 
@@ -803,6 +820,32 @@ def stockscore_v3_deep_progress(req: Req):
             }
             out['cached'] = True
     return out
+
+
+@app.post('/api/stockscore_v3_refresh')
+def stockscore_v3_refresh(req: Req):
+    """强制刷新某只股票的全部缓存（payload/facts/研报/行业/估值风险块）。
+
+    坑（2026-10-21）：改成日级缓存后，数据更新（换季财报、新研报、
+    行业成分调整）不会自动生效 —— 必须有显式刷新入口，否则会出现
+    「代码改了线上还是旧数」的困局。
+    """
+    code = re.sub(r'\D', '', req.code or '')
+    if len(code) != 6:
+        raise HTTPException(400, '请输入6位股票代码')
+    cleared = []
+    with _CACHE_LOCK:
+        for k in list(_CACHE.keys()):
+            if k.endswith(':' + code) or k == code:
+                _CACHE.pop(k, None)
+                cleared.append(k)
+    try:
+        import stockscore_deep as _ssd
+        _ssd.invalidate(code)
+        cleared.append('deep')
+    except Exception:
+        pass
+    return {'code': code, 'cleared': cleared, 'count': len(cleared)}
 
 
 @app.post('/api/stockscore_v3_bundle')

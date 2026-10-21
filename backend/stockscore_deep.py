@@ -1366,6 +1366,33 @@ def get_cached(code, asof=None):
     return obj
 
 
+def invalidate(code, asof=None):
+    """清掉某只股票的深度分析缓存（内存 + 磁盘）。
+
+    坑（2026-10-21）：改成日级缓存后，数据更新不会自动生效，
+    必须有显式失效入口，否则会出现「代码改了线上还是旧文本」。
+    """
+    asof = asof or time.strftime('%Y%m%d')
+    n = 0
+    with _lock:
+        for k in [k for k in _mem if k[0] == code]:
+            _mem.pop(k, None)
+            n += 1
+    try:
+        d = CACHE_DIR
+        if os.path.isdir(d):
+            for fn in os.listdir(d):
+                if fn.startswith(code + '_') and fn.endswith('.json'):
+                    try:
+                        os.remove(os.path.join(d, fn))
+                        n += 1
+                    except OSError:
+                        pass
+    except Exception:
+        pass
+    return n
+
+
 def get_or_build(code, name, facts_blocks, research, payload=None, key=None,
                  asof=None, force=False, coverage=None, on_section=None,
                  timing=None, industry_raw=None, industry_facts=None):
