@@ -36,11 +36,27 @@ import os
 import re
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import requests
 
 LLM_URL = 'https://api.deepseek.com/chat/completions'
 LLM_MODEL = 'deepseek-v4-flash'
+# 审读模型单独用 deepseek-chat（2026-10-21 实测）：
+# v4-flash 25.6s / chat 3.4s（快 7.5 倍），同一份 5250 字六段正文，
+# 两者都报出 8 条意见、各含 3 条 high，chat 另抓出「隐含增速易被读成目标价暗示」。
+# 审读只要求结构化挑刺，不需要 reasoning，chat 够用且省 22s/轮。
+CRITIC_MODEL = 'deepseek-chat'
+# 正文字模型（2026-10-21 实测对比，同一 prompt 六段并行）：
+#   v4-flash 墙钟 11.7s（各段 5.5-11.7s）
+#   chat    墙钟  4.5s（各段 1.8-4.5s）
+# 质量对比（同一 critic 审两版）：flash 版 high 2 条 / chat 版 high 0 条，
+# chat 版对「数据不可得」的处理更诚实（明说拿不到，不拿常识补），
+# 字数也更实（market 段 293 字讲清楚缺口，而非凑数）。
+# 代价是注水重复偏多（critic 报 3 条 medium 注水）——这由既有
+# critic→重写闭环处理，与模型选择无关。
+# 结论：正文改用 chat，速度 2.6 倍且质量不降；重写轮同样用 chat。
+SECTION_MODEL = 'deepseek-chat'
 LLM_TIMEOUT = 180
 
 CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'deep')
@@ -48,7 +64,7 @@ CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'de
 # 生成逻辑版本号：任何影响正文的改动都要 +1，让旧缓存自动失效
 # 2026-10-20 v8：coverage 改为由调用方统一传入（研报通道 + 行业结构层），
 # 避免 deep 页与 modules/口播页报出不同等级。
-PIPELINE_VERSION = 21   # v21: 跨段重复只判叙述段(numbers/valuation豁免)+机械复检纳入重复+重写防塌陷; v20: 收敛前机械复检+未解标记不再依赖 stuck; v19: 跨段重复机械闸(cross_section_repeats, 12字shingle/>=3段判定); v18: unresolved 改为「终态全部 high」+ stuck 单列; v17: 加机械闸(audit_structure 序号断号 / audit_numbers 市值÷PE≠净利); v16: 重写闭环三修(fix 下传/结构性medium进队列/未解明示); v15: prompt 规则22(核心数字不跨段重复)/23(禁价格高低措辞)/24(TTM结论要说清季度构成); v14: 段内禁自相矛盾
+PIPELINE_VERSION = 22   # v22: 六段并行生成+逐段发布(as_completed)+同轮多段重写并行; critic 换 deepseek-chat(实测快7.5倍质量相当); v21: 跨段重复只判叙述段(numbers/valuation豁免)+机械复检纳入重复+重写防塌陷; v20: 收敛前机械复检+未解标记不再依赖 stuck; v19: 跨段重复机械闸(cross_section_repeats, 12字shingle/>=3段判定); v18: unresolved 改为「终态全部 high」+ stuck 单列; v17: 加机械闸(audit_structure 序号断号 / audit_numbers 市值÷PE≠净利); v16: 重写闭环三修(fix 下传/结构性medium进队列/未解明示); v15: prompt 规则22(核心数字不跨段重复)/23(禁价格高低措辞)/24(TTM结论要说清季度构成); v14: 段内禁自相矛盾
 _lock = threading.Lock()
 _mem = {}
 
@@ -107,7 +123,7 @@ INDUSTRY_FEED_SECTIONS = {'market', 'moat', 'business'}
 
 # ================================================================== LLM
 def _call(messages, key, temperature=0.3, max_tokens=3000, retries=2,
-          with_meta=False):
+          with_meta=False, model=None):
     """调用 LLM。
 
     坑（2026-10-20 实测）：deepseek-v4-flash 会把 max_tokens 花在 reasoning_content 上，
@@ -121,7 +137,7 @@ def _call(messages, key, temperature=0.3, max_tokens=3000, retries=2,
     **调用方看不到 finish_reason**——被截断了还以为写完了，
     于是只按残缺 JSON 抢救，17 条意见只救回 1 条。截断信息必须从源头透出来。
     """
-    body = {'model': LLM_MODEL, 'messages': messages,
+    body = {'model': model or LLM_MODEL, 'messages': messages,
             'temperature': temperature, 'max_tokens': max_tokens}
     last = None
     budget = max_tokens
@@ -388,33 +404,19 @@ def _extract_text(raw):
     return s
 
 
-def _gen_section(sec, facts, research_facts, name, code, coverage, key,
-                 extra_note='', used_idx=None, industry_facts=None):
-    facts_lines = []
-    picked = _pick_facts(facts, sec['key'], used_idx=used_idx)
-    for f, _idx in picked:
-        lab = f.get('label') or ''
-        txt = f.get('text') or ''
-        src = f.get('source') or ''
-        if txt:
-            facts_lines.append('- [%s] %s%s' % (lab, txt, ('（来源：%s）' % src) if src else ''))
-    research_lines = []
-    for f in research_facts:
-        research_lines.append('- [%s] %s' % (f.get('label'), f.get('text')))
-    # 行业结构数据：只投给用得上的段落（market/moat/business）
-    industry_lines = []
-    if industry_facts and sec['key'] in INDUSTRY_FEED_SECTIONS:
-        industry_lines = ['- %s' % t for t in industry_facts]
+def _gen_section_from_prompt(sec, user, key, extra_note=''):
+    """按已拼好的 prompt 调 LLM 出正文（并行体与重写共用）。
 
-    user = _section_prompt(sec, facts_lines, research_lines, name, code, coverage,
-                            industry_lines=industry_lines)
+    2026-10-21 新增：把原来 _gen_section 里「拼 prompt」和「调 LLM」拆开。
+    并行生成时 prompt 拼装要按原顺序先算完（事实降权依赖顺序），
+    LLM 调用本身没有顺序依赖，所以拆成两步。
+    """
     if extra_note:
-        user += '\n\n【重写要求】上一次生成被校验拦下，问题：' + extra_note
-
+        user = user + '\n\n【重写要求】上一次生成被校验拦下，问题：' + extra_note
     try:
         raw = _call([{'role': 'system', 'content': SECTION_SYSTEM},
                      {'role': 'user', 'content': user}], key,
-                     temperature=0.35, max_tokens=2600)
+                    temperature=0.35, max_tokens=2600, model=SECTION_MODEL)
         text = _extract_text(raw)
         # 截断检测（2026-10-20 实测）：critic 抓到过一段
         # "……预期与经营的差距"戛然而止——句子没有谓语也没有结论。
@@ -427,9 +429,9 @@ def _gen_section(sec, facts, research_facts, name, code, coverage, key,
                          {'role': 'user', 'content': user +
                           '\n\n【注意】上一版结尾被截断了，'
                           '请把最后一段写完整，说完这句话。'}], key,
-                        temperature=0.35, max_tokens=3200)
+                        temperature=0.35, max_tokens=3200, model=SECTION_MODEL)
             text = _extract_text(raw)
-        return text, [i for _, i in picked]
+        return text, []
     except Exception as e:                           # noqa: BLE001
         return '（本段生成失败：%s）' % (str(e)[:60],), []
 
@@ -784,7 +786,8 @@ def run_critic(sections, key):
                 [{'role': 'system', 'content': CRITIC_SYSTEM},
                  {'role': 'user',
                   'content': '请审阅以下个股深度分析：\n\n' + body + extra}],
-                key, temperature=0.2, max_tokens=budgets[attempt], with_meta=True)
+                key, temperature=0.2, max_tokens=budgets[attempt], with_meta=True,
+                model=CRITIC_MODEL)
         except Exception as e:                       # noqa: BLE001
             return {'issues': [], 'summary': 'critic 不可用：%s' % (str(e)[:60],)}
         last = raw or ''
@@ -924,13 +927,28 @@ def _coverage_note(coverage, blocks):
 
 # ================================================================== 主流程
 def build_deep(code, name, facts_blocks, research, payload=None, key=None,
-               coverage=None, regenerate=True):
+               coverage=None, regenerate=True, on_section=None, timing=None,
+               industry_raw=None, industry_facts=None):
     """生成深度分析。
 
     facts_blocks: list of facts 列表（每项 {'key','label','value','text','source'}）
     research: research block（stockscore_research.get_research 的返回）
     payload: v3 打分 payload（用于取 tier_note）
+    on_section: 可选回调。每当一段正文生成完成就调用一次（section dict），
+                用于「首段先出」——不等六段跑完就先给前端渲染。
+    timing: 可选 dict，调用方可读回各阶段耗时（用于定位慢在哪一段）。
+    industry_raw / industry_facts: 调用方已取好的行业结构数据。
+        坑（2026-10-21 实测）：原来 build_deep 内部自己再取一次 get_industry，
+        而调用方（api._ss_deep_inputs）已经取过一次 ——
+        行业结构要拉申万成分股实算，重复算一遍白花十几秒。
     """
+    _t0 = time.time()
+    _tim = timing if isinstance(timing, dict) else {}
+
+    def _mark(k, t0):
+        _tim[k] = round(time.time() - t0, 1)
+        return time.time()
+
     from stockscore_research import facts_for_writer, coverage_level
     research_facts = facts_for_writer(research)
 
@@ -939,15 +957,19 @@ def build_deep(code, name, facts_blocks, research, payload=None, key=None,
     # 这一层自己从申万成分股实算，数字可复算、可溯源。
     # 拿不到就静默降级（industry_facts 为空 → 不进 prompt），
     # 不许用常识补。
-    industry_facts = []
-    industry_raw = None
-    try:
-        from stockscore_industry import get_industry, facts_for_writer as _ind_facts
-        industry_raw = get_industry(code)
-        industry_facts = _ind_facts(industry_raw)
-    except Exception as e:                          # noqa: BLE001
+    _ti = time.time()
+    if industry_facts is None:
         industry_facts = []
-        industry_raw = {'error': str(e)[:80]}
+    if industry_raw is None:
+        industry_raw = None
+        try:
+            from stockscore_industry import get_industry, facts_for_writer as _ind_facts
+            industry_raw = get_industry(code)
+            industry_facts = _ind_facts(industry_raw)
+        except Exception as e:                      # noqa: BLE001
+            industry_facts = []
+            industry_raw = {'error': str(e)[:80]}
+    _tim['industry_in_build'] = round(time.time() - _ti, 1)
 
     # coverage 必须在拿到行业数据之后算：行业层能把 B/C 票升级到 A
     coverage = coverage or coverage_level(research, industry_raw)
@@ -982,36 +1004,89 @@ def build_deep(code, name, facts_blocks, research, payload=None, key=None,
 
     sections = []
     used_idx = set()          # 已经喂过的 fact 下标，后续段落降权
+    # 2026-10-21：六段并行生成。
+    # 坑（实测）：原来六段是串行 for 循环，每段一次 LLM 调用约 8-12s，
+    # 六段累计 60-120s，首段要等 8-12s 才可见，全文要等 1 分钟以上。
+    # 改并行后：首段（最短的那段）约 8-10s 出，全文约 23s（实测并行六段 23.3s）。
+    # used_idx 的降权语义要保住 —— 段与段之间是「已用事实」弱依赖，
+    # 不能真并行共享同一个 set，否则并发写入结果不确定。
+    # 解法：先按原顺序算出每段的 facts 分配（纯本地计算，微秒级，含 used_idx 降权），
+    # 再把这 6 份「事实配餐」并行送进 LLM。事实分配顺序与串行版完全一致。
+    _plan = []
+    _used_local = set()
     for sec in wanted:
-        text, picked_idx = _gen_section(sec, all_facts, research_facts, name, code,
-                                         coverage, key, used_idx=used_idx,
-                                         industry_facts=industry_facts)
+        picked = _pick_facts(all_facts, sec['key'], used_idx=_used_local)
+        _plan.append((sec, picked, set(_used_local)))
+        _used_local.update(i for _, i in picked)
+
+    def _gen_one(plan_item):
+        """并行体：单段生成 + 数字回验（回验不通过则带问题重写一次）。"""
+        sec, picked, used_snapshot = plan_item
+        facts_lines = []
+        for f, _idx in picked:
+            lab = f.get('label') or ''
+            txt = f.get('text') or ''
+            src = f.get('source') or ''
+            if txt:
+                facts_lines.append('- [%s] %s%s' % (lab, txt, ('（来源：%s）' % src) if src else ''))
+        research_lines = []
+        for f in research_facts:
+            research_lines.append('- [%s] %s' % (f.get('label'), f.get('text')))
+        industry_lines = []
+        if industry_facts and sec['key'] in INDUSTRY_FEED_SECTIONS:
+            industry_lines = ['- %s' % t for t in industry_facts]
+        user = _section_prompt(sec, facts_lines, research_lines, name, code, coverage,
+                                industry_lines=industry_lines)
+        text, _ = _gen_section_from_prompt(sec, user, key)
         text, hits = _guard_banned(text)
         note = ''
         if hits:
             note = '出现禁词 %s' % '、'.join(hits)
         v = verify_numbers(text, whitelist, all_facts)
         if not v['ok'] and regenerate:
-            text, picked_idx = _gen_section(
-                sec, all_facts, research_facts, name, code, coverage, key,
-                used_idx=used_idx,
-                industry_facts=industry_facts,
+            text2, _ = _gen_section_from_prompt(
+                sec, user,
+                key,
                 extra_note='文中出现了事实清单里没有的数字 %s，'
                            '请只使用清单中的数字重写。' % '、'.join(v['bad'][:8]))
-            text, hits2 = _guard_banned(text)
+            text2, hits2 = _guard_banned(text2)
             if hits2:
                 note = (note + '；' if note else '') + '重写后仍出现禁词 %s' % '、'.join(hits2)
-            v2 = verify_numbers(text, whitelist, all_facts)
+            v2 = verify_numbers(text2, whitelist, all_facts)
             if v2['ok']:
-                v = v2
-        used_idx.update(picked_idx)
-        sections.append({'key': sec['key'], 'title': sec['title'], 'text': text,
-                         'facts_used': len(picked_idx),
-                         '_picked_idx': picked_idx,
-                         'unverified_numbers': v['bad'], 'note': note})
+                text, v = text2, v2
+        return {'key': sec['key'], 'title': sec['title'], 'text': text,
+                'facts_used': len(picked),
+                '_picked_idx': [i for _, i in picked],
+                'unverified_numbers': v['bad'], 'note': note}
 
+    if _plan:
+        _tg = time.time()
+        with ThreadPoolExecutor(max_workers=min(6, len(_plan))) as _pool:
+            _futures = [_pool.submit(_gen_one, p) for p in _plan]
+            # 2026-10-21：按完成顺序逐段发布（as_completed），不等全部跑完。
+            # 六段耗时 8-23s 不等，最快的那段约 8-10s 先出来 →
+            # 前端可以先渲染这一段，用户不用干等全文。
+            # 收集时仍按 _plan 原顺序还原，保证页面段落顺序稳定。
+            _done = {}
+            for _f in as_completed(_futures):
+                _r = _f.result()
+                _done[_r['key']] = _r
+                if on_section:
+                    try:
+                        on_section(_r)
+                    except Exception:          # noqa: BLE001
+                        pass
+            for _p in _plan:
+                sections.append(_done[_p[0]['key']])
+        _tim['sections_parallel'] = round(time.time() - _tg, 1)
+    used_idx = _used_local
+
+    _tc = time.time()
     contradictions = detect_contradictions(sections)
     critic = run_critic(sections, key) if key else {'issues': [], 'summary': '未运行'}
+    _tim['critic_first'] = round(time.time() - _tc, 1)
+    _tim['to_first_sections'] = round(time.time() - _t0, 1)
 
     # 裁决：critic 标 high 且指向某段 → 重生成该段。
     # 轮次上限从 2 提到 3（2026-10-20 改）：原来写「两轮基本收敛」是建立在
@@ -1088,6 +1163,11 @@ def build_deep(code, name, facts_blocks, research, payload=None, key=None,
                     + '；'.join(_gs[:3]))
             if not high_by_sec:
                 break
+            # 2026-10-21：同一轮内的多段重写改为并行。
+            # 坑（实测）：原来重写是 for 循环逐段串行，一轮要改 3 段就是 3×10s=30s，
+            # 三轮下来尾部延迟 90s+。各段重写互不依赖（每段只改自己），
+            # 只有「读 sections 拿本段 own facts」这一步要串行，先算好再并行送 LLM。
+            _rw_jobs = []
             for sec_key, probs in high_by_sec.items():
                 sec = sec_by_key.get(sec_key)
                 if not sec:
@@ -1101,32 +1181,56 @@ def build_deep(code, name, facts_blocks, research, payload=None, key=None,
                         own = set(s.get('_picked_idx') or [])
                         break
                 rewrite_used = used_idx - own
-                text, new_picked = _gen_section(
-                    sec, all_facts, research_facts, name, code,
-                    coverage, key, used_idx=rewrite_used,
-                    industry_facts=industry_facts,
-                    extra_note=(('编辑审读发现以下问题，请修正：' + '；'.join(probs[:3])
+                _rw_jobs.append((sec_key, sec, probs, rewrite_used))
+
+            def _rewrite_one(job):
+                """并行体重写单段。返回 (sec_key, text, new_picked)。"""
+                _sec_key, _sec, _probs, _rewrite_used = job
+                _facts_lines = []
+                for _f, _idx in _pick_facts(all_facts, _sec['key'], used_idx=_rewrite_used):
+                    _lab = _f.get('label') or ''
+                    _txt = _f.get('text') or ''
+                    _src = _f.get('source') or ''
+                    if _txt:
+                        _facts_lines.append('- [%s] %s%s' % (
+                            _lab, _txt, ('（来源：%s）' % _src) if _src else ''))
+                _research_lines = []
+                for _f in research_facts:
+                    _research_lines.append('- [%s] %s' % (_f.get('label'), _f.get('text')))
+                _industry_lines = []
+                if industry_facts and _sec['key'] in INDUSTRY_FEED_SECTIONS:
+                    _industry_lines = ['- %s' % _t for _t in industry_facts]
+                _user = _section_prompt(_sec, _facts_lines, _research_lines, name, code,
+                                        coverage, industry_lines=_industry_lines)
+                _text, _picked = _gen_section_from_prompt(
+                    _sec, _user, key,
+                    extra_note=(('编辑审读发现以下问题，请修正：' + '；'.join(_probs[:3])
                                  + '只改有问题的表述；本段原有的论证链和已核对的数据必须保留，'
                                    '篇幅不得明显少于现在（约 %d 字以上）。'
-                                   % max(300, int(len(sec.get('text') or '') * 0.8)))
-                                if probs else ''))
-                text, _ = _guard_banned(text)
-                for s in sections:
-                    if s['key'] == sec_key:
-                        s['text'] = text
-                        # note 只保留最新一次重写标记。
-                        # 坑（2026-10-20 实测）：原来按 rewritten 布尔值判断 tag，
-                        # 结果 note 累积成"（已按审读意见重写）（二审重写）"。
-                        # 现在直接替换，页面上永远只有一个标记。
-                        tag = ('（已按审读意见重写）' if not s.get('_rewritten')
-                               else '（二审重写）')
-                        base = (s.get('note') or '').split('（')[0].strip()
-                        s['note'] = (base + tag) if base else tag
-                        s['_rewritten'] = True
-                        s['unverified_numbers'] = verify_numbers(
-                            text, whitelist, all_facts)['bad']
-                        s['_picked_idx'] = new_picked
-                        rewritten = True
+                                   % max(300, int(len(_sec.get('text') or '') * 0.8)))
+                                if _probs else ''))
+                _text, _ = _guard_banned(_text)
+                return _sec_key, _text, _picked
+
+            if _rw_jobs:
+                with ThreadPoolExecutor(max_workers=min(6, len(_rw_jobs))) as _pool:
+                    for _sec_key, text, new_picked in _pool.map(_rewrite_one, _rw_jobs):
+                        for s in sections:
+                            if s['key'] == _sec_key:
+                                s['text'] = text
+                                # note 只保留最新一次重写标记。
+                                # 坑（2026-10-20 实测）：原来按 rewritten 布尔值判断 tag，
+                                # 结果 note 累积成"（已按审读意见重写）（二审重写）"。
+                                # 现在直接替换，页面上永远只有一个标记。
+                                tag = ('（已按审读意见重写）' if not s.get('_rewritten')
+                                       else '（二审重写）')
+                                base = (s.get('note') or '').split('（')[0].strip()
+                                s['note'] = (base + tag) if base else tag
+                                s['_rewritten'] = True
+                                s['unverified_numbers'] = verify_numbers(
+                                    text, whitelist, all_facts)['bad']
+                                s['_picked_idx'] = new_picked
+                                rewritten = True
             # 本轮重写完，重新检测+复审，作为下一轮的输入
             contradictions = detect_contradictions(sections)
             critic = run_critic(sections, key) if key else {'issues': [], 'summary': '未运行'}
@@ -1263,7 +1367,8 @@ def get_cached(code, asof=None):
 
 
 def get_or_build(code, name, facts_blocks, research, payload=None, key=None,
-                 asof=None, force=False, coverage=None):
+                 asof=None, force=False, coverage=None, on_section=None,
+                 timing=None, industry_raw=None, industry_facts=None):
     asof = asof or time.strftime('%Y%m%d')
     with _lock:
         if (code, asof) in _mem and not force:
@@ -1279,7 +1384,8 @@ def get_or_build(code, name, facts_blocks, research, payload=None, key=None,
         except Exception:
             pass
     obj = build_deep(code, name, facts_blocks, research, payload=payload, key=key,
-                      coverage=coverage)
+                      coverage=coverage, on_section=on_section, timing=timing,
+                      industry_raw=industry_raw, industry_facts=industry_facts)
     try:
         os.makedirs(CACHE_DIR, exist_ok=True)
         with open(path, 'w', encoding='utf-8') as f:

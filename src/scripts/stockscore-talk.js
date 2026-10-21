@@ -52,12 +52,14 @@ font-size:17px;line-height:1.95;-webkit-text-size-adjust:100%}
 const esc = (s) => String(s == null ? '' : s)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
+// 2026-10-21：导航与打分卡主结构对齐（总览 + 质地/价格/势能/风险），
+// 去掉已废弃的 deep 页，避免出现点进去是重定向的空 tab。
 const VIEWS = [
   ['index', '总览', 'overview'],
   ['quality', '质地', 'quality'],
   ['price', '价格', 'price'],
   ['momentum', '势能', 'momentum'],
-  ['deep', '深度', 'deep'],
+  ['risk', '风险', 'risk'],
 ];
 
 function routeBase() {
@@ -65,9 +67,9 @@ function routeBase() {
   // 拼出来的 base 丢了子路径前缀。线上 base 是 /songguo-invest（GitHub Pages 子路径），
   // 丢前缀 → 导航 href 指向根路径 /tools/... → 线上一点就 404；
   // 本地 serve_dist 剥掉前缀后反而"能用"，所以本地测不出来，只有线上炸。
-  // 现在和 stockscore-v3.js / stockscore-deep.js 用同一套写法：保留前缀。
+  // 现在和 stockscore-v3.js 用同一套写法：保留前缀。
   const p = location.pathname.replace(/\/+$/, '');
-  const m = p.match(/^(.*\/stockscore)(?:\/(?:index|quality|price|momentum|deep|talk))?$/);
+  const m = p.match(/^(.*\/stockscore)(?:\/(?:index|quality|price|momentum|risk|talk))?$/);
   return m ? m[1] : p;
 }
 

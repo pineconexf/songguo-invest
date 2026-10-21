@@ -421,6 +421,158 @@ import stockscore_research as _ssres  # noqa: E402
 import stockscore_modules as _ssmod  # noqa: E402
 import stockscore_deep as _ssdeep  # noqa: E402
 import stockscore_summary as _sssum  # noqa: E402
+import stockscore_job as _ssjob  # noqa: E402
+
+
+def _ss_deep_inputs(code, timing=None):
+    """把深度分析需要的全部输入一次性备齐（供 deep / prewarm / progress 复用）。
+
+    坑（2026-10-20 修）：之前 4 个端点（modules/deep/summary/talk）
+    各自算 coverage，其中只有 deep 传了 industry_raw，另外三处没传。
+    结果同一只票在「深度」页显示 A 级、在「模块」和「口播」页显示 B 级——
+    页面之间自相矛盾。coverage 是全局口径，必须一处算、处处用。
+
+    这里统一返回 (payload, fk, research, industry_raw, industry_facts, cov)。
+
+    2026-10-21：加 timing 埋点。坑（实测）：首次调用要 60s+ 才出首段，
+    但不知道慢在哪一段 —— 研报抓取？行业结构？v3 全市场横截面？
+    分段计时才能对症。
+    """
+    _tim = timing if isinstance(timing, dict) else {}
+    _t = time.time()
+    payload, fk = _ss_core(code)
+    _tim['core_v3'] = round(time.time() - _t, 1)
+    _t = time.time()
+    research = {}
+    try:
+        research = _ssres.get_research(code, time.strftime('%Y%m%d'), DS_KEY)
+    except Exception:
+        research = {}
+    _tim['research'] = round(time.time() - _t, 1)
+    _t = time.time()
+    industry_raw = None
+    industry_facts = []
+    try:
+        import stockscore_industry as _ssind
+        industry_raw = _ssind.get_industry(code)
+        industry_facts = _ssind.facts_for_writer(industry_raw)
+    except Exception:
+        industry_raw = {'error': '行业结构数据层不可得'}
+    _tim['industry'] = round(time.time() - _t, 1)
+    cov = _ssres.coverage_level(research, industry_raw)
+    return payload, fk, research, industry_raw, industry_facts, cov
+
+
+def _ss_run_deep(code, payload, fk, research, cov):
+    """跑一次深度分析（同步）。用模块/风险 facts 一起喂进去。"""
+    vb = _ssmod.build_valuation_block(code, research=research)
+    kb = _ssmod.build_risk_block(code, research=research)
+    return _ssdeep.get_or_build(
+        code, payload.get('name', code),
+        [fk.get('facts') or [], vb['facts'], kb['facts']],
+        research, payload=payload, key=DS_KEY, coverage=cov)
+
+
+def _ss_industry(code):
+    """取行业结构数据（raw, facts_for_writer）。日级缓存。
+
+    坑（2026-10-21 实测）：行业结构要拉申万成分股实算，是重活；
+    但它**当日不变**，所以缓存住，别让 bundle 和预热各算一遍。
+    """
+    raw = cache_get('ss3i:' + code)
+    facts = []
+    if not raw:
+        try:
+            import stockscore_industry as _ssind
+            raw = _ssind.get_industry(code)
+            facts = _ssind.facts_for_writer(raw)
+        except Exception:
+            raw = {'error': '行业结构数据层不可得'}
+        cache_put('ss3i:' + code, raw)
+    else:
+        try:
+            import stockscore_industry as _ssind
+            facts = _ssind.facts_for_writer(raw)
+        except Exception:
+            facts = []
+    return raw, facts
+
+
+def _ss_research(code):
+    """取研报抽取结果。日级缓存。"""
+    research = cache_get('ss3r:' + code)
+    if not research:
+        try:
+            research = _ssres.get_research(code, time.strftime('%Y%m%d'), DS_KEY)
+        except Exception:
+            research = {}
+        cache_put('ss3r:' + code, research)
+    return research
+
+
+def _ss_modules(code, research):
+    """取估值块 + 风险块。日级缓存（确定性结果，当天算一次）。"""
+    mods = cache_get('ss3m:' + code)
+    if mods:
+        return mods['vb'], mods['kb']
+    import concurrent.futures as _cf
+    with _cf.ThreadPoolExecutor(max_workers=2) as _pool:
+        _f_vb = _pool.submit(_ssmod.build_valuation_block, code, research=research)
+        _f_kb = _pool.submit(_ssmod.build_risk_block, code, research=research)
+        vb = _f_vb.result()
+        kb = _f_kb.result()
+    cache_put('ss3m:' + code, {'vb': vb, 'kb': kb})
+    return vb, kb
+
+
+def _ss_start_deep_job(code, force=False):
+    """启动后台深度分析作业（去重）。返回是否由本次调用启动。"""
+    if not force and _ssdeep.get_cached(code) is not None:
+        return False
+    if not _ssjob.claim(code):
+        return False
+
+    def _worker():
+        try:
+            _tim = {}
+            _t = time.time()
+            # 坑（2026-10-21 实测）：前置几件事（v3 payload / facts / research /
+            # industry / modules）合计 22-68s，六段并行只要 4.5s。
+            # 所以「首段 8-10 秒可见」的前提是**前置已完成**。
+            # 修法：
+            # ① 走 bundle 的同一套日级缓存（facts/research/industry/modules），
+            #    预热线程不重复算；
+            # ② 互不依赖的块并行算；
+            # ③ 总览页先调 bundle（v3 payload 进 10 分钟内存缓存），预热时 v3 秒回。
+            import concurrent.futures as _cf
+            with _cf.ThreadPoolExecutor(max_workers=3) as _pool:
+                _f_core = _pool.submit(_ss_core, code)
+                _f_res = _pool.submit(_ss_research, code)
+                _f_ind = _pool.submit(_ss_industry, code)
+                payload, fk = _f_core.result()
+                research = _f_res.result() or {}
+                industry_raw, industry_facts = _f_ind.result()
+            _tim['core_and_sources'] = round(time.time() - _t, 1)
+            _t = time.time()
+            cov = _ssres.coverage_level(research, industry_raw)
+            vb, kb = _ss_modules(code, research)
+            _tim['modules'] = round(time.time() - _t, 1)
+            final = _ssdeep.get_or_build(
+                code, payload.get('name', code),
+                [fk.get('facts') or [], vb['facts'], kb['facts']],
+                research, payload=payload, key=DS_KEY, coverage=cov,
+                on_section=lambda s: _ssjob.publish_section(code, s),
+                timing=_tim,
+                industry_raw=industry_raw, industry_facts=industry_facts)
+            _tim['total'] = round(time.time() - _t, 1)
+            _ssjob.finish(code, final=final, coverage=cov, meta={'timing': _tim})
+        except Exception as e:                       # noqa: BLE001
+            _ssjob.finish(code, error='%s: %s' % (type(e).__name__, e))
+
+    t = threading.Thread(target=_worker, daemon=True,
+                         name='deep-%s' % code)
+    t.start()
+    return True
 
 
 def _ss_core(code):
@@ -432,7 +584,13 @@ def _ss_core(code):
             raise HTTPException(404, '未获取到该股票数据，请核对代码')
         cache_put('ss3:' + code, payload)
     import stockscore_facts as _ssf
-    fk = _ssf.build_facts(code)
+    # 坑（2026-10-21 实测）：build_facts 要 9.5s（拉 F10 财务多期），
+    # 但 facts 是**当日不变**的静态事实层 —— 用日级缓存，
+    # 避免预热、bundle、deep 三条线各算一遍。
+    fk = cache_get('ss3f:' + code)
+    if not fk:
+        fk = _ssf.build_facts(code)
+        cache_put('ss3f:' + code, fk)
     return payload, fk
 
 
@@ -498,10 +656,19 @@ def stockscore_v3_modules(req: Req):
 
 @app.post('/api/stockscore_v3_deep')
 def stockscore_v3_deep(req: Req):
-    """六段深度分析：逐段生成 + 数字回验 + 矛盾清单 + critic。"""
+    """六段深度分析：逐段生成 + 数字回验 + 矛盾清单 + critic。
+
+    2026-10-21：改为走作业态。
+    - 若后台已有作业在跑（总览页预热过），直接返回缓存结果；
+    - 否则同步跑一次（保持旧语义，前端可继续用这个端点）。
+    新前端优先用 /api/stockscore_v3_deep_progress（轮询，首段先出）。
+    """
     code = re.sub(r'\D', '', req.code or '')
     if len(code) != 6:
         raise HTTPException(400, '请输入6位股票代码')
+    cached = _ssdeep.get_cached(code)
+    if cached is not None:
+        return cached
     payload, fk, research, industry_raw, industry_facts, cov = _ss_context(code)
     vb = _ssmod.build_valuation_block(code, research=research)
     kb = _ssmod.build_risk_block(code, research=research)
@@ -512,6 +679,223 @@ def stockscore_v3_deep(req: Req):
             research, payload=payload, key=DS_KEY, coverage=cov)
     except Exception as e:
         raise HTTPException(503, f'深度分析生成失败: {type(e).__name__}: {e}')
+
+
+@app.post('/api/stockscore_v3_deep_prewarm')
+def stockscore_v3_deep_prewarm(req: Req):
+    """总览页后台预热：启动深度分析作业，不等结果。
+
+    坑（2026-10-21 实测）：用户从总览点进深度页时，若深度分析还没生成，
+    要等 60-90 秒。总览页加载时就调这个端点把活干起来，
+    用户点进深度页时多数已经命中缓存 → 近 0 秒读出。
+
+    重复调用是幂等的：已有作业在跑就直接返回 running，已有缓存直接返回 cached。
+    """
+    code = re.sub(r'\D', '', req.code or '')
+    if len(code) != 6:
+        raise HTTPException(400, '请输入6位股票代码')
+    if _ssdeep.get_cached(code) is not None:
+        return {'code': code, 'state': 'cached'}
+    started = _ss_start_deep_job(code)
+    snap = _ssjob.get(code)
+    return {'code': code,
+            'state': (snap or {}).get('state', 'running'),
+            'started': started}
+
+
+@app.post('/api/stockscore_v3_deep_progress')
+def stockscore_v3_deep_progress(req: Req):
+    """轮询深度分析进度：已完成的段落逐段返回（首段 8-10 秒即可见）。
+
+    返回 {state, sections[], total_chars, elapsed, coverage, cached}。
+    state: running | done | error | idle
+    - idle  : 从未生成过（前端应先调 prewarm 或让本端点触发）
+    - running: 正在生成，sections 里是已完成的段落
+    - done   : 全文完成，sections 是最终正文
+    """
+    code = re.sub(r'\D', '', req.code or '')
+    if len(code) != 6:
+        raise HTTPException(400, '请输入6位股票代码')
+    snap = _ssjob.get(code)
+    if snap is None:
+        cached = _ssdeep.get_cached(code)
+        if cached is not None:
+            return {
+                'code': code, 'state': 'done', 'elapsed': 0,
+                'sections': cached.get('sections') or [],
+                'total_chars': cached.get('total_chars') or 0,
+                'coverage': cached.get('coverage'),
+                'meta': {
+                    'contradictions': cached.get('contradictions') or [],
+                    'critic': cached.get('critic') or {},
+                    'rewrite_rounds': cached.get('rewrite_rounds') or 0,
+                    'unresolved': cached.get('unresolved') or [],
+                    'structure_issues': cached.get('structure_issues') or [],
+                    'unverified_numbers': cached.get('unverified_numbers') or [],
+                    'research_reports': cached.get('research_reports') or 0,
+                    'coverage_note': cached.get('coverage_note') or '',
+                    'industry': cached.get('industry'),
+                },
+                'cached': True,
+            }
+        # 没人预热过 → 顺手启动一份，前端下一轮轮询就有内容了
+        _ss_start_deep_job(code)
+        return {'code': code, 'state': 'running', 'elapsed': 0,
+                'sections': [], 'total_chars': 0, 'coverage': None,
+                'meta': {}, 'cached': False}
+    out = {
+        'code': code, 'state': snap['state'], 'elapsed': snap['elapsed'],
+        'sections': snap['sections'], 'total_chars': snap['total_chars'],
+        'coverage': snap['coverage'], 'meta': snap['meta'],
+        'error': snap['error'], 'cached': False,
+    }
+    if snap['state'] == 'done':
+        cached = _ssdeep.get_cached(code)
+        if cached:
+            out['sections'] = cached.get('sections') or out['sections']
+            out['total_chars'] = cached.get('total_chars') or out['total_chars']
+            out['meta'] = {
+                'contradictions': cached.get('contradictions') or [],
+                'critic': cached.get('critic') or {},
+                'rewrite_rounds': cached.get('rewrite_rounds') or 0,
+                'unresolved': cached.get('unresolved') or [],
+                'structure_issues': cached.get('structure_issues') or [],
+                'unverified_numbers': cached.get('unverified_numbers') or [],
+                'research_reports': cached.get('research_reports') or 0,
+                'coverage_note': cached.get('coverage_note') or '',
+                'industry': cached.get('industry'),
+            }
+            out['cached'] = True
+    return out
+
+
+@app.post('/api/stockscore_v3_bundle')
+def stockscore_v3_bundle(req: Req):
+    """统一数据契约：一次返回总览 + 4 个深度分页所需的全部数据。
+
+    2026-10-21 新增。为什么要它：
+    之前 PC 端要打 4 个端点（v3 / modules / deep / summary），
+    微信端、小程序、APP 各写一套拼装逻辑，模块边界必然走形。
+    bundle 把「一个总览页 + 4 个深度分页」的模块边界固化在服务端：
+      overview  —— 总览页：快速判断、核心摘要、关键风险、一句话结论
+      quality   —— 质地：Q 组四维 + 业务结构/差异化壁垒两段深度
+      price     —— 价格：V 组 + 数字检验/估值与预期两段深度
+      momentum  —— 势能：M 组 + 市场空间段深度
+      risk      —— 风险：风险与安全段 + 红旗 + 关键矛盾 + 审读意见
+    四端拿同一份 JSON，渲染层各自决定长什么样。
+
+    deep 正文只取已缓存的（get_cached），不触发生成 ——
+    预热由 /api/stockscore_v3_deep_prewarm 负责，总览页会调。
+
+    坑（2026-10-21 实测）：第一版 bundle 要 58.6s，因为
+    facts(9.5s) + modules(12.6s) + industry + research 全串行算，
+    而其中 facts/research/industry/modules 都是**当日不变**的确定性数据。
+    现在：facts 走日级缓存；research/industry/modules 走日级缓存；
+    且 research 与 modules 互不依赖，并行算。
+    """
+    code = re.sub(r'\D', '', req.code or '')
+    if len(code) != 6:
+        raise HTTPException(400, '请输入6位股票代码')
+    payload, fk = _ss_core(code)
+    # 日级缓存：确定性层当天算一次就够（facts/research/industry/modules）
+    research = _ss_research(code)
+    industry_raw, industry_facts = _ss_industry(code)
+    cov = _ssres.coverage_level(research, industry_raw)
+    vb, kb = _ss_modules(code, research)
+    deep = _ssdeep.get_cached(code)
+
+    def _sec(key):
+        if not deep:
+            return []
+        return [s for s in (deep.get('sections') or []) if s.get('key') == key]
+
+    dims_by_key = {d['key']: d for d in (payload.get('dims') or [])}
+    groups = payload.get('groups') or {}
+    pages = payload.get('pages') or {}
+    gate = payload.get('gate') or {}
+
+    def _dim_block(keys):
+        return [dims_by_key[k] for k in keys if k in dims_by_key]
+
+    Q_KEYS = ['profit_quality', 'core_competence', 'growth', 'financial_health']
+    V_KEYS = ['valuation']
+    M_KEYS = ['chain_prosperity', 'earnings_revision', 'capital_momentum']
+
+    # 关键风险：红旗 + 黄旗 + 风险模块的 flag，合并去重
+    key_risks = []
+    for r in (gate.get('red') or []):
+        key_risks.append({'level': 'red', 'text': r})
+    for r in (gate.get('yellow') or []):
+        key_risks.append({'level': 'yellow', 'text': r})
+    for f in (kb.get('flags') or []):
+        key_risks.append({'level': 'flag',
+                          'text': '%s：%s' % (f.get('label') or '已兑现风险',
+                                              f.get('text') or '')})
+
+    overview = {
+        'total': payload.get('total'),
+        'total_raw': payload.get('total_raw'),
+        'tier': payload.get('tier'),
+        'tier_note': payload.get('tier_note'),
+        'tag': payload.get('tag') or {},
+        'groups': groups,
+        'gate': gate,
+        'key_risks': key_risks,
+        'one_liner': (payload.get('pages') or {}).get('overview', {}).get('blocks', [{}])[0].get('t', ''),
+        'headline': (pages.get('overview') or {}).get('headline') or '',
+        'investable_checks': payload.get('investable_checks') or {},
+        'coverage': cov,
+    }
+
+    def _mod(key, title, dim_keys, sec_keys, page_key, extra=None):
+        page = pages.get(page_key) or {}
+        m = {
+            'key': key,
+            'title': title,
+            'score': (groups.get({'quality': 'Q', 'price': 'V',
+                                   'momentum': 'M'}.get(key, '')) or {}).get('score'),
+            'headline': page.get('headline') or '',
+            'blocks': page.get('blocks') or [],
+            'dims': _dim_block(dim_keys),
+            'sections': [s for sk in sec_keys for s in _sec(sk)],
+            'section_keys': sec_keys,
+            'coverage': cov,
+        }
+        if extra:
+            m.update(extra)
+        return m
+
+    modules = {
+        'quality': _mod('quality', '质地', Q_KEYS, ['business', 'moat'], 'quality'),
+        'price': _mod('price', '价格', V_KEYS, ['numbers', 'valuation'], 'price',
+                      extra={'valuation_facts': vb.get('facts') or [],
+                             'valuation_gaps': vb.get('gaps') or []}),
+        'momentum': _mod('momentum', '势能', M_KEYS, ['market'], 'momentum',
+                         extra={'industry_facts': industry_facts,
+                                'industry': industry_raw}),
+        'risk': _mod('risk', '风险与安全', [], ['risk'], 'overview',
+                     extra={'risk_facts': kb.get('facts') or [],
+                            'risk_flags': kb.get('flags') or [],
+                            'risk_gaps': kb.get('gaps') or [],
+                            'contradictions': (deep or {}).get('contradictions') or [],
+                            'critic': (deep or {}).get('critic') or {},
+                            'unresolved': (deep or {}).get('unresolved') or [],
+                            'structure_issues': (deep or {}).get('structure_issues') or []}),
+    }
+
+    return {
+        'code': code,
+        'name': payload.get('name', code),
+        'industry': payload.get('industry'),
+        'data_asof': payload.get('data_asof'),
+        'coverage': cov,
+        'deep_ready': deep is not None,
+        'deep_cached': deep is not None,
+        'research_reports': (research or {}).get('report_count', 0),
+        'overview': overview,
+        'modules': modules,
+        'contract': 'v1',
+    }
 
 
 @app.post('/api/stockscore_v3_summary')

@@ -3,13 +3,16 @@ import Layout from '../../../layouts/Layout.astro';
 
 // 个股打分卡 V3（2026-10-18）· 总览页
 // 3 组 8 维 = 100：Q 质地 52 / V 价格 26 / M 势能 22，再过闸门
-// 后端：POST /api/stockscore_v3（backend/stockscore_v3.py 引擎，复用 V1 数据层与日级横截面宇宙）
-// 四页独立路由：/tools/stockscore/ · /quality · /price · /momentum（同一份 payload，详略不同）
+// 后端：POST /api/stockscore_v3_bundle（统一契约，一次返回总览+4个深度分页数据）
+// 页面结构（2026-10-21 模块化重构）：1 总览 + 4 深度分页 + 1 口播 = 6 页
+//   总览 / · 质地 /quality · 价格 /price · 势能 /momentum · 风险 /risk · 口播 /talk
+// 深度正文走 /api/stockscore_v3_deep_progress（轮询，首段 8-10 秒可见），
+// 总览页加载时调 /api/stockscore_v3_deep_prewarm 后台预热 → 点深度页近 0 秒读缓存。
 // V1 已归档至 /tools/stockscore-v1-legacy/（六维口径，仅供对照，不再维护）
 ---
 <Layout
   title="个股打分卡 V3 · 总览"
-  description="输入 A 股代码，八维打分（盈利质量/核心竞争力/成长质量/财务健康/估值安全边际/产业链景气/预期修正/资金动能），分质地、价格、势能三组，附闸门与松果可投性标签。全市场横截面分位，缺失维度如实标注不填分。不构成投资建议。"
+  description="输入 A 股代码，八维打分（盈利质量/核心竞争力/成长质量/财务健康/估值安全边际/产业链景气/预期修正/资金动能），分质地、价格、势能三组。总览页给快速判断、核心摘要与关键风险，另有质地/价格/势能/风险四个深度分页承载完整分析与事实证据。附闸门与松果可投性标签。全市场横截面分位，缺失维度如实标注不填分。不构成投资建议。"
 >
   <section class="hero" style="padding: 52px 48px 40px;">
     <div class="hero-inner">
