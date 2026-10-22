@@ -238,7 +238,10 @@ def _dim(key, label, weight, metrics, flags, extras=None):
     conf = sum(m['weight'] * m['confidence'] for m in ms)
     d = {'key': key, 'label': label, 'weight': weight, 'score': raw, 'available': True,
          'confidence': round(conf, 2),
-         'metrics': [{k: v for k, v in m.items() if k != 'contrib'} for m in ms],
+         # 2026-10-22：保留 contrib（该指标实际贡献的分）。
+         # 原来被剥掉了，导致后端无法判断"哪个指标是短板"——
+         # 只有 contrib 能把 direction 的方向折算吸收掉（pctl 做不到）。
+         'metrics': [dict(m) for m in ms],
          'flags': flags}
     if extras:
         d.update({k: v for k, v in extras.items() if k != 'na_reason'})
@@ -483,8 +486,17 @@ def compute_v3(code):
 
     # —— 横向：同行地位与技术
     peer_mv = _peers_mv(uni, board_code)
-    m2.append(_m('规模位次(市值行业内分位)', mv_abs, '元',
-                 pct_rank(peer_mv, mv_abs), 1.5, 'high', n_samples=len(peer_mv)))
+    # 2026-10-22：单位纠正 + 精简到亿元。
+    # 坑：valmap 里的 TOTAL_MARKET_CAP 单位是**元**（688508 = 8,020,700,357 元 = 80.21 亿元），
+    # 跟 tushare daily_basic 的 total_mv（万元）只差字母，千万别混用。
+    # 原来这里 unit 标成 '元'，前端会渲染出 "8,020,700,357.22 元" 这种长到没法读的数字。
+    # 改成亿元口径（元 / 1e8），peer_mv 同步换算保持同一量纲。
+    mv_abs_yuan = _num(ind_row.get('TOTAL_MARKET_CAP'))
+    mv_abs_yi = (mv_abs_yuan / 1e8) if mv_abs_yuan else (mv if mv else None)
+    peer_mv_yi = [(v / 1e8) for v in peer_mv]
+    m2.append(_m('规模位次(市值行业内分位)', mv_abs_yi, '亿元',
+                 pct_rank(peer_mv_yi, mv_abs_yi) if mv_abs_yi is not None else None,
+                 1.5, 'high', n_samples=len(peer_mv_yi)))
     premium = (gm_now - gm_med) if (gm_now is not None and gm_med is not None) else None
     uni_prem = []
     for r in uni_mid.values():
@@ -559,7 +571,7 @@ def compute_v3(code):
     m3.append(_m('单季营收同比', toi_yoy, '%',
                  pct_rank([_num(r.get('DJD_TOI_YOY')) for r in uni_mid.values()], toi_yoy),
                  0.15, 'high'))
-    m3.append(_m('单季扣非净利同比(与A+旗同源)', dnp_yoy, '%',
+    m3.append(_m('单季扣非净利同比', dnp_yoy, '%',
                  pct_rank([_num(r.get('DJD_DEDUCTDPNP_YOY')) for r in uni_mid.values()], dnp_yoy),
                  0.15, 'high'))
     diverg = (toi_yoy - dnp_yoy) if (toi_yoy is not None and dnp_yoy is not None) else None
@@ -784,7 +796,7 @@ def compute_v3(code):
                      note='粗档绝对刻度'))
     else:
         f7.append('近120日研报覆盖 <3 篇 → 覆盖度与预测漂移子项 N/A（严禁填 0，否则系统性惩罚冷门中小盘）')
-    m7.append(_m('单季扣非净利同比(与A+旗同源)', dnp_yoy, '%',
+    m7.append(_m('单季扣非净利同比', dnp_yoy, '%',
                  pct_rank([_num(r.get('DJD_DEDUCTDPNP_YOY')) for r in uni_mid.values()], dnp_yoy),
                  0.20, 'high'))
     preds = stock_predict_recent(code, days=30)
@@ -832,7 +844,7 @@ def compute_v3(code):
     if len(nets) >= 21:
         net20 = sum(nets[:20])
         roll = [sum(nets[i:i + 20]) for i in range(len(nets) - 19)]
-        m8.append(_m('主力净流入20日累计(B级·大单推算)', net20 / 1e8, '亿元',
+        m8.append(_m('主力净流入20日累计（大单推算，拆单可能失真）', net20 / 1e8, '亿元',
                      pct_rank(roll, net20), 2.5, 'high', n_samples=len(nets),
                      reliability='B',
                      note='按单笔成交金额分档推算，主力可拆单规避 → 只读异动，不读主力意图'))
@@ -888,7 +900,7 @@ def compute_v3(code):
             f'H3 双降：单季营收同比 {toi_yoy:.1f}%、扣非同比 {dnp_yoy:.1f}% 均 <0')
     elif dnp_yoy is not None and dnp_yoy < 0:
         # H3 是 A+ 的超集：H3 命中时不再重复计 A+
-        gate['yellow'].append(f'A+ 旗：单季扣非净利同比 {dnp_yoy:.1f}% <0')
+        gate['yellow'].append(f'业绩信号：单季扣非净利同比 {dnp_yoy:.1f}%（为负，盈利质量走弱）')
     if nco_mean is not None and nco_mean < 0.5:
         gate['yellow'].append(f'经营现金流÷净利润 3 年均值 {nco_mean:.2f} <0.5')
     ar_c = yoy_change('YSZKZZTS')
@@ -917,7 +929,12 @@ def compute_v3(code):
         tier = _TIERS[max(0, _TIERS.index(tier) - 1)]
     tier_note = None
     if gate_hit == 'yellow2':
-        tier_note = f'黄旗 {len(gate["yellow"])} 条 → 分档下调一档（{tier_of(total)} → {tier}）'
+        # 坑：档位本来就已是最低档时，降一档的结果还是同一档，
+        # 直接套模板会写出"（待观察 → 待观察）"这种没信息量的话。
+        _before = tier_of(total)
+        tier_note = (f'黄旗 {len(gate["yellow"])} 条 → 分档下调一档（{_before} → {tier}）'
+                     if _before != tier
+                     else f'黄旗 {len(gate["yellow"])} 条 → 已在下限档（{tier}），不再下调')
     elif gate_hit == 'yellow1':
         tier_note = f'黄旗 1 条 → 仅标注，不调档（{tier}）'
     elif gate_hit == 'red':
@@ -1014,15 +1031,20 @@ def _build_pages(**k):
     """
     d = {x['key']: x for x in k['dims']}
     g = k['groups']
-    qs = lambda key: _f((g.get(key) or {}).get('score'), 0)  # noqa: E731
+    # 2026-10-22：小数位 0 → 1。总览 headline 写「质地 53」而深度页写「53.5 分」，
+    # 同一个人看两个页面数字对不上，没必要。
+    qs = lambda key: _f((g.get(key) or {}).get('score'), 1)  # noqa: E731
     p1 = {
         'title': '总览',
+        # 2026-10-22：去掉"按松果口径属于【域内候选/域外优质/红旗不碰】"。
+        # 用户明确要求不接入松果投资策略的选股最终影响 ——
+        # 这里的 tag 文案就是选股结论，属于策略输出，不该出现在质地查询工具里。
         'headline': (f"质地 {qs('Q')} / 价格 {qs('V')} / 势能 {qs('M')}；"
-                     f"红旗 {len(k['gate']['red'])} 条、黄旗 {len(k['gate']['yellow'])} 条；"
-                     f"按松果口径属于【{k['tag']['label']}】"),
+                     f"红旗 {len(k['gate']['red'])} 条、黄旗 {len(k['gate']['yellow'])} 条"),
         'blocks': [
-            {'h': '结论', 't': f"总分 {_f(k['total'])}，{_scale(k['total'])}。{k['tag']['desc']}。"},
-            {'h': '闸门', 't': ('没有触发一票否决的红旗项' if not k['gate']['red']
+            {'h': '结论', 't': f"总分 {_f(k['total'])}，{_scale(k['total'])}。"
+                               f"这是按打分卡算出的质地水平，不构成买卖建议。"},
+            {'h': '闸门', 't': ('没有触发封顶的红旗项' if not k['gate']['red']
                                 else '；'.join(k['gate']['red'])) +
                                ('；黄旗：' + '；'.join(k['gate']['yellow']) if k['gate']['yellow'] else '')},
             {'h': '未接入项', 't': '、'.join(k['gate']['not_wired']) + '（如实标注，不填 0）'},
@@ -1083,7 +1105,7 @@ def _build_pages(**k):
                             f"单季扣非同比 {_f(k['dnp_yoy'])}%。"},
             {'h': '资金（带可靠性）', 't': f"融资余额近 20 日 {_f(k['rz20'])}%（A 级·真实披露）· "
                                     f"龙虎榜净买入 {_f((k['bb'] or 0) / 1e8, 2) if k.get('bb') else 'N/A'} 亿（A 级）· "
-                                    f"主力净流入 20 日 {_f(k['net20'], 2)} 亿（B 级·大单推算，可能被拆单规避）"},
+                                    f"主力净流入 20 日 {_f(k['net20'], 2)} 亿元（大单推算口径，拆单可能失真）"},
         ],
     }
     return {'overview': p1, 'quality': p2, 'price': p3, 'momentum': p4}

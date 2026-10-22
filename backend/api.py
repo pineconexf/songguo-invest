@@ -578,6 +578,236 @@ def _ss_banned_guard(block):
     block['facts'] = keep
 
 
+def _verdict_overall(total, tier, groups):
+    """总览页的"总体描述评价结果"。
+
+    2026-10-22 新增。用户在总览页要三块：分数总览 / 总体描述评价结果 /
+    打分卡结构特点。第二块不能只是"总分 65，中等"—— 还得说清强在哪、弱在哪。
+
+    严格约束：只描述质地本身；不给买卖建议、不给目标价、不给涨跌预测、
+    不出现可投域/域内域外这类选股结论。
+    """
+    if total is None:
+        return '打分卡数据暂缺，暂时给不出总体评价。'
+    sc = round(float(total), 1)
+    if sc >= 80:
+        lv = '很强'
+    elif sc >= 65:
+        lv = '较强'
+    elif sc >= 45:
+        lv = '中等'
+    else:
+        lv = '偏弱'
+    parts = ['综合打分 %s 分，%s。' % (sc, lv)]
+    avail = [(k, g) for k, g in (groups or {}).items()
+             if isinstance(g, dict) and g.get('score') is not None]
+    if not avail:
+        parts.append('但细分维度数据暂缺，明细页可查。')
+        return ''.join(parts)
+    strong_k, strong_g = max(avail, key=lambda x: x[1].get('score') or 0)
+    weak_k, weak_g = min(avail, key=lambda x: x[1].get('score') or 0)
+    name_map = {'Q': '质地', 'V': '价格', 'M': '势能'}
+    sn = name_map.get(strong_k, strong_g.get('label') or strong_k)
+    wn = name_map.get(weak_k, weak_g.get('label') or weak_k)
+    if strong_k != weak_k:
+        parts.append('强在%s（%s 分），弱在%s（%s 分）。'
+                     % (sn, round(float(strong_g.get('score')), 1),
+                        wn, round(float(weak_g.get('score')), 1)))
+    else:
+        parts.append('三个切面表现比较均衡。')
+    parts.append('这是按打分卡算出的质地水平，不构成买卖建议。')
+    return ''.join(parts)
+
+
+def _mval(val, unit=''):
+    """指标值的展示格式化：按单位决定小数位，并把金额统一到亿元。
+
+    坑：metric 的 value 是 round(value, 4) 出来的，直接拼出来是
+    "-11.3955%" / "-1.3774亿元" 这种没人愿意读的数字。
+    """
+    if val is None:
+        return '—'
+    try:
+        f = float(val)
+    except (TypeError, ValueError):
+        return str(val)
+    u = (unit or '').strip()
+    if u in ('%', 'pct', '％'):
+        nd = 2 if abs(f) < 100 else 1
+        return ('%.' + str(nd) + 'f') % f + '%'
+    if u in ('亿元', '亿'):
+        return ('%.2f' % f).rstrip('0').rstrip('.') + ' 亿元'
+    if u in ('万元', '万'):
+        # 统一亿元口径，小额保留 4 位小数，不回落万元
+        yi = f / 1e4
+        if abs(yi) >= 0.01:
+            return ('%.2f' % yi).rstrip('0').rstrip('.') + ' 亿元'
+        return ('%.4f' % yi).rstrip('0').rstrip('.') + ' 亿元'
+    if u == '元':
+        yi = f / 1e8
+        if abs(yi) >= 0.01:
+            return ('%.2f' % yi).rstrip('0').rstrip('.') + ' 亿元'
+        return ('%.4f' % yi).rstrip('0').rstrip('.') + ' 亿元'
+    if u in ('分', '倍', 'x', 'X'):
+        nd = 2 if abs(f) < 100 else 1
+        txt = (('%.' + str(nd) + 'f') % f).rstrip('0').rstrip('.')
+        if txt in ('', '-0'):
+            txt = '0'
+        return txt + ' ' + u
+    if abs(f) < 100:
+        return ('%.2f' % f).rstrip('0').rstrip('.')
+    return ('%.0f' % f)
+
+
+# ── 金额单位收口 ───────────────────────────────────────────────────────────
+# v3 页面里的文字（风险 flags/facts、闸门说明、总体评价）里混着万元口径，
+# 而深度正文早就是亿元了 —— 同一页面上"8.55 亿元"和"85,513.23 万"并存，
+# 用户读起来是两种货币。所以在 api 返回前统一收口一次。
+# 只动字符串字段，不动 metrics 的 value/unit（那是数值列，交给前端渲染）。
+import re as _re
+
+# 注意：排除字符集里不能有"元"。"85,623.26 万元"里的"万元"正是要转的目标，
+# 把"元"列进排除会让整条正则永远不匹配。
+_AMT_WAN_RE = _re.compile(r'(?P<num>-?\d[\d,，]*(?:\.\d+)?)\s*万(?![亿股人份户家次批名])')
+
+
+def _amt_to_yi_text(m):
+    """万元字符串 → 亿元字符串。统一亿元口径（小额保留 4 位小数，不回落万元）。"""
+    try:
+        v = float(m.group('num').replace(',', '').replace('，', ''))
+    except ValueError:
+        return m.group(0)
+    yi = v / 1.0e4
+    nd = 2 if abs(yi) >= 0.01 else 4
+    txt = ('%.*f' % (nd, yi)).rstrip('0').rstrip('.')
+    if txt in ('', '-0'):
+        txt = '0'
+    return txt + ' 亿元'
+
+
+def _money_in_text(t):
+    if not isinstance(t, str) or '万' not in t:
+        return t
+    return _AMT_WAN_RE.sub(_amt_to_yi_text, t)
+
+
+def _money_in_obj(o):
+    """递归把 payload 里字符串字段中的"万元"换成"亿元"。"""
+    if isinstance(o, str):
+        return _money_in_text(o)
+    if isinstance(o, list):
+        return [_money_in_obj(x) for x in o]
+    if isinstance(o, dict):
+        return {k: _money_in_obj(v) for k, v in o.items()}
+    return o
+
+
+def _verdict_risk(gate, flags, gaps):
+    """风险与安全维度的总体评价。
+
+    2026-10-22 新增。风险维度没有分数（它不是打分维度，是一组客观事实），
+    所以 _verdict 只能吐"数据暂缺，给不出总体评价"—— 用户看到这句是坏体验。
+    改成用红旗/黄旗/缺口条数给一条具体判断。
+    """
+    red = gate.get('red') or []
+    yel = gate.get('yellow') or []
+    parts = []
+    if red:
+        parts.append('命中 %d 条红旗（%s），属于需要先弄清楚再谈别的类型。'
+                     % (len(red), '、'.join(str(x) for x in red[:3])))
+    elif yel:
+        parts.append('没有红旗，但有 %d 条黄旗——不算硬伤，属于要跟踪的瑕疵。' % len(yel))
+    else:
+        parts.append('没有命中红旗或黄旗，风险面上暂时挑不出明显硬伤。')
+    hard = [f for f in flags if str(f.get('level') or '') in ('high', '高')]
+    if hard:
+        parts.append('已兑现风险里有 %d 条偏高强度，值得单独看。' % len(hard))
+    if gaps:
+        parts.append('另有 %d 处数据缺口，相关结论要打个折扣看。' % len(gaps))
+    else:
+        parts.append('关键数据基本齐，判断依据比较完整。')
+    return ''.join(parts)
+
+
+def _verdict(key, title, dims, group):
+    """生成某模块的"总体评价"：分数档位 + 一句判断 + 最关键短板。
+
+    2026-10-22 新增。用户诉求是"先看分数及总体评价，再看具体深度分析"，
+    所以需要一条结论式的句子，而不是原来 headline 那种维度分数罗列。
+
+    严格约束：
+      - 只描述质地/价格/势能本身，不给投资建议、不给买卖倾向
+      - 不出现目标价、涨跌预测、可投域判断
+      - 数据不足时如实说"该维数据暂缺"，不硬凑
+    """
+    sc = group.get('score')
+    if sc is None:
+        return '%s维度数据暂缺，暂时给不出总体评价。' % title
+    sc = round(float(sc), 1)
+    # 档位判断（纯分数语义，不涉及投资策略）
+    if sc >= 80:
+        lv = '很强'
+    elif sc >= 65:
+        lv = '较强'
+    elif sc >= 45:
+        lv = '中等'
+    else:
+        lv = '偏弱'
+    avail = [d for d in (dims or []) if d.get('score') is not None]
+    if not avail:
+        return '%s %s 分（%s），但支撑该分数的明细数据暂缺。' % (title, sc, lv)
+    strong = max(avail, key=lambda d: d.get('score') or 0)
+    weak = min(avail, key=lambda d: d.get('score') or 0)
+    parts = ['%s %s 分，%s。' % (title, sc, lv)]
+    if len(avail) == 1:
+        # 坑：只有一个可用维度时 strong 和 weak 必然是同一个，
+        # 老逻辑会走"各项表现比较均衡"分支 —— 17 分也说均衡，是错的。
+        # 2026-10-22：措辞改具体。"只有一项明细"读者不知道指什么，
+        # 现在明确说清是"一个子维度"、以及为什么强弱对比无意义。
+        sub = weak.get('label') or weak.get('name') or ''
+        if sub:
+            parts.append('这一档目前只有一个子维度（%s），还没有更多子维度可以横向比较。' % sub)
+        else:
+            parts.append('这一档目前只有一个子维度，还没有更多子维度可以横向比较。')
+    elif strong.get('label') and weak.get('label') and strong.get('key') != weak.get('key'):
+        parts.append('强在%s（%s 分），弱在%s（%s 分）。'
+                     % (strong.get('label'), round(float(strong.get('score')), 1),
+                        weak.get('label'), round(float(weak.get('score')), 1)))
+    else:
+        parts.append('各项表现比较均衡。')
+    # 短板补充：取短板维度里 contrib 最低的那个指标。
+    # 坑：metric 的字段是 name/value/unit/contrib，不是 label/score ——
+    # contrib 才是该指标实际贡献的分（pctl 方向已按 direction 折算），
+    # 拿 pctl 直接比会把"越低越好"的指标（毛利率波动等）判反。
+    try:
+        wm = [m for m in (weak.get('metrics') or []) if m.get('contrib') is not None]
+        if wm:
+            m0 = min(wm, key=lambda m: m.get('contrib') or 0)
+            if m0.get('name'):
+                val = m0.get('value')
+                unit = m0.get('unit') or ''
+                if val is not None:
+                    u = (unit or '').strip()
+                    if u == '分':
+                        # 分数类指标写成"（得分 0.0）"，避免"0.00 分"这种
+                        # 读起来像计算错误的写法
+                        parts.append('关键短板在%s（得分 %s）。'
+                                     % (m0.get('name'),
+                                        ('%.1f' % float(val)).rstrip('0').rstrip('.')
+                                        or '0'))
+                    elif u in ('倍', 'x', 'X', '%', 'pct', '％'):
+                        parts.append('关键短板在%s（%s）。'
+                                     % (m0.get('name'), _mval(val, unit)))
+                    else:
+                        parts.append('关键短板在%s：%s。'
+                                     % (m0.get('name'), _mval(val, unit)))
+                else:
+                    parts.append('关键短板在%s（数据暂缺）。' % m0.get('name'))
+    except Exception:
+        pass
+    return ''.join(parts)
+
+
 def _ss_start_deep_job(code, force=False):
     """启动后台深度分析作业（去重）。返回是否由本次调用启动。"""
     if not force and _ssdeep.get_cached(code) is not None:
@@ -907,22 +1137,29 @@ def stockscore_v3_bundle(req: Req):
     for r in (gate.get('yellow') or []):
         key_risks.append({'level': 'yellow', 'text': r})
     for f in (kb.get('flags') or []):
-        key_risks.append({'level': 'flag',
-                          'text': '%s：%s' % (f.get('label') or '已兑现风险',
-                                              f.get('text') or '')})
+        # 坑：flags 的 text 本身常常已经带了 label 前缀
+        # （"盈利质量：当前 -1.07倍（阈值 0.60倍…）"），
+        # 无脑拼一下会变成"盈利质量：盈利质量：当前…"。
+        _lb = (f.get('label') or '已兑现风险').strip()
+        _tx = (f.get('text') or '').strip()
+        if _tx.startswith(_lb):
+            _tx = _tx[len(_lb):].lstrip('：: ')
+        key_risks.append({'level': 'flag', 'text': '%s：%s' % (_lb, _tx)})
 
     overview = {
         'total': payload.get('total'),
         'total_raw': payload.get('total_raw'),
         'tier': payload.get('tier'),
         'tier_note': payload.get('tier_note'),
-        'tag': payload.get('tag') or {},
+        # 2026-10-22：去掉松果投资策略的选股最终影响。
+        # tag（可投域：域内候选/域外优质/红旗不碰）和 investable_checks
+        # （可投性11步）都是"选不选它"的结论，不属于"这只股票质地如何"的范畴，
+        # 这里不再下发到前端。保留 groups/gate/key_risks 这些客观事实层。
         'groups': groups,
         'gate': gate,
         'key_risks': key_risks,
-        'one_liner': (payload.get('pages') or {}).get('overview', {}).get('blocks', [{}])[0].get('t', ''),
+        'one_liner': _verdict_overall(payload.get('total'), payload.get('tier'), groups),
         'headline': (pages.get('overview') or {}).get('headline') or '',
-        'investable_checks': payload.get('investable_checks') or {},
         'coverage': cov,
     }
 
@@ -934,8 +1171,14 @@ def stockscore_v3_bundle(req: Req):
             'score': (groups.get({'quality': 'Q', 'price': 'V',
                                    'momentum': 'M'}.get(key, '')) or {}).get('score'),
             'headline': page.get('headline') or '',
+            # 2026-10-22：总体评价（结论式）。原来只有 headline（维度分数罗列），
+            # 用户要的是"先是分数及总体评价，其次才是具体深度分析"，
+            # 所以这里补一条带判断和短板的结论句。
+            'verdict': _verdict(key, title, m_dims := _dim_block(dim_keys),
+                                (groups.get({'quality': 'Q', 'price': 'V',
+                                             'momentum': 'M'}.get(key, '')) or {})),
             'blocks': page.get('blocks') or [],
-            'dims': _dim_block(dim_keys),
+            'dims': m_dims,
             'sections': [s for sk in sec_keys for s in _sec(sk)],
             'section_keys': sec_keys,
             'coverage': cov,
@@ -953,7 +1196,9 @@ def stockscore_v3_bundle(req: Req):
                          extra={'industry_facts': industry_facts,
                                 'industry': industry_raw}),
         'risk': _mod('risk', '风险与安全', [], ['risk'], 'overview',
-                     extra={'risk_facts': kb.get('facts') or [],
+                     extra={'verdict': _verdict_risk(gate, kb.get('flags') or [],
+                                                     kb.get('gaps') or []),
+                            'risk_facts': kb.get('facts') or [],
                             'risk_flags': kb.get('flags') or [],
                             'risk_gaps': kb.get('gaps') or [],
                             'contradictions': (deep or {}).get('contradictions') or [],

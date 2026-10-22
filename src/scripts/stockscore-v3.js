@@ -69,6 +69,12 @@ max-width:1000px;margin:0 auto;padding:0 4px 48px;color:var(--ink);font-size:14.
 .ss3 .blk .h{font-size:12px;font-weight:800;color:var(--green);letter-spacing:.06em;margin-bottom:3px}
 .ss3 .blk .t{font-size:13.5px;color:var(--ink2);line-height:1.75}
 .ss3 .note{font-size:11.5px;color:var(--faint);line-height:1.7;margin-top:9px}
+/* 2026-10-22：总体评价块。用户要求先看分数及总体评价、再看深度分析，
+   所以总体评价要比 note 醒目一点，但不能抢分数的位置。 */
+.ss3 .verdict{margin-top:10px;font-size:13px;line-height:1.75;color:var(--fg)}
+.ss3 .verdict b{display:inline-block;margin-right:8px;font-size:11px;font-weight:600;
+  color:var(--gold);border:1px solid var(--gold);border-radius:3px;padding:1px 6px;
+  vertical-align:1.5px;letter-spacing:.5px}
 .ss3 .dimhead{display:flex;justify-content:space-between;align-items:baseline;margin:22px 0 10px;padding-bottom:8px;border-bottom:1px solid var(--line2)}
 .ss3 .dimhead h3{margin:0;font-size:15px;font-weight:800}
 .ss3 .dimhead .sc{font-size:19px;font-weight:800;font-variant-numeric:tabular-nums}
@@ -148,6 +154,66 @@ function num(v, nd = 2) {
   return s || '0';
 }
 
+/* 金额单位统一到亿元（2026-10-22）
+ *
+ * 用户要求：所有出现的金额数字，精简到亿元单元。
+ * 后端已把主要金额口径改成亿元，但不同来源字段单位不一
+ * （tushare daily_basic.total_mv 是万元、valmap.TOTAL_MARKET_CAP 是元），
+ * 前端再兜一层，避免漏网的金额渲染成 8,020,700,357.22 元这种没法读的长数字。
+ *
+ * 只对金额类单位生效；%、pct、倍、天、年、分 这类一律不动。
+ */
+const MONEY_UNITS = { '元': 1e8, '万元': 1e4 };
+function fmtMoney(value, unit, nd = 2) {
+  if (value === null || value === undefined) return 'N/A';
+  if (typeof value !== 'number') return esc(value);
+  const k = (unit || '').trim();
+  // '亿元' 不在 MONEY_UNITS 里：后端给的亿元值已经是亿元口径，再除一次就错了。
+  // 非金额单位（%、pct、倍、年…）原样输出，但单位词要保留。
+  if (!Object.prototype.hasOwnProperty.call(MONEY_UNITS, k)) {
+    return num(value, nd) + (k ? ' ' + esc(k) : '');
+  }
+  // 用户口径：金额一律亿元，不因金额小就回落万元/元。
+  // 小额（< 0.01 亿元）保留 4 位小数，避免 0.00 亿元丢信息。
+  const yi = value / MONEY_UNITS[k];
+  if (Math.abs(yi) >= 0.01) return num(yi, nd) + ' 亿元';
+  return num(yi, 4) + ' 亿元';
+}
+
+/* 内部流程术语 → 中性标签。
+ * 后端 critic 的 type / problem 是 LLM 自由写出来的，会出现
+ * "二审重写""仍有审读意见未解""已改法"这类生产流水线词汇。
+ * 用户明确要求页面不出现这类术语，所以在前端统一收口。 */
+const INTERNAL_WORDS = [
+  [/二审/g, '二次修订'], [/三审/g, '复核'], [/审读/g, '复核'],
+  [/未解/g, '待确认'], [/改法/g, '修订方式'],
+  [/自检/g, '检查'], [/审稿/g, '复核'], [/审校/g, '复核'],
+  [/仍有审读意见未解/g, '仍有待确认项'],
+  [/critic/gi, '复核'], [/pipeline/gi, '流程'],
+];
+// 禁词中性化：复核意见里可能引用被禁措辞（如"易被读成隐含目标价"）。
+// 用户端不能出现这些词本身，改成中性说法，保留原意。
+const BANNED_NEUTRAL = [
+  [/目标价/g, '价格预期'], [/上涨空间/g, '上行空间'], [/下行空间/g, '下行空间测算'],
+  [/合理价位/g, '价格中枢'], [/估值区间/g, '估值带'], [/预期回报/g, '回报预期'],
+  [/回归中位空间/g, '回归中位幅度'],
+];
+function issueType(t) {
+  if (!t) return '待确认';
+  let x = String(t);
+  INTERNAL_WORDS.forEach(([re, to]) => { x = x.replace(re, to); });
+  x = x.replace(/[\s·・\-_—:：]+/g, ' ').trim();
+  if (!x || x.length > 12) return '待确认';
+  return x;
+}
+function issueProblem(t) {
+  if (!t) return '';
+  let x = String(t);
+  INTERNAL_WORDS.forEach(([re, to]) => { x = x.replace(re, to); });
+  BANNED_NEUTRAL.forEach(([re, to]) => { x = x.replace(re, to); });
+  return x;
+}
+
 const tierCls = (t) => ({ 优: 'p-in', 良: 'p-in', 中: 'p-out', 待观察: 'p-red' }[t] || 'p-gray');
 const tagCls = (c) => ({ in: 'p-in', out: 'p-out', red: 'p-red' }[c] || 'p-gray');
 const barCls = (k) => (k === 'valuation' ? 'v'
@@ -215,7 +281,7 @@ function dimBlock(d) {
       : m.reliability === 'B' ? '<br><span class="tagB">B级·大单推算</span>' : '';
     const note = m.note ? `<div class="note">${esc(m.note)}</div>` : '';
     return `<tr><td>${esc(m.name)}${rel}${note}</td>` +
-      `<td class="n">${num(m.value)}${esc(m.unit || '')}</td>` +
+      `<td class="n">${fmtMoney(m.value, m.unit)}</td>` +
       `<td class="n">${num(m.pctl, 0)}</td>` +
       `<td class="n">${Math.round(m.weight * 100)}%</td>` +
       `<td class="n">${m.confidence}</td></tr>`;
@@ -264,62 +330,82 @@ function factsHtml(facts, gaps) {
 
 /* ------------------------------------------------------------ 深度正文 */
 function sectionHtml(s) {
-  const paras = (s.text || '').split(/\n{2,}/).filter(Boolean)
+  // 深度正文兜底过滤内部流程术语（后端已收口一次，这里是双保险——
+  // 深度正文是流式增量返回的，个别段落可能绕过后端清洗路径）。
+  const paras = issueProblem(s.text || '').split(/\n{2,}/).filter(Boolean)
     .map((p) => `<p>${esc(p).replace(/\n/g, '<br>')}</p>`).join('');
   const note = s.note ? `<div class="deepnote">${esc(s.note)}</div>` : '';
   return `<div class="deep"><h3>${esc(s.title)}</h3>${paras}${note}</div>`;
 }
 
 /* ------------------------------------------------------------ 总览页 */
+/* 总览页：严格三个模块 —— ①分数总览 ②总体描述评价结果 ③打分卡结构特点
+ *
+ * 2026-10-22 重构。之前这里还有「一句话结论」「关键风险」「松果可投性」
+ * 「四个深度分页」四张独立卡，且顶部挂了可投域 tag（域内候选/域外优质/红旗不碰），
+ * 后两者都是"选不选它"的策略结论，已按需求移除。
+ * 关键风险并入"总体描述评价结果"，不再单列。
+ */
 function renderOverview(b) {
   const o = b.overview || {};
-  const g = o.groups || {};
-  const tag = o.tag || {};
   const gate = o.gate || {};
 
-  const risks = (o.key_risks || []).map((r) => {
-    const cls = r.level === 'red' ? 'r' : (r.level === 'yellow' ? 'y' : 'f');
-    const mark = r.level === 'red' ? '🔴 ' : (r.level === 'yellow' ? '🟡 ' : '⚑ ');
-    return `<div class="fl ${cls}">${mark}${esc(r.text)}</div>`;
-  }).join('') || '<div class="fl n">未触发红旗、黄旗或已兑现风险标记。</div>';
-
-  const gateNote = (gate.not_wired || []).length
-    ? `<div class="fl n">未接入：${esc((gate.not_wired || []).join('、'))}（如实标注，不填 0）</div>` : '';
-
-  const chk = Object.entries(o.investable_checks || {}).map(([k, v]) =>
-    `<div class="${v ? 'ok' : 'no'}">${v ? '✅' : '❌'} ${esc(k)}</div>`).join('');
-
+  // ---------- 模块一：分数总览 ----------
   const cards = ['quality', 'price', 'momentum', 'risk'].map((k) => {
     const m = (b.modules || {})[k] || {};
     const cls = k === 'quality' ? 'Q' : (k === 'price' ? 'V' : (k === 'momentum' ? 'M' : ''));
     const score = m.score === null || m.score === undefined ? '—' : num(m.score, 1);
+    // 坑：风险模块没有分数，它的 headline 继承的是总览页那句
+    // "质地 53.5 / 价格 17.4 / 势能 23.4"，放在风险卡下面就是文不对题。
+    // 没分数的模块改用它自己的 verdict（红旗/黄旗/缺口判断）。
+    const sub = (m.score === null || m.score === undefined)
+      ? (m.verdict || '不参与打分，只做风险核查')
+      : (m.headline || '');
     return `<a class="gcard ${cls}" href="${routeBase()}/${k}/?code=${encodeURIComponent(b.code)}">
       <div class="k">${esc(m.title || k)}</div>
       <div class="v">${score}</div>
-      <div class="q">${esc(m.headline || '')}</div></a>`;
+      <div class="q">${esc(sub)}</div></a>`;
   }).join('');
 
-  return `<div class="card"><div class="hero">
+  const m1 = `<div class="card"><h2 class="s">分数总览<span class="w">三个切面打分 + 一个风险核查</span></h2>
+    <div class="hero">
       <div><div class="big">${num(o.total, 1)}<small>分 · ${esc(o.tier)}</small></div>
         <div class="note" style="margin-top:8px">裸分 ${num(o.total_raw, 1)}${o.tier_note ? '　' + esc(o.tier_note) : ''}</div></div>
-      <div class="meta"><span class="pill ${tagCls(tag.code)}">${esc(tag.label)}</span>
-        <span class="pill ${tierCls(o.tier)}">档位 ${esc(o.tier)}</span>
-        <span class="pill p-gray">红旗 ${(gate.red || []).length} · 黄旗 ${(gate.yellow || []).length}</span>
-        <div class="note">${esc(tag.desc || '')}</div></div></div>
-    </div>
-    <div class="g3">${cards}</div></div>
-    <div class="card"><h2 class="s">一句话结论<span class="w">先读这一句</span></h2>
-      ${blocksHtml([{ h: '结论', t: o.one_liner || o.headline || '（暂无）' }])}
-      <div class="note">${esc(o.headline || '')}</div></div>
-    <div class="card"><h2 class="s">关键风险<span class="w">${(o.key_risks || []).length} 条</span></h2>${risks}${gateNote}</div>
-    <div class="card"><h2 class="s">松果可投性（简化 11 步 + 市值）</h2><div class="chk">${chk}</div>
-      <div class="note">完整 V35 管线含 VC∈[0.90,0.99]、行业软调节、红旗删票不补位；
-        本卡用可公开验证的简化口径做代理，标签含义为「落在射程内与否」，不等于买入建议。</div></div>
-    <div class="card"><h2 class="s">四个深度分页<span class="w">同一份数据，不同切面</span></h2>
-      <div class="note">质地（业务结构＋差异化壁垒）、价格（数字检验＋估值与预期）、
-        势能（市场空间）、风险（风险与安全＋关键矛盾＋审读意见）。
-        每页都带对应的评分卡支撑数据与事实证据，数字与本页同源。</div>
-      <a class="btn" href="${routeBase()}/quality/?code=${encodeURIComponent(b.code)}">从质地开始看 →</a></div>`;
+      <div class="meta"><span class="pill ${tierCls(o.tier)}">档位 ${esc(o.tier)}</span>
+        <span class="pill p-gray">红旗 ${(gate.red || []).length} · 黄旗 ${(gate.yellow || []).length}</span></div></div>
+    <div class="g3">${cards}</div></div>`;
+
+  // ---------- 模块二：总体描述评价结果 ----------
+  const risks = (o.key_risks || []).map((r) => {
+    const cls = r.level === 'red' ? 'r' : (r.level === 'yellow' ? 'y' : 'f');
+    const mark = r.level === 'red' ? '🔴 ' : (r.level === 'yellow' ? '🟡 ' : '⚑ ');
+    return `<div class="fl ${cls}">${mark}${esc(r.text)}</div>`;
+  }).join('');
+  const gateNote = (gate.not_wired || []).length
+    ? `<div class="fl n">未接入：${esc((gate.not_wired || []).join('、'))}（如实标注，不填 0）</div>` : '';
+  const riskHtml = `<h2 class="s" style="margin-top:16px">已量化的风险</h2>`
+    + (risks || '<div class="fl n">未触发红旗、黄旗或已兑现风险标记。</div>') + gateNote;
+
+  const m2 = `<div class="card"><h2 class="s">总体描述评价结果<span class="w">先读这一段</span></h2>
+    ${blocksHtml([{ h: '总体评价', t: o.one_liner || o.headline || '（暂无）' }])}
+    ${riskHtml}</div>`;
+
+  // ---------- 模块三：松果个股打分卡的结构特点 ----------
+  const m3 = `<div class="card"><h2 class="s">松果个股打分卡的结构特点<span class="w">这套分数是怎么算出来的</span></h2>
+    <div class="note">打分卡把一只股票拆成四个切面，每个切面由若干有明确数据来源的指标加权得出，
+      指标带口径说明和历史分位，最后合成总分。四个切面各自独立成页，页内数字与本页同源。</div>
+    <table class="facts">
+      <tr><td class="v">质地（Q·权重 52%）</td><td>业务结构、差异化壁垒、盈利质量、核心竞争力、成长质量、财务健康</td></tr>
+      <tr><td class="v">价格（V·权重 26%）</td><td>数字检验、估值与预期——看价格与经营事实的匹配度</td></tr>
+      <tr><td class="v">势能（M·权重 22%）</td><td>市场空间、行业景气与需求端的变化</td></tr>
+      <tr><td class="v">风险（权重 0）</td><td>已兑现风险红旗、安全边际、跨段矛盾检测——只做闸门，不进加权</td></tr>
+    </table>
+    <div class="note">指标口径、权重、可靠性分级（A 级真实披露 / B 级大单推算）和历史分位
+      在各深度页的「评分卡支撑数据」里逐条列出，未接入的指标如实标注，不填 0。
+      红旗只报命中的，未命中不等于没有风险。</div>
+    <a class="btn" href="${routeBase()}/quality/?code=${encodeURIComponent(b.code)}">从质地开始看 →</a></div>`;
+
+  return m1 + m2 + m3;
 }
 
 /* ------------------------------------------------------------ 深度分页 */
@@ -329,9 +415,15 @@ function renderModule(b, key) {
   const secs = (m.sections || []).map(sectionHtml).join('');
   const blocks = blocksHtml(m.blocks);
 
+  // 2026-10-22：头部顺序改为「分数 → 总体评价 → 深度分析」。
+  // 用户诉求：先看这个维度的分数和总体评价，其次才是具体深度分析描述。
+  // verdict 是后端生成的结论式评价（分数档位 + 判断 + 最关键短板）。
+  const verdictHtml = m.verdict
+    ? `<div class="verdict"><b>总体评价</b>${esc(m.verdict)}</div>`
+    : `<div class="note" style="margin-top:8px">${esc(m.headline || '')}</div>`;
   const head = `<div class="card"><div class="hero">
       <div><div class="big">${m.score === null || m.score === undefined ? '—' : num(m.score, 1)}<small>${esc(m.title || '')}</small></div>
-        <div class="note" style="margin-top:8px">${esc(m.headline || '')}</div></div>
+        ${verdictHtml}</div>
       <div class="meta"><span class="pill p-gray">外部深度数据 ${esc(b.coverage || '—')} 级</span>
         <span class="pill p-gray">研报 ${esc(b.research_reports || 0)} 篇</span></div></div></div>`;
 
@@ -358,16 +450,21 @@ function renderModule(b, key) {
         <ul class="issues">${contra.map((c) => `<li><span class="ty high">矛盾</span>${esc(c.detail)}
           ${c.a_text ? `<br><span class="src">${esc(c.a)}：${esc(c.a_text)}</span>` : ''}
           ${c.b_text ? `<br><span class="src">${esc(c.b)}：${esc(c.b_text)}</span>` : ''}</li>`).join('')}</ul></div>` : '';
+    // 2026-10-22：去掉内部质检术语（审读意见 / 二审重写 / 未解问题 / 内容自检）。
+    // 内容保留 —— 诚实披露"这一段哪里还没写扎实"对读者有价值，
+    // 但"审读""二审""改法""自检"是生产流水线内部词汇，不该出现在页面上。
+    // type 字段是 LLM 自己写的，可能直接吐出"二审重写"这种词，
+    // 所以不是换个标题就够了 —— type 也要过滤成中性标签。
     const issues = (m.critic && m.critic.issues) || [];
     const issueHtml = issues.length
-      ? `<div class="card"><h2 class="s">审读意见<span class="w">${issues.length} 条</span></h2>
-        <ul class="issues">${issues.map((i) => `<li><span class="ty ${esc(i.severity || '')}">${esc(i.type || '')}</span>
-          ${esc(i.problem || '')}${i.fix ? `<br><span class="src">改法：${esc(i.fix)}</span>` : ''}</li>`).join('')}</ul>
-        ${m.critic.summary ? `<div class="note">${esc(m.critic.summary)}</div>` : ''}</div>` : '';
+      ? `<div class="card"><h2 class="s">这段分析的薄弱点<span class="w">${issues.length} 条</span></h2>
+        <ul class="issues">${issues.map((i) => `<li><span class="ty ${esc(i.severity || '')}">${esc(issueType(i.type))}</span>
+          ${esc(issueProblem(i.problem))}</li>`).join('')}</ul>
+        ${m.critic.summary ? `<div class="note">${esc(issueProblem(m.critic.summary))}</div>` : ''}</div>` : '';
     const unres = (m.unresolved || []).length
-      ? `<div class="card"><h2 class="s">未解问题<span class="w">如实披露</span></h2>
+      ? `<div class="card"><h2 class="s">数据缺口<span class="w">如实披露</span></h2>
         <ul class="issues">${m.unresolved.map((i) => `<li><span class="ty high">${esc(i.severity || 'high')}</span>
-          ${esc(i.problem || '')}${i.fix ? `　改法：${esc(i.fix)}` : ''}</li>`).join('')}</ul></div>` : '';
+          ${esc(issueProblem(i.problem))}</li>`).join('')}</ul></div>` : '';
     extra = `<div class="card"><h2 class="s">风险与安全<span class="w">只报命中的红旗</span></h2>${flags}
         ${rf ? `<h2 class="s" style="margin-top:16px">风险事实</h2>${rf}` : ''}</div>`
       + contraHtml + issueHtml + unres;
@@ -376,7 +473,8 @@ function renderModule(b, key) {
   const deepBox = `<div class="card"><h2 class="s">深度分析<span class="w" id="ss3-prog"></span></h2>
     <div id="ss3-deep">${secs || '<div class="waiting">深度分析正在生成中…</div>'}</div></div>`;
 
-  const concl = blocks ? `<div class="card"><h2 class="s">结论</h2>${blocks}</div>` : '';
+  // blocks 自带 h='结论' 标题，页面不要再套一层，否则标题会重复出现两次。
+  const concl = blocks ? `<div class="card">${blocks}</div>` : '';
 
   return head + deepBox + dimCard + extra + concl;
 }

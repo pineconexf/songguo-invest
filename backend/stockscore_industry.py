@@ -33,12 +33,13 @@ import json
 import threading
 
 from tushare_client import _call
+from stockscore_units import fmt_yi as _yi  # 2026-10-22：金额单位统一到亿元口径
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CACHE_DIR = os.path.join(BASE_DIR, 'data', 'industry')
 # 2026-10-20 v2：修 CRn 为 None 时渲染出字面量 "None%"；
 # 集中度样本阈值 8→6（申万二级存在天然小行业，如「国有大型银行Ⅱ」仅 6 只）。
-PIPELINE_VERSION = 2
+PIPELINE_VERSION = 3
 
 _lock = threading.Lock()
 _mem = {}
@@ -48,6 +49,7 @@ _TRADE_DATE_FALLBACK = 8
 
 
 # ================================================================== 缓存
+
 
 def _cache_path(code, asof):
     return os.path.join(CACHE_DIR, '%s_%s_v%d.json' % (code, asof, PIPELINE_VERSION))
@@ -259,7 +261,9 @@ def build_industry(code, asof=None, force=False):
                     'target_pe_pctile': None,
                     'target_pb': round(tgt[0]['pb'], 2) if tgt and tgt[0].get('pb') else None,
                     'target_pb': round(tgt[0]['pb'], 2) if tgt and tgt[0].get('pb') else None,
-                    'caliber': '申万二级行业成分股总市值口径（%d 只），市值单位万元' % len(rows),
+                    # 2026-10-22：金额单位统一到亿元，caliber 里的口径说明同步改，
+                    # 否则页面会出现"单位万元"但正文写"亿元"的自相矛盾。
+                    'caliber': '申万二级行业成分股总市值口径（%d 只），市值单位亿元' % len(rows),
                     'method': 'CRn=前n大成分股市值/行业总市值；HHI=各成分股市值占比平方和',
                 }
             else:
@@ -458,10 +462,10 @@ def facts_for_writer(ind):
         facts.append(
             '行业集中度（%s）：%s，'
             'HHI %s（%s）；样本 %d 只申万二级行业成分股，'
-            '行业总市值 %s 万元'
+            '行业总市值 %s'
             % (c['caliber'], '、'.join(cr_parts),
                c.get('hhi'), c.get('hhi_level'),
-               c.get('sample_n'), c.get('total_mv_wan')))
+               c.get('sample_n'), _yi(c.get('total_mv_wan'), unit='万元')))
         # 2026-10-20 改：原来这里把「行业 PE 中位」和「公司自身 PE」并排写。
         # 但行业 PE 中位来自 tushare daily_basic 截面，公司自身 PE 若取东财口径，
         # 两者财报期不同（芯朋微 84.86 vs 88.10），并排就是拿两把尺子量同一张桌子。
@@ -471,11 +475,11 @@ def facts_for_writer(ind):
                    % (c.get('sample_n'), _pct)) if _pct is not None else (
                    '本股 PE(TTM) %s' % c.get('target_pe_ttm'))
         facts.append(
-            '目标公司行业市值占比 %s%%（自身总市值 %s 万元，交易日 %s；'
+            '目标公司行业市值占比 %s%%（自身总市值 %s，交易日 %s；'
             '注意这是市值口径，不等于收入份额，不能直接用来判断公司的规模地位或规模壁垒），'
             '行业 PE(TTM) 中位 %s、PB 中位 %s（申万二级成分股同批截面）；'
             '%s，PB %s'
-            % (c.get('target_mv_share_pct'), c.get('target_mv_wan'),
+            % (c.get('target_mv_share_pct'), _yi(c.get('target_mv_wan'), unit='万元'),
                c.get('trade_date'), c.get('pe_median'), c.get('pb_median'),
                _pe_txt, c.get('target_pb')))
     g = ind.get('growth')

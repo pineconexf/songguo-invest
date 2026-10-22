@@ -31,7 +31,9 @@ CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'su
 # 生成逻辑版本号：prompt/禁词/口径一改就 +1，旧缓存自动失效
 # 2026-10-20 v5：coverage 口径统一（研报通道 + 行业结构层），
 # 且行业结构事实进 prompt——旧缓存的 coverage 是按旧口径算的，会和页面其它处打架。
-PIPELINE_VERSION = 6
+# 2026-10-22 v7：去掉 tag.desc（可投域/域内域外/优质线 = 松果投资策略选股结论），
+# prompt 里显式禁用这些措辞。
+PIPELINE_VERSION = 7
 
 # 口播版字数上限（元宝总结版规格：≤1200 字）
 MAX_CHARS = 1200
@@ -128,10 +130,12 @@ def _fallback(code, name, payload, vb, kb, coverage):
     """模型不可用时，用确定性数据拼一段能朗读的摘要。"""
     total = (payload or {}).get('total')
     tier = (payload or {}).get('tier') or ''
-    tag = ((payload or {}).get('tag') or {}).get('desc') or ''
+    # 2026-10-22：不再引用 tag.desc —— 那是"可投域/域内域外/优质线"的选股结论，
+    # 属于松果投资策略，不该出现在面向普通用户的质地查询工具里。
     lines = ['%s，股票代码%s。' % (name, code)]
     if total is not None:
-        lines.append('打分卡总分%s分，档位%s。%s' % (total, tier, tag))
+        lines.append('打分卡总分%s分，档位%s。这是按打分卡算出的质地水平，'
+                     '不代表接下来会涨还是会跌。' % (total, tier))
     lines.append('这份评分只描述公司现在的状态，不代表接下来会涨还是会跌。')
 
     # 估值与预期
@@ -185,6 +189,9 @@ SUMMARY_SYSTEM = """你在给一个语音助手写"这段股票分析的口播�
     要么不写这个研报数字，要么明确说「研报口径是 X 期，最新是 Y 期」。
     不许把两期的数字混着当同一件事说——通勤听的人分辨不出期次，只会记住那个数。
 12. 事实清单里标了「不成立」「数据不可得」「仅供参考」的，相应内容不许当作结论说出来。
+13. **禁止出现任何选股结论式措辞**：可投域、域内、域外、候选、优质线、红旗不碰、
+    一票否决、不碰、值得买。不要评价这只股票"能不能买"，
+    只描述它按打分卡算出来是什么质地水平。
 
 只输出 JSON：{"text":"口播稿全文"}"""
 
@@ -204,9 +211,11 @@ def build_summary(code, name, payload, vb, kb, research, facts, key,
     lines = []
     lines.append('公司：%s（%s）' % (name, code))
     if payload:
-        lines.append('打分卡：总分 %s，档位 %s。%s'
-                     % (payload.get('total'), payload.get('tier'),
-                        (payload.get('tag') or {}).get('desc') or ''))
+        # 2026-10-22：去掉 tag.desc（可投域/域内域外/优质线 = 选股结论），
+        # 只留客观分数与档位。
+        lines.append('打分卡：总分 %s，档位 %s。这是按打分卡算出的质地水平，'
+                     '不代表接下来会涨还是会跌。'
+                     % (payload.get('total'), payload.get('tier')))
     lines.append('外部深度数据覆盖度：%s 级' % coverage)
 
     # 事实清单（最新财报口径）—— 2026-10-20 补

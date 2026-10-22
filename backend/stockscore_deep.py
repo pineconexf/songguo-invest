@@ -64,8 +64,19 @@ CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'de
 # 生成逻辑版本号：任何影响正文的改动都要 +1，让旧缓存自动失效
 # 2026-10-20 v8：coverage 改为由调用方统一传入（研报通道 + 行业结构层），
 # 避免 deep 页与 modules/口播页报出不同等级。
-PIPELINE_VERSION = 22   # v22: 六段并行生成+逐段发布(as_completed)+同轮多段重写并行; critic 换 deepseek-chat(实测快7.5倍质量相当); v21: 跨段重复只判叙述段(numbers/valuation豁免)+机械复检纳入重复+重写防塌陷; v20: 收敛前机械复检+未解标记不再依赖 stuck; v19: 跨段重复机械闸(cross_section_repeats, 12字shingle/>=3段判定); v18: unresolved 改为「终态全部 high」+ stuck 单列; v17: 加机械闸(audit_structure 序号断号 / audit_numbers 市值÷PE≠净利); v16: 重写闭环三修(fix 下传/结构性medium进队列/未解明示); v15: prompt 规则22(核心数字不跨段重复)/23(禁价格高低措辞)/24(TTM结论要说清季度构成); v14: 段内禁自相矛盾
+PIPELINE_VERSION = 26  # v26: tier_note 去掉 tag.desc(可投域/域内域外=选股结论),只留分数+档位+调档说明; v25: critic/unresolved/structure_issues 自由文本做内部术语+禁词中性化; v24: 正文 _strip_internal_terms + 金额统一亿元
 _lock = threading.Lock()
+# 内存缓存键带 PIPELINE_VERSION。
+# 坑（2026-10-22）：原来键只有 (code, asof)，版本号升级后进程内
+# 仍返回旧对象——磁盘缓存按版本失效了，内存缓存却没失效。
+# 结果：改了生成逻辑但 prewarm 返回 "cached"，测的全是旧文本。
+_MEM_KEY_VERSION = PIPELINE_VERSION
+
+
+def _mem_key(code, asof):
+    return (code, asof, _MEM_KEY_VERSION)
+
+
 _mem = {}
 
 # 段落的禁用词（与 narrative 层同一把尺子：不给操作建议）
@@ -590,6 +601,116 @@ def cross_section_repeats(sections, min_secs=3, limit=6,
     return picked
 
 
+# ================================================================== 金额单位统一
+# 2026-10-22：用户要求"所有出现的金额数字，精简到亿元单元"。
+# 坑：LLM 写正文时会把金额写成"6,400 万元""12.3 亿元""1,234,567,890 元"混着来，
+# 有的带千分位、有的不带，单位还随上下文漂移。必须后处理统一，
+# 否则同一页会出现三种金额写法，读者得自己换算。
+#
+# 规则：
+#   - "X 万元" → 换算成亿元；不足 1 亿的保留"万元"（换算会写成 0.00 亿元，丢信息）
+#   - "X 元"    → 换算成亿元；不足 1 亿的保留"万元"
+#   - "X 亿元"  → 保留，只做千分位规范
+#   - 已经带"亿"字的数字不动
+#   - 百分比、倍数、股数、股价一律不动（这些不是金额）
+_AMT_WAN = re.compile(r'([\d][\d,，\.]*)\s*万元')
+# 裸"元"：只匹配长整数（>=7 位），因为股价/单价都是小数值，不该被当成金额换算。
+# 负向断言排除 亿/万/美/欧/日/港/英/澳/加/瑞（美元、欧元、港元不是人民币金额）。
+_AMT_YUAN = re.compile(r'([\d]{1,3}(?:[\d,，]{3,})+|\d{7,})\s*元(?![亿万美欧日港英澳加瑞])')
+_AMT_YI = re.compile(r'([\d][\d,，\.]*)\s*亿元')
+
+
+def _amt_to_yi_str(numtxt):
+    """把一个金额数字串统一换成亿元口径的可读字符串。
+
+    用户口径（2026-10-22）：所有金额一律用"亿元"，不因金额小就回落成万元/元。
+    小额写成 0.00 亿元会丢信息，所以小于 0.01 亿元时保留 4 位小数。
+    """
+    t = str(numtxt).replace(',', '').replace('，', '').strip()
+    if not t:
+        return None
+    try:
+        v = float(t)
+    except ValueError:
+        return None
+    yi = v / 1e4
+    nd = 2 if abs(yi) >= 0.01 else 4
+    txt = '{:,.{}f}'.format(yi, nd).rstrip('0').rstrip('.')
+    if txt in ('', '-0'):
+        txt = '0'
+    return txt + ' 亿元'
+
+
+# 内部生产流程术语 → 中性说法。
+# 正文是 LLM 写的，它会描述"这一段经过二审重写""仍有审读意见未解"
+# —— 那是我们的流水线内部说法，用户看到只会莫名其妙。
+# 在源头（正文生成后）就收口，不依赖前端过滤。
+_INTERNAL_TERMS = [
+    (r'二审重写', '二次修订'),
+    (r'三审重写', '复核修订'),
+    (r'二审', '二次修订'),
+    (r'三审', '复核'),
+    (r'审读意见未解', '待确认项'),
+    (r'仍有审读意见未解', '仍有待确认项'),
+    (r'审读意见', '复核意见'),
+    (r'审读', '复核'),
+    (r'审稿', '复核'),
+    (r'审校', '复核'),
+    (r'内容自检', '质量检查'),
+    (r'自检', '检查'),
+    (r'未解问题', '待确认项'),
+    (r'未解', '待确认'),
+    (r'改法', '修订方式'),
+    (r'Critic', '复核'),
+    (r'critic', '复核'),
+]
+
+
+# 被禁措辞的中性化替换：复核意见里可能引用被禁措辞
+# （例如"易被读成隐含目标价"）。用户端不能出现这些词本身，
+# 改成中性说法，保留原意。
+_BANNED_NEUTRAL = [
+    (r'目标价', '价格预期'),
+    (r'上涨空间', '上行空间'),
+    (r'合理价位', '价格中枢'),
+    (r'估值区间', '估值带'),
+    (r'预期回报', '回报预期'),
+]
+
+
+def _neutralize_banned(text):
+    if not text:
+        return text
+    out = str(text)
+    for pat, rep in _BANNED_NEUTRAL:
+        out = re.sub(pat, rep, out)
+    return out
+
+
+def _strip_internal_terms(text):
+    if not text:
+        return text
+    out = text
+    # 先整段删掉"（已按审读意见重写）"这类括号标记 ——
+    # 光换词会留下"（已按复核意见重写）"，还是流水线口吻。
+    out = re.sub(r'[（(][^）)]*(审读|重写|二审|三审|未解|自检)[^）)]*[）)]', '', out)
+    for pat, rep in _INTERNAL_TERMS:
+        out = re.sub(pat, rep, out)
+    return out
+
+
+def _normalize_money(text):
+    """正文金额单位统一到亿元（2026-10-22）。"""
+    if not text:
+        return text
+    s = text
+    # 先处理"亿元"，避免后面的"元"正则把"亿元"拆掉
+    s = _AMT_YI.sub(lambda m: m.group(1) + ' 亿元', s)
+    s = _AMT_WAN.sub(lambda m: (_amt_to_yi_str(m.group(1)) or m.group(0)), s)
+    s = _AMT_YUAN.sub(lambda m: (_amt_to_yi_str(m.group(1)) or m.group(0)), s)
+    return s
+
+
 def _guard_banned(text):
     """命中禁词整句丢弃。返回 (清洗后文本, 命中词列表)"""
     hits = BANNED_RE.findall(text or '')
@@ -1055,6 +1176,11 @@ def build_deep(code, name, facts_blocks, research, payload=None, key=None,
             v2 = verify_numbers(text2, whitelist, all_facts)
             if v2['ok']:
                 text, v = text2, v2
+        # 2026-10-22：金额单位统一到亿元。
+        # 必须在 verify_numbers **之后**做 —— 金额换算会改写数字
+        # （6,400 万元 → 0.64 亿元），先做会被 verify 判成"清单外的数字"而误触发重写。
+        text = _normalize_money(text)
+        text = _strip_internal_terms(text)
         return {'key': sec['key'], 'title': sec['title'], 'text': text,
                 'facts_used': len(picked),
                 '_picked_idx': [i for _, i in picked],
@@ -1210,6 +1336,9 @@ def build_deep(code, name, facts_blocks, research, payload=None, key=None,
                                    % max(300, int(len(_sec.get('text') or '') * 0.8)))
                                 if _probs else ''))
                 _text, _ = _guard_banned(_text)
+                # 2026-10-22：重写路径同样做金额单位统一 + 内部术语收口
+                _text = _normalize_money(_text)
+                _text = _strip_internal_terms(_text)
                 return _sec_key, _text, _picked
 
             if _rw_jobs:
@@ -1286,14 +1415,18 @@ def build_deep(code, name, facts_blocks, research, payload=None, key=None,
 
     tier_note = ''
     if payload:
+        # 2026-10-22：不再拼 tag.desc（"可投域/域内候选/域外优质/红旗不碰"=
+        # 松果投资策略的选股结论），只留客观分数、档位与调档说明。
         tier_note = '%s 分，%s。%s' % (
             payload.get('total'), payload.get('tier'),
-            (payload.get('tag') or {}).get('desc') or '')
+            payload.get('tier_note') or '')
 
     # 注意：矛盾检测与 critic 的结果来自上面重写循环内部的复检，
     # 报的是**最终文本**，不是改之前的版本。
 
     out = _assemble(sections, coverage, code, name, tier_note)
+    # 2026-10-22：剥掉段落 note 里的内部流水线术语（详见 _strip_internal_note_terms）
+    out = _strip_internal_note_terms(out)
     out['contradictions'] = contradictions
     out['critic'] = critic
     # 重写痕迹要透出：页面上要能看出"这段被审读意见改过"
@@ -1351,8 +1484,9 @@ def get_cached(code, asof=None):
     """
     asof = asof or time.strftime('%Y%m%d')
     with _lock:
-        if (code, asof) in _mem:
-            return _mem[(code, asof)]
+        k = _mem_key(code, asof)
+        if k in _mem:
+            return _mem[k]
     path = _cache_path(code, asof)
     if not os.path.exists(path):
         return None
@@ -1362,7 +1496,7 @@ def get_cached(code, asof=None):
     except Exception:
         return None
     with _lock:
-        _mem[(code, asof)] = obj
+        _mem[_mem_key(code, asof)] = obj
     return obj
 
 
@@ -1393,20 +1527,86 @@ def invalidate(code, asof=None):
     return n
 
 
+def _strip_internal_note_terms(obj):
+    """剥掉 sections[].note 里的内部流水线术语（2026-10-22）。
+
+    坑：note 里写的是"（已按审读意见重写）""（二审重写）""（仍有审读意见未解）"
+    这类重写轮次标记，是给开发和质量闸门看的，泄漏到用户端是噪音，
+    而且用户会误以为"这段没写好"。内部信息仍通过 rewritten/rewrite_rounds/
+    unresolved/stuck 等独立字段保留，不丢数据。
+
+    新生成和读旧磁盘缓存都要清洗 —— 旧缓存 JSON 里已带这些标记。
+    """
+    if not isinstance(obj, dict):
+        return obj
+    for s in obj.get('sections') or []:
+        if isinstance(s, dict):
+            if s.get('note'):
+                s['note'] = _NOTE_INTERNAL_RE.sub('', s['note']).strip()
+            if s.get('text'):
+                s['text'] = _strip_internal_terms(s['text'])
+    # critic / unresolved / structure_issues 里的自由文本同样会带内部术语
+    # 和被禁措辞（例如"易被读成隐含目标价"），一并收口。
+    _clean_freetext(obj.get('critic'))
+    for x in (obj.get('unresolved') or []):
+        if isinstance(x, dict):
+            for k in ('type', 'problem', 'fix'):
+                if x.get(k):
+                    x[k] = _neutralize_banned(_strip_internal_terms(str(x[k])))
+    for x in (obj.get('structure_issues') or []):
+        if isinstance(x, dict):
+            if x.get('key'):
+                x['key'] = _strip_internal_terms(str(x['key']))
+            if isinstance(x.get('issues'), list):
+                x['issues'] = [
+                    _neutralize_banned(_strip_internal_terms(it))
+                    if isinstance(it, str) else it
+                    for it in x['issues']
+                ]
+    for c in (obj.get('contradictions') or []):
+        if isinstance(c, dict):
+            for k in ('detail', 'a_text', 'b_text'):
+                if c.get(k):
+                    c[k] = _neutralize_banned(_strip_internal_terms(str(c[k])))
+    return obj
+
+
+def _clean_freetext(node):
+    """递归清洗 critic / 类似的自由文本节点。"""
+    if isinstance(node, dict):
+        for k, v in list(node.items()):
+            if isinstance(v, str):
+                node[k] = _neutralize_banned(_strip_internal_terms(v))
+            else:
+                _clean_freetext(v)
+    elif isinstance(node, list):
+        for i, v in enumerate(node):
+            if isinstance(v, str):
+                node[i] = _neutralize_banned(_strip_internal_terms(v))
+            else:
+                _clean_freetext(v)
+    return node
+
+
+_NOTE_INTERNAL_RE = re.compile(r'[（(][^）)]*(审读|重写|二审|未解)[^）)]*[）)]')
+
+
 def get_or_build(code, name, facts_blocks, research, payload=None, key=None,
                  asof=None, force=False, coverage=None, on_section=None,
                  timing=None, industry_raw=None, industry_facts=None):
     asof = asof or time.strftime('%Y%m%d')
     with _lock:
-        if (code, asof) in _mem and not force:
-            return _mem[(code, asof)]
+        k = _mem_key(code, asof)
+        if k in _mem and not force:
+            return _mem[k]
     path = _cache_path(code, asof)
     if not force and os.path.exists(path):
         try:
             with open(path, encoding='utf-8') as f:
                 obj = json.load(f)
+            obj = _strip_internal_note_terms(obj)
             with _lock:
-                _mem[(code, asof)] = obj
+                _mem[_mem_key(code, asof)] = obj
             return obj
         except Exception:
             pass
@@ -1420,7 +1620,7 @@ def get_or_build(code, name, facts_blocks, research, payload=None, key=None,
     except Exception:
         pass
     with _lock:
-        _mem[(code, asof)] = obj
+        _mem[_mem_key(code, asof)] = obj
     return obj
 
 
