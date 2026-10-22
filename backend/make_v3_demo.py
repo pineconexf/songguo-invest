@@ -262,7 +262,7 @@ def page_quality(p):
     return _header(p, 'quality') + f"""
 <div class="card"><div class="hero"><div class="big">{_num(g['score'],1)}<small>Q · 质地</small></div>
 <div class="meta"><div class="t" style="font-size:13.5px">{escape(p['pages']['quality']['headline'])}</div>
-<div class="note">{escape(g['v35'])}</div></div></div></div>
+<div class="note">{escape(g.get('question',''))}</div></div></div></div>
 <div class="card"><h2 class="s">四个维度合在一起看</h2>{''.join(_dim_block(d, 'Q') for d in dims)}</div>
 <div class="card"><h2 class="s">结论：是不是好公司</h2>{blocks}
 <div class="note">纵向=链条位置与议价力（慢变，结构）；横向=同行地位与技术代差；自身=壁垒类型与持续性。
@@ -280,7 +280,7 @@ def page_price(p):
     return _header(p, 'price') + f"""
 <div class="card"><div class="hero"><div class="big">{_num(g['score'],1)}<small>V · 价格</small></div>
 <div class="meta"><div class="t" style="font-size:13.5px">{escape(p['pages']['price']['headline'])}</div>
-<div class="note">{escape(g['v35'])}</div></div></div></div>
+<div class="note">{escape(g.get('question',''))}</div></div></div></div>
 <div class="card"><h2 class="s">估值与安全边际</h2>{_dim_block(d, 'V')}</div>
 <div class="card"><h2 class="s">结论：现在贵不贵</h2>{blocks}
 <div class="note">低分位=高分。亏损股 PE 无定义时整维 N/A；金融业只计 PB。
@@ -299,7 +299,7 @@ def page_momentum(p):
     return _header(p, 'momentum') + f"""
 <div class="card"><div class="hero"><div class="big">{_num(g['score'],1)}<small>M · 势能</small></div>
 <div class="meta"><div class="t" style="font-size:13.5px">{escape(p['pages']['momentum']['headline'])}</div>
-<div class="note">{escape(g['v35'])}</div></div></div></div>
+<div class="note">{escape(g.get('question',''))}</div></div></div></div>
 <div class="card"><h2 class="s">三个维度：景气 / 预期 / 资金</h2>
 {''.join(_dim_block(d, 'M') for d in dims)}</div>
 <div class="card"><h2 class="s">结论：有没有风、能持续多久</h2>{blocks}

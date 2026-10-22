@@ -57,9 +57,9 @@ GROUP_OF = {
     'M': ['chain_prosperity', 'earnings_revision', 'capital_momentum'],
 }
 GROUP_META = {
-    'Q': {'label': '质地', 'question': '是不是好公司？', 'v35': '11 步筛选池（门槛）'},
-    'V': {'label': '价格', 'question': '现在贵不贵？', 'v35': 'VC 区间 + FCF/EV 排序'},
-    'M': {'label': '势能', 'question': '现在有没有风？', 'v35': '月度调仓时点 + 牛市开关'},
+    'Q': {'label': '质地', 'question': '是不是好公司？'},
+    'V': {'label': '价格', 'question': '现在贵不贵？'},
+    'M': {'label': '势能', 'question': '现在有没有风？'},
 }
 
 # 卡点环节白名单（规则判定，非 LLM）
@@ -817,7 +817,7 @@ def compute_v3(code):
         f7.append('业绩预告(近30日)：' + '、'.join(kinds[:3]) + '（仅展示不计分）')
         pred_dir = kinds
     d7 = _dim('earnings_revision', '预期修正', W['earnings_revision'], m7, f7,
-              extras={'thresh': '与 V35 H3/A+ 同源：单季扣非同比字段一律复用，不重新定义；'
+              extras={'thresh': '单季扣非同比口径全站统一，不重新定义；'
                                 '无研报覆盖 → N/A 不进分母',
                       'forecast': pred_dir})
 
@@ -863,7 +863,7 @@ def compute_v3(code):
         f8.append('新浪资金流序列不足 21 日 → 主力子项不纳入')
     f8.append('北向资金 2024-09-30 起停止实时披露，本维不含北向（C 级，永久剔除）')
     d8 = _dim('capital_momentum', '资金动能', W['capital_momentum'], m8, f8,
-              extras={'thresh': '主窗口 20 日（与月度调仓同频）；5日/60日只展示不计分；'
+              extras={'thresh': '主窗口 20 日；5日/60日只展示不计分；'
                                 'A级占3.5分、B级占2.5分——真实性越高权重越高',
                       'reliability': {'A': '融资余额/龙虎榜（真实披露）',
                                       'B': '主力净流入（大单推算，拆单失真）',
@@ -886,7 +886,7 @@ def compute_v3(code):
         gw = sum(d['weight'] for d in gd)
         groups[gk] = {
             'key': gk, 'label': GROUP_META[gk]['label'],
-            'question': GROUP_META[gk]['question'], 'v35': GROUP_META[gk]['v35'],
+            'question': GROUP_META[gk]['question'],
             'weight': round(sum(W[k] for k in keys) * 100),
             'score': round(sum(d['score'] * d['weight'] for d in gd) / gw, 2) if gw else None,
             'available': bool(gd),
@@ -943,13 +943,14 @@ def compute_v3(code):
         # 坑：档位本来就已是最低档时，降一档的结果还是同一档，
         # 直接套模板会写出"（待观察 → 待观察）"这种没信息量的话。
         _before = tier_of(total)
-        tier_note = (f'黄旗 {len(gate["yellow"])} 条 → 分档下调一档（{_before} → {tier}）'
+        # 2026-10-22："黄旗/红旗"是策略内部标记口径，对外改中性表述。
+        tier_note = (f'风险提示 {len(gate["yellow"])} 条 → 分档下调一档（{_before} → {tier}）'
                      if _before != tier
-                     else f'黄旗 {len(gate["yellow"])} 条 → 已在下限档（{tier}），不再下调')
+                     else f'风险提示 {len(gate["yellow"])} 条 → 已在下限档（{tier}），不再下调')
     elif gate_hit == 'yellow1':
-        tier_note = f'黄旗 1 条 → 仅标注，不调档（{tier}）'
+        tier_note = f'风险提示 1 条 → 仅标注，不调档（{tier}）'
     elif gate_hit == 'red':
-        tier_note = f'红旗 {len(gate["red"])} 条 → 总分封顶 59（裸分 {round(total_raw,2)}）'
+        tier_note = f'风险提示 {len(gate["red"])} 条 → 总分封顶 59（裸分 {round(total_raw,2)}）'
 
     # ============================================ 松果可投性（简化 11 步代理）
     checks = {
@@ -960,15 +961,12 @@ def compute_v3(code):
         '市值≤300亿': (mv is not None and mv <= 300),
     }
     passed = sum(1 for v in checks.values() if v)
-    if gate['red']:
-        tag = {'code': 'red', 'label': '❌ 红旗', 'desc': '命中一票否决项，不碰'}
-    elif passed == len(checks):
-        tag = {'code': 'in', 'label': '✅ 域内候选',
-               'desc': '通过简化 11 步 + 市值门槛，落在 V35 可投域内（VC 区间待完整管线）'}
-    elif (d1['available'] and d1['score'] >= 65) or (d2['available'] and d2['score'] >= 65):
-        tag = {'code': 'out', 'label': '⚠️ 域外优质', 'desc': '质地不差，但不满足松果可投域'}
-    else:
-        tag = {'code': 'out', 'label': '⚠️ 域外', 'desc': '不满足松果可投域，且质地未达优质线'}
+    # 2026-10-22：这里原本输出「域内候选 / 域外优质 / 域外 / 红旗不碰」，
+    # 那是选股结论（域内/域外、可投域、优质线、一票否决），
+    # 与"面向普通股票的质地查询"定位冲突。
+    # 现在只保留客观门槛达成情况，不给可投/不可投的结论。
+    tag = {'code': 'basic', 'label': f'基础门槛 {passed}/{len(checks)} 项达成',
+           'desc': '仅列示可量化门槛的达成数量，不作可投性判断'}
 
     # ============================================ 四页内容
     pages = _build_pages(
@@ -1050,14 +1048,15 @@ def _build_pages(**k):
         # 2026-10-22：去掉"按松果口径属于【域内候选/域外优质/红旗不碰】"。
         # 用户明确要求不接入松果投资策略的选股最终影响 ——
         # 这里的 tag 文案就是选股结论，属于策略输出，不该出现在质地查询工具里。
+        # 2026-10-22："红旗/黄旗"是策略内部标记口径，改为中性「风险提示」。
         'headline': (f"质地 {qs('Q')} / 价格 {qs('V')} / 势能 {qs('M')}；"
-                     f"红旗 {len(k['gate']['red'])} 条、黄旗 {len(k['gate']['yellow'])} 条"),
+                     f"风险提示 {len(k['gate']['red']) + len(k['gate']['yellow'])} 条"),
         'blocks': [
             {'h': '结论', 't': f"总分 {_f(k['total'])}，{_scale(k['total'])}。"
                                f"这是按打分卡算出的质地水平，不构成买卖建议。"},
-            {'h': '闸门', 't': ('没有触发封顶的红旗项' if not k['gate']['red']
+            {'h': '闸门', 't': ('没有触发封顶的风险项' if not k['gate']['red']
                                 else '；'.join(k['gate']['red'])) +
-                               ('；黄旗：' + '；'.join(k['gate']['yellow']) if k['gate']['yellow'] else '')},
+                               ('；关注：' + '；'.join(k['gate']['yellow']) if k['gate']['yellow'] else '')},
             {'h': '未接入项', 't': '、'.join(k['gate']['not_wired']) + '（如实标注，不填 0）'},
         ],
     }
