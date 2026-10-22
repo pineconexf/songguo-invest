@@ -84,7 +84,7 @@ _CACHE_TTL_DAY = 86400      # 日级 24 小时
 # 否则旧落盘文件会继续被当作有效缓存返回给用户。
 _SS_PAYLOAD_VERSION = 2      # v2: 删 groups.v35、tag 改中性、headline/tier_note 改「风险提示」
 _SS_FACTS_VERSION = 1
-_SS_MODULES_VERSION = 1
+_SS_MODULES_VERSION = 2   # v2: '松果FCF收益率' → '自由现金流收益率(FCFF÷市值)'（去掉策略品牌口径，与前端口径一致）
 _CACHE_MAX = 500
 _CACHE_LOCK = threading.Lock()
 
@@ -172,19 +172,19 @@ def compute_scores(rows, q):
     total = roe_s + prof_s + pe_s + mv_s + gr_s
     grade = '优' if total >= 80 else '良' if total >= 60 else '中' if total >= 40 else '差'
     return {
-        'roe': {'score': roe_s, 'max': 20, 'detail': f'近3年ROE最低 {roe_min:.1f}%', 'thresh': 'V35：ROE连续3年>3%'},
-        'profit': {'score': prof_s, 'max': 20, 'detail': f'近3年净利负值年数 {neg}/3', 'thresh': 'V35：连续盈利'},
+        'roe': {'score': roe_s, 'max': 20, 'detail': f'近3年ROE最低 {roe_min:.1f}%', 'thresh': 'ROE 连续 3 年 >3%'},
+        'profit': {'score': prof_s, 'max': 20, 'detail': f'近3年净利负值年数 {neg}/3', 'thresh': '连续盈利'},
         'pe': {'score': pe_s, 'max': 20, 'detail': f'PE(TTM) {pe:.1f}', 'thresh': '估值维度（FCF/EV待接入）'},
-        'mv': {'score': mv_s, 'max': 20, 'detail': f'总市值 {mv:.0f}亿', 'thresh': 'V35：市值≤300亿'},
+        'mv': {'score': mv_s, 'max': 20, 'detail': f'总市值 {mv:.0f}亿', 'thresh': '市值 ≤300 亿'},
         'growth': {'score': gr_s, 'max': 20, 'detail': f'净利同比 {yoy:.1f}%', 'thresh': '成长维度（牛市增强信号）'},
         'total': total, 'grade': grade
     }
 
 
-PROMPT = """你是「松果投资体系」的个股体检助手。请基于给定评分数据，输出一份专业的个股体检报告。
+PROMPT = """你是个股体检助手。请基于给定评分数据，输出一份专业的个股体检报告。
 
 股票：{name}（{code}），现价 {price} 元，PE(TTM) {pe}，总市值 {mv} 亿，PB {pb}
-体系总分：{total}/100，评级：{grade}
+总分：{total}/100，评级：{grade}
 
 分项评分（各20分制）：
 - 质量·ROE（{roe_score}分）：{roe_detail}
@@ -196,11 +196,11 @@ PROMPT = """你是「松果投资体系」的个股体检助手。请基于给�
 请输出 JSON：
 {{
   "summary": "一句话定位（60字内，讲清楚这是一只什么风格的股票）",
-  "style_analysis": "松果 V35 画像匹配分析（150字内：低估值+高质量+中小盘三个维度分别匹配度）",
+  "style_analysis": "五维画像匹配分析（150字内：低估值+高质量+中小盘三个维度分别匹配度）",
   "strengths": ["优势1", "优势2", "优势3"],
   "risks": ["风险1", "风险2", "风险3"],
-  "verdict": "体系画像定位（120字内：从五维评分说明该股的画像特征，如质量型 / 成长型 / 低估型 / 混合型，说明强项与短板各在哪个维度）",
-  "action_hint": "画像归类（60字内：把该股归入「质量型 / 成长型 / 低估型 / 混合型 / 不符合画像」之一，并一句话说明依据）"
+  "verdict": "画像定位（120字内：从五维评分说明该股的画像特征，如质量型 / 成长型 / 低估型 / 混合型，说明强项与短板各在哪个维度）",
+  "action_hint": "画像归类（60字内：把该股归入「质量型 / 成长型 / 低估型 / 混合型」之一，并一句话说明依据）"
 }}
 
 铁律：只做客观画像描述与评分陈述。禁止出现任何买入、卖出、加仓、减仓、持有、建仓、清仓、目标价、涨跌预测、收益承诺类表述。"""

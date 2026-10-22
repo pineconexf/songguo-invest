@@ -544,7 +544,7 @@ def compute_v3(code):
                  pct_rank((uni.get('univ_gm_std') or {}).values(), gm_std), 1.5, 'low'))
     fcff = latest('FCFF_FORWARD')
     fcf_yield = (fcff / mv_abs * 100.0) if (fcff and mv_abs) else None
-    m2.append(_m('自由现金流收益率(FCFF÷市值，松果FCF/EV代理)', fcf_yield, '%',
+    m2.append(_m('自由现金流收益率(FCFF÷市值)', fcf_yield, '%',
                  _abs(fcf_yield, [(-5, 0), (0, 40), (3, 65), (8, 90), (15, 100)]),
                  1.0, 'high', coarse=True,
                  note='粗档绝对刻度；代理口径（分母仅市值，未扣净债）'))
@@ -690,13 +690,13 @@ def compute_v3(code):
                          0.12 if use_pe else 0.30, 'low', n_samples=len(peers_pe)))
         # 松果 FCF 收益率（粗档绝对刻度：无全市场 FCFF 宇宙，且 1/市值 是规模因子不是收益率）
         if fcf_yield is not None:
-            m5.append(_m('松果FCF收益率(FCFF÷市值)', fcf_yield, '%',
+            m5.append(_m('自由现金流收益率(FCFF÷市值)', fcf_yield, '%',
                          _abs(fcf_yield, [(-5, 0), (0, 40), (3, 65), (8, 90), (15, 100)]),
                          0.26, 'high', coarse=True,
                          note='松果 FCF/EV 的代理口径（分母仅市值，未扣净债；粗档绝对刻度）'))
         d5 = _dim('valuation', '估值与安全边际', W['valuation'], m5, f5,
                   extras={'thresh': '低分位=高分；金融只PB；亏损整维N/A；'
-                                    '松果FCF收益率权重最高（26%）'})
+                                    '自由现金流收益率权重最高（26%）'})
 
     # ============================================ ⑥ 产业链景气 8
     f6, m6 = [], []
