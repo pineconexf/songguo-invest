@@ -35,6 +35,7 @@ from stockscore import (
     load_board_returns, tier_of, FIN_INDUSTRY_RE, PHARMA_SEMI_RE,
 )
 import chain_structure
+import stockscore_persist as _sspersist
 
 UA = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
       'Referer': 'https://data.eastmoney.com/'}
@@ -95,23 +96,33 @@ def stock_finance_v3(code):
 
 def v3_cross(period):
     """最新报告期的全市场扩展横截面（周转天数/研发/营业周期），1 小时缓存。
-    只用于给 V1 的 mid 补列，不改变 V1 任何取数行为。"""
+    只用于给 V1 的 mid 补列，不改变 V1 任何取数行为。
+
+    2026-10-22：加磁盘层。实测该查询 17.6s（拉全市场 13465 行），
+    进程重启后内存缓存丢失 → compute_v3 从 0.4s 涨到 29s，
+    卡在深度正文生成之前，首段可见时间被推到 40s。
+    横截面按报告期唯一，天然日级稳定，落盘安全。
+    """
     if not period:
         return {}
     with _V3X_LOCK:
         if _V3X['data'] and time.time() - _V3X['ts'] < 3600:
             return _V3X['data']
-    cols = ('SECUCODE,YSZKZZTS,PAYABLE_TDAYS,CHZZTS,OPERATE_CYCLE,RDEXPEND,'
-            'TOTALOPERATEREVE,FCFF_FORWARD')
-    out = {}
-    try:
-        for r in dc_all('RPT_F10_FINANCE_MAINFINADATA', f"(REPORT_DATE='{period}')",
-                        cols, source='HSF10'):
-            sc = r.get('SECUCODE')
-            if sc and len(str(sc)) > 6 and str(sc)[6] == '.':
-                out[sc] = r
-    except Exception:
+    disk_key = 'v3cross_' + str(period).replace('-', '')
+    out = _sspersist.get(disk_key)
+    if not out:
+        cols = ('SECUCODE,YSZKZZTS,PAYABLE_TDAYS,CHZZTS,OPERATE_CYCLE,RDEXPEND,'
+                'TOTALOPERATEREVE,FCFF_FORWARD')
         out = {}
+        try:
+            for r in dc_all('RPT_F10_FINANCE_MAINFINADATA', f"(REPORT_DATE='{period}')",
+                            cols, source='HSF10'):
+                sc = r.get('SECUCODE')
+                if sc and len(str(sc)) > 6 and str(sc)[6] == '.':
+                    out[sc] = r
+        except Exception:
+            out = {}
+        _sspersist.put(disk_key, out)
     with _V3X_LOCK:
         _V3X.update(ts=time.time(), data=out)
     return out

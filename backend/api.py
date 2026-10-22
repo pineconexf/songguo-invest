@@ -439,6 +439,7 @@ import stockscore_modules as _ssmod  # noqa: E402
 import stockscore_deep as _ssdeep  # noqa: E402
 import stockscore_summary as _sssum  # noqa: E402
 import stockscore_job as _ssjob  # noqa: E402
+import stockscore_persist as _sspersist  # noqa: E402
 
 
 def _ss_deep_inputs(code, timing=None):
@@ -531,6 +532,8 @@ def _ss_modules(code, research):
     """取估值块 + 风险块。日级缓存（确定性结果，当天算一次）。"""
     mods = cache_get('ss3m:' + code, ttl=_CACHE_TTL_DAY)
     if not mods:
+        mods = _sspersist.get('ss3m_' + code)
+    if not mods:
         import concurrent.futures as _cf
         with _cf.ThreadPoolExecutor(max_workers=2) as _pool:
             _f_vb = _pool.submit(_ssmod.build_valuation_block, code, research=research)
@@ -540,7 +543,9 @@ def _ss_modules(code, research):
         # 出口闸门：确定性层的文字也要过禁词（见 _ss_banned_guard 说明）
         _ss_banned_guard(vb)
         _ss_banned_guard(kb)
-        cache_put('ss3m:' + code, {'vb': vb, 'kb': kb}, ttl=_CACHE_TTL_DAY)
+        mods = {'vb': vb, 'kb': kb}
+        cache_put('ss3m:' + code, mods, ttl=_CACHE_TTL_DAY)
+        _sspersist.put('ss3m_' + code, mods)
     else:
         vb, kb = mods['vb'], mods['kb']
     return vb, kb
@@ -859,21 +864,30 @@ def _ss_start_deep_job(code, force=False):
 
 
 def _ss_core(code):
-    """取 v3 payload + facts（缓存优先）。"""
+    """取 v3 payload + facts（内存缓存 → 磁盘日级缓存 → 现算）。"""
     payload = cache_get('ss3:' + code, ttl=_CACHE_TTL_DAY)
+    if not payload:
+        # 2026-10-22：加磁盘层。生产 uvicorn 重启后内存缓存全丢，
+        # 冷启动 compute_v3(29s)+build_facts(10s)=39s 卡在正文生成之前，
+        # 首段被推到 40s。落盘后重启即命中。
+        payload = _sspersist.get('ss3_' + code)
     if not payload:
         payload, _ = _ss3.compute_v3(code)
         if payload is None:
             raise HTTPException(404, '未获取到该股票数据，请核对代码')
         cache_put('ss3:' + code, payload, ttl=_CACHE_TTL_DAY)
+        _sspersist.put('ss3_' + code, payload)
     import stockscore_facts as _ssf
     # 坑（2026-10-21 实测）：build_facts 要 9.5s（拉 F10 财务多期），
     # 但 facts 是**当日不变**的静态事实层 —— 用日级缓存，
     # 避免预热、bundle、deep 三条线各算一遍。
     fk = cache_get('ss3f:' + code, ttl=_CACHE_TTL_DAY)
     if not fk:
+        fk = _sspersist.get('ss3f_' + code)
+    if not fk:
         fk = _ssf.build_facts(code)
         cache_put('ss3f:' + code, fk, ttl=_CACHE_TTL_DAY)
+        _sspersist.put('ss3f_' + code, fk)
     return payload, fk
 
 

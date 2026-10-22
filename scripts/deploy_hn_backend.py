@@ -49,6 +49,7 @@ FILES = [
     'stockscore_units.py',
     'stockscore_job.py',
     'stockscore_gate.py',
+    'stockscore_persist.py',
     'tushare_client.py',
     # --- 深度分析链 ---
     'stockscore_deep.py',
