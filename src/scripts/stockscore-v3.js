@@ -372,7 +372,7 @@ function renderOverview(b) {
       <div><div class="big">${num(o.total, 1)}<small>分 · ${esc(o.tier)}</small></div>
         <div class="note" style="margin-top:8px">裸分 ${num(o.total_raw, 1)}${o.tier_note ? '　' + esc(o.tier_note) : ''}</div></div>
       <div class="meta"><span class="pill ${tierCls(o.tier)}">档位 ${esc(o.tier)}</span>
-        <span class="pill p-gray">红旗 ${(gate.red || []).length} · 黄旗 ${(gate.yellow || []).length}</span></div></div>
+        <span class="pill p-gray">风险项 ${(gate.red || []).length} · 关注项 ${(gate.yellow || []).length}</span></div></div>
     <div class="g3">${cards}</div></div>`;
 
   // ---------- 模块二：总体描述评价结果 ----------
@@ -384,7 +384,7 @@ function renderOverview(b) {
   const gateNote = (gate.not_wired || []).length
     ? `<div class="fl n">未接入：${esc((gate.not_wired || []).join('、'))}（如实标注，不填 0）</div>` : '';
   const riskHtml = `<h2 class="s" style="margin-top:16px">已量化的风险</h2>`
-    + (risks || '<div class="fl n">未触发红旗、黄旗或已兑现风险标记。</div>') + gateNote;
+    + (risks || '<div class="fl n">未触发风险项、关注项或已兑现风险标记。</div>') + gateNote;
 
   const m2 = `<div class="card"><h2 class="s">总体描述评价结果<span class="w">先读这一段</span></h2>
     ${blocksHtml([{ h: '总体评价', t: o.one_liner || o.headline || '（暂无）' }])}
@@ -398,11 +398,11 @@ function renderOverview(b) {
       <tr><td class="v">质地（Q·权重 52%）</td><td>业务结构、差异化壁垒、盈利质量、核心竞争力、成长质量、财务健康</td></tr>
       <tr><td class="v">价格（V·权重 26%）</td><td>数字检验、估值与预期——看价格与经营事实的匹配度</td></tr>
       <tr><td class="v">势能（M·权重 22%）</td><td>市场空间、行业景气与需求端的变化</td></tr>
-      <tr><td class="v">风险（权重 0）</td><td>已兑现风险红旗、安全边际、跨段矛盾检测——只做闸门，不进加权</td></tr>
+      <tr><td class="v">风险（权重 0）</td><td>已兑现风险项、安全边际、跨段矛盾检测——只做闸门，不进加权</td></tr>
     </table>
     <div class="note">指标口径、权重、可靠性分级（A 级真实披露 / B 级大单推算）和历史分位
       在各深度页的「评分卡支撑数据」里逐条列出，未接入的指标如实标注，不填 0。
-      红旗只报命中的，未命中不等于没有风险。</div>
+      风险项只报命中的，未命中不等于没有风险。</div>
     <a class="btn" href="${routeBase()}/quality/?code=${encodeURIComponent(b.code)}">从质地开始看 →</a></div>`;
 
   return m1 + m2 + m3;
@@ -442,7 +442,7 @@ function renderModule(b, key) {
     }
   } else if (key === 'risk') {
     const flags = (m.risk_flags || []).map((f) => `<div class="fl r"><b>${esc(f.label || '已兑现风险')}</b>　${esc(f.text || '')}</div>`).join('')
-      || '<div class="fl n">确定性指标未触发任何红旗阈值。只说明已量化的风险项没越线，不代表没有风险。</div>';
+      || '<div class="fl n">确定性指标未触发任何风险阈值。只说明已量化的风险项没越线，不代表没有风险。</div>';
     const rf = factsHtml(m.risk_facts, m.risk_gaps);
     const contra = (m.contradictions || []);
     const contraHtml = contra.length
@@ -465,7 +465,7 @@ function renderModule(b, key) {
       ? `<div class="card"><h2 class="s">数据缺口<span class="w">如实披露</span></h2>
         <ul class="issues">${m.unresolved.map((i) => `<li><span class="ty high">${esc(i.severity || 'high')}</span>
           ${esc(issueProblem(i.problem))}</li>`).join('')}</ul></div>` : '';
-    extra = `<div class="card"><h2 class="s">风险与安全<span class="w">只报命中的红旗</span></h2>${flags}
+    extra = `<div class="card"><h2 class="s">风险与安全<span class="w">只报命中的风险项</span></h2>${flags}
         ${rf ? `<h2 class="s" style="margin-top:16px">风险事实</h2>${rf}` : ''}</div>`
       + contraHtml + issueHtml + unres;
   }
