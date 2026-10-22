@@ -2,11 +2,11 @@
 import Layout from '../../../layouts/Layout.astro';
 
 // 个股打分卡 V3 · 价格页（V 组，26 分）
-// 单维独占一组：估值与安全边际——松果 alpha 的核心是「买得便宜」，所以这一维权重最高
+// 单维独占一组：估值与安全边际——这一维回答「现在贵不贵」，权重最高的是自由现金流收益率
 ---
 <Layout
   title="个股打分卡 V3 · 价格"
-  description="价格组详解：PE/PB 自身 3 年分位、PEG、股息率、行业中位分位、松果 FCF 收益率（FCFF÷市值）。低分位=高分，亏损股整维 N/A，金融业只计 PB。不构成投资建议。"
+  description="价格组详解：PE/PB 自身 3 年分位、PEG、股息率、行业中位分位、自由现金流收益率（FCFF÷市值）。低分位=高分，亏损股整维 N/A，金融业只计 PB。不构成投资建议。"
 >
   <section class="hero" style="padding: 52px 48px 40px;">
     <div class="hero-inner">
@@ -15,8 +15,8 @@ import Layout from '../../../layouts/Layout.astro';
         好公司也会买贵，<br /><span class="gold">这一维只问贵不贵</span>
       </h1>
       <p class="hero-lead">
-        单维独占一组，26 分。松果的 alpha 核心是「买得便宜」——FCF/EV 排序，
-        所以这一维里权重最高的子项是<b>松果 FCF 收益率</b>，而不是常见的 PE 分位。
+        单维独占一组，26 分。这一维回答「现在贵不贵」，
+        权重最高的子项是<b>自由现金流收益率（FCFF÷市值）</b>，而不是常见的 PE 分位。
         估值分位用<b>自身历史</b>而非全市场横截面：同一把尺子量不同行业没有意义。
       </p>
       <div class="callout" style="margin-top: var(--sp-4);">

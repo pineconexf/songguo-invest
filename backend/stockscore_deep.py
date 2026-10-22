@@ -64,7 +64,7 @@ CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'de
 # 生成逻辑版本号：任何影响正文的改动都要 +1，让旧缓存自动失效
 # 2026-10-20 v8：coverage 改为由调用方统一传入（研报通道 + 行业结构层），
 # 避免 deep 页与 modules/口播页报出不同等级。
-PIPELINE_VERSION = 27  # v27: 策略内部标签中性化(红旗/黄旗/域内域外/可投域/优质线/一票否决/不碰 → 风险项/关注项等)+ 提示层禁止使用这些标签; v26: tier_note 去掉 tag.desc(可投域/域内域外=选股结论),只留分数+档位+调档说明; v25: critic/unresolved/structure_issues 自由文本做内部术语+禁词中性化; v24: 正文 _strip_internal_terms + 金额统一亿元
+PIPELINE_VERSION = 28  # v28: 禁词从'换中性说法'改为'整句剔除'——换说法(如目标价→价格预期/上涨空间→上行空间/合理价位→价格中枢)本质仍是涨跌预测,用户已明令禁止变相预测; v27: 策略内部标签中性化(红旗/黄旗/域内域外/可投域/优质线/一票否决/不碰 → 风险项/关注项等)+ 提示层禁止使用这些标签; v26: tier_note 去掉 tag.desc(可投域/域内域外=选股结论),只留分数+档位+调档说明; v25: critic/unresolved/structure_issues 自由文本做内部术语+禁词中性化; v24: 正文 _strip_internal_terms + 金额统一亿元
 _lock = threading.Lock()
 # 内存缓存键带 PIPELINE_VERSION。
 # 坑（2026-10-22）：原来键只有 (code, asof)，版本号升级后进程内
@@ -681,25 +681,26 @@ _INTERNAL_TERMS = [
 ]
 
 
-# 被禁措辞的中性化替换：复核意见里可能引用被禁措辞
+# 被禁措辞的剔除：复核意见里可能引用被禁措辞
 # （例如"易被读成隐含目标价"）。用户端不能出现这些词本身，
-# 改成中性说法，保留原意。
-_BANNED_NEUTRAL = [
-    (r'目标价', '价格预期'),
-    (r'上涨空间', '上行空间'),
-    (r'合理价位', '价格中枢'),
-    (r'估值区间', '估值带'),
-    (r'预期回报', '回报预期'),
+# 也不能出现同义的变相说法（"上行空间""价格中枢""回报预期"本质仍是涨跌预测），
+# 所以命中即整句剔除，而不是换个说法保留。
+_BANNED_PHRASES = [
+    r'目标价', r'上涨空间', r'上行空间', r'下行空间', r'合理价位', r'价格中枢',
+    r'估值区间', r'估值带', r'预期回报', r'回归中位空间', r'回归中位幅度',
+    r'涨跌空间', r'空间测算',
 ]
+_BANNED_SPLIT = re.compile(r'(?<=[。；;！!？?])')
 
 
 def _neutralize_banned(text):
+    # 剔除含涨跌预测措辞的句子（整句丢弃，保留其余句子）
     if not text:
         return text
     out = str(text)
-    for pat, rep in _BANNED_NEUTRAL:
-        out = re.sub(pat, rep, out)
-    return out
+    kept = [s for s in _BANNED_SPLIT.split(out)
+            if not any(re.search(p, s) for p in _BANNED_PHRASES)]
+    return ''.join(kept).strip()
 
 
 def _strip_internal_terms(text):

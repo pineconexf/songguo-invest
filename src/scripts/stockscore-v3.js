@@ -191,13 +191,21 @@ const INTERNAL_WORDS = [
   [/仍有审读意见未解/g, '仍有待确认项'],
   [/critic/gi, '复核'], [/pipeline/gi, '流程'],
 ];
-// 禁词中性化：复核意见里可能引用被禁措辞（如"易被读成隐含目标价"）。
-// 用户端不能出现这些词本身，改成中性说法，保留原意。
-const BANNED_NEUTRAL = [
-  [/目标价/g, '价格预期'], [/上涨空间/g, '上行空间'], [/下行空间/g, '下行空间测算'],
-  [/合理价位/g, '价格中枢'], [/估值区间/g, '估值带'], [/预期回报/g, '回报预期'],
-  [/回归中位空间/g, '回归中位幅度'],
+// 禁词剔除：复核意见里可能引用被禁措辞（如"易被读成隐含目标价"）。
+// 用户端不能出现这些词本身，也不能出现同义的变相说法
+// （"上行空间""下行空间测算""价格中枢"本质仍是涨跌预测），
+// 所以命中即整句剔除，而不是换个说法保留。
+const BANNED_PHRASES = [
+  /目标价/, /上涨空间/, /上行空间/, /下行空间/, /合理价位/, /价格中枢/,
+  /估值区间/, /估值带/, /预期回报/, /回归中位空间/, /回归中位幅度/,
+  /涨跌空间/, /空间测算/,
 ];
+function dropBannedSentences(text) {
+  if (!text) return '';
+  const parts = String(text).split(/(?<=[。；;！!？?])/);
+  const kept = parts.filter(s => !BANNED_PHRASES.some(re => re.test(s)));
+  return kept.join('').trim();
+}
 function issueType(t) {
   if (!t) return '待确认';
   let x = String(t);
@@ -210,7 +218,8 @@ function issueProblem(t) {
   if (!t) return '';
   let x = String(t);
   INTERNAL_WORDS.forEach(([re, to]) => { x = x.replace(re, to); });
-  BANNED_NEUTRAL.forEach(([re, to]) => { x = x.replace(re, to); });
+  x = dropBannedSentences(x);
+  if (!x) return '';
   return x;
 }
 
