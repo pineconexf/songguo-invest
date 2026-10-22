@@ -719,18 +719,21 @@ def _verdict_risk(gate, flags, gaps):
 
     2026-10-22 新增。风险维度没有分数（它不是打分维度，是一组客观事实），
     所以 _verdict 只能吐"数据暂缺，给不出总体评价"—— 用户看到这句是坏体验。
-    改成用红旗/黄旗/缺口条数给一条具体判断。
+    改成用风险项/关注项/缺口条数给一条具体判断。
+
+    2026-10-22 再改：原文用"红旗/黄旗"，那是策略内部标记口径，
+    改为"风险项/关注项"，口径不变，只换用户可见的说法。
     """
     red = gate.get('red') or []
     yel = gate.get('yellow') or []
     parts = []
     if red:
-        parts.append('命中 %d 条红旗（%s），属于需要先弄清楚再谈别的类型。'
+        parts.append('命中 %d 条风险项（%s），属于需要先弄清楚再谈别的类型。'
                      % (len(red), '、'.join(str(x) for x in red[:3])))
     elif yel:
-        parts.append('没有红旗，但有 %d 条黄旗——不算硬伤，属于要跟踪的瑕疵。' % len(yel))
+        parts.append('没有硬性风险项，但有 %d 条关注项——不算硬伤，属于要跟踪的瑕疵。' % len(yel))
     else:
-        parts.append('没有命中红旗或黄旗，风险面上暂时挑不出明显硬伤。')
+        parts.append('没有命中风险项或关注项，风险面上暂时挑不出明显硬伤。')
     hard = [f for f in flags if str(f.get('level') or '') in ('high', '高')]
     if hard:
         parts.append('已兑现风险里有 %d 条偏高强度，值得单独看。' % len(hard))
