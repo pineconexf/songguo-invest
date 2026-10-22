@@ -688,12 +688,12 @@ def compute_v3(code):
         if len(peers_pe) >= 5:
             m5.append(_m('行业中位分位(低=高分)', cur, '倍', pct_rank(peers_pe, cur),
                          0.12 if use_pe else 0.30, 'low', n_samples=len(peers_pe)))
-        # 松果 FCF 收益率（粗档绝对刻度：无全市场 FCFF 宇宙，且 1/市值 是规模因子不是收益率）
+        # FCF 收益率（粗档绝对刻度：无全市场 FCFF 宇宙，且 1/市值 是规模因子不是收益率）
         if fcf_yield is not None:
             m5.append(_m('自由现金流收益率(FCFF÷市值)', fcf_yield, '%',
                          _abs(fcf_yield, [(-5, 0), (0, 40), (3, 65), (8, 90), (15, 100)]),
                          0.26, 'high', coarse=True,
-                         note='松果 FCF/EV 的代理口径（分母仅市值，未扣净债；粗档绝对刻度）'))
+                         note='FCF/EV 的代理口径（分母仅市值，未扣净债；粗档绝对刻度）'))
         d5 = _dim('valuation', '估值与安全边际', W['valuation'], m5, f5,
                   extras={'thresh': '低分位=高分；金融只PB；亏损整维N/A；'
                                     '自由现金流收益率权重最高（26%）'})
@@ -1095,7 +1095,7 @@ def _build_pages(**k):
                                 f"通俗说，市场愿意为它每 1 块钱的年利润付 {_f(k['pe'])} 块钱。"
                                 if k.get('pe') is not None else
                                 '亏损或数据缺失，PE 无定义，这一维按 N/A 处理。')},
-            {'h': '松果安全边际', 't': f"FCF 收益率 {_f(k['fcf_yield'])}%：按松果口径，它每年能自由支配的现金"
+            {'h': '安全边际', 't': f"FCF 收益率 {_f(k['fcf_yield'])}%：按这个口径，它每年能自由支配的现金"
                                   f"大约相当于市值的 {_f(k['fcf_yield'])}%，这个数越高说明越便宜"
                                   f"（FCFF÷市值代理口径，未扣净债）。"},
         ],

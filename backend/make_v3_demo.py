@@ -284,7 +284,7 @@ def page_price(p):
 <div class="card"><h2 class="s">估值与安全边际</h2>{_dim_block(d, 'V')}</div>
 <div class="card"><h2 class="s">结论：现在贵不贵</h2>{blocks}
 <div class="note">低分位=高分。亏损股 PE 无定义时整维 N/A；金融业只计 PB。
-松果 FCF 收益率为 FCFF÷市值的代理口径（未扣净债），权重 26%，是这一维里最接近策略排序逻辑的子项。</div></div>
+FCF 收益率为 FCFF÷市值的代理口径（未扣净债），权重 26%，是这一维里权重最高的子项。</div></div>
 """ + _footer(p)
 
 
