@@ -82,7 +82,7 @@ _CACHE_TTL_DAY = 86400      # 日级 24 小时
 # 磁盘落盘缓存的版本护栏（2026-10-22）。
 # payload / facts / modules 的结构或文案一变，必须 +1，
 # 否则旧落盘文件会继续被当作有效缓存返回给用户。
-_SS_PAYLOAD_VERSION = 2      # v2: 删 groups.v35、tag 改中性、headline/tier_note 改「风险提示」
+_SS_PAYLOAD_VERSION = 3      # v3: payload 快照里的价格维度 label 去掉'松果FCF收益率''松果安全边际'品牌口径；v2: 删 groups.v35、tag 改中性、headline/tier_note 改「风险提示」
 _SS_FACTS_VERSION = 2   # v2: facts 里的 dims label 去掉'松果FCF收益率'品牌口径
 _SS_MODULES_VERSION = 2   # v2: '松果FCF收益率' → '自由现金流收益率(FCFF÷市值)'（去掉策略品牌口径，与前端口径一致）
 _CACHE_MAX = 500
