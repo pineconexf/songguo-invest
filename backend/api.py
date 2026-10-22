@@ -78,6 +78,13 @@ class Req(BaseModel):
 _CACHE = {}
 _CACHE_TTL = 600            # 默认 10 分钟
 _CACHE_TTL_DAY = 86400      # 日级 24 小时
+
+# 磁盘落盘缓存的版本护栏（2026-10-22）。
+# payload / facts / modules 的结构或文案一变，必须 +1，
+# 否则旧落盘文件会继续被当作有效缓存返回给用户。
+_SS_PAYLOAD_VERSION = 2      # v2: 删 groups.v35、tag 改中性、headline/tier_note 改「风险提示」
+_SS_FACTS_VERSION = 1
+_SS_MODULES_VERSION = 1
 _CACHE_MAX = 500
 _CACHE_LOCK = threading.Lock()
 
@@ -532,7 +539,7 @@ def _ss_modules(code, research):
     """取估值块 + 风险块。日级缓存（确定性结果，当天算一次）。"""
     mods = cache_get('ss3m:' + code, ttl=_CACHE_TTL_DAY)
     if not mods:
-        mods = _sspersist.get('ss3m_' + code)
+        mods = _sspersist.get('ss3m_' + code, version=_SS_MODULES_VERSION)
     if not mods:
         import concurrent.futures as _cf
         with _cf.ThreadPoolExecutor(max_workers=2) as _pool:
@@ -545,7 +552,7 @@ def _ss_modules(code, research):
         _ss_banned_guard(kb)
         mods = {'vb': vb, 'kb': kb}
         cache_put('ss3m:' + code, mods, ttl=_CACHE_TTL_DAY)
-        _sspersist.put('ss3m_' + code, mods)
+        _sspersist.put('ss3m_' + code, mods, version=_SS_MODULES_VERSION)
     else:
         vb, kb = mods['vb'], mods['kb']
     return vb, kb
@@ -870,24 +877,26 @@ def _ss_core(code):
         # 2026-10-22：加磁盘层。生产 uvicorn 重启后内存缓存全丢，
         # 冷启动 compute_v3(29s)+build_facts(10s)=39s 卡在正文生成之前，
         # 首段被推到 40s。落盘后重启即命中。
-        payload = _sspersist.get('ss3_' + code)
+        # 版本护栏：payload 结构一变（如删字段/改文案），旧落盘文件
+        # 必须失效，否则旧结构的缓存会继续吐给用户。
+        payload = _sspersist.get('ss3_' + code, version=_SS_PAYLOAD_VERSION)
     if not payload:
         payload, _ = _ss3.compute_v3(code)
         if payload is None:
             raise HTTPException(404, '未获取到该股票数据，请核对代码')
         cache_put('ss3:' + code, payload, ttl=_CACHE_TTL_DAY)
-        _sspersist.put('ss3_' + code, payload)
+        _sspersist.put('ss3_' + code, payload, version=_SS_PAYLOAD_VERSION)
     import stockscore_facts as _ssf
     # 坑（2026-10-21 实测）：build_facts 要 9.5s（拉 F10 财务多期），
     # 但 facts 是**当日不变**的静态事实层 —— 用日级缓存，
     # 避免预热、bundle、deep 三条线各算一遍。
     fk = cache_get('ss3f:' + code, ttl=_CACHE_TTL_DAY)
     if not fk:
-        fk = _sspersist.get('ss3f_' + code)
+        fk = _sspersist.get('ss3f_' + code, version=_SS_FACTS_VERSION)
     if not fk:
         fk = _ssf.build_facts(code)
         cache_put('ss3f:' + code, fk, ttl=_CACHE_TTL_DAY)
-        _sspersist.put('ss3f_' + code, fk)
+        _sspersist.put('ss3f_' + code, fk, version=_SS_FACTS_VERSION)
     return payload, fk
 
 

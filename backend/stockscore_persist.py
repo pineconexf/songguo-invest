@@ -50,8 +50,12 @@ def _path(key, day):
     return os.path.join(_dir(), f'{safe}.{day}.json')
 
 
-def get(key, day=None):
-    """读盘。命中返回对象，miss/异常返回 None（调用方须自行走计算路径）。"""
+def get(key, day=None, version=None):
+    """读盘。命中返回对象，miss/异常返回 None（调用方须自行走计算路径）。
+
+    version 不为空时，落盘文件的版本必须与之相等才返回数据，
+    否则返回 None（视为未命中）—— 用于结构变更后让旧落盘自动失效。
+    """
     if day is None:
         day = time.strftime('%Y%m%d')
     p = _path(key, day)
@@ -62,19 +66,33 @@ def get(key, day=None):
         if time.time() - os.path.getmtime(p) > 12 * 3600:
             return None
         with open(p, 'r', encoding='utf-8') as f:
-            return json.load(f)
+            data = json.load(f)
+        if version is not None:
+            if not isinstance(data, dict) or data.get('__v') != version:
+                return None
+        # '__v' 是内部版本标记，任何情况下都不该泄漏给消费方
+        if isinstance(data, dict):
+            data.pop('__v', None)
+        return data
     except Exception:          # noqa: BLE001
         return None
 
 
-def put(key, obj, day=None):
-    """写盘。失败静默（缓存不是关键路径，不该因写盘失败影响主流程）。"""
+def put(key, obj, day=None, version=None):
+    """写盘。失败静默（缓存不是关键路径，不该因写盘失败影响主流程）。
+
+    version 不为空时，版本标记写进落盘文件的 '__v' 键，
+    不污染业务对象本身。
+    """
     if day is None:
         day = time.strftime('%Y%m%d')
     p = _path(key, day)
     try:
         with _LOCK:
             tmp = p + '.tmp'
+            if version is not None and isinstance(obj, dict):
+                obj = dict(obj)
+                obj['__v'] = version
             with open(tmp, 'w', encoding='utf-8') as f:
                 json.dump(obj, f, ensure_ascii=False, default=str)
             os.replace(tmp, p)

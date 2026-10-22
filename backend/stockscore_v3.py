@@ -109,7 +109,7 @@ def v3_cross(period):
         if _V3X['data'] and time.time() - _V3X['ts'] < 3600:
             return _V3X['data']
     disk_key = 'v3cross_' + str(period).replace('-', '')
-    out = _sspersist.get(disk_key)
+    out = _sspersist.get(disk_key, version=1)
     if not out:
         cols = ('SECUCODE,YSZKZZTS,PAYABLE_TDAYS,CHZZTS,OPERATE_CYCLE,RDEXPEND,'
                 'TOTALOPERATEREVE,FCFF_FORWARD')
@@ -122,7 +122,7 @@ def v3_cross(period):
                     out[sc] = r
         except Exception:
             out = {}
-        _sspersist.put(disk_key, out)
+        _sspersist.put(disk_key, out, version=1)
     with _V3X_LOCK:
         _V3X.update(ts=time.time(), data=out)
     return out
