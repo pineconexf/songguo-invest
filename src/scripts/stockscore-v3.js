@@ -396,7 +396,7 @@ function renderOverview(b) {
     <div class="g3">${cards}</div></div>`;
 
   // ---------- V4 中性：四张核心卡（FCF/EV、现价/合理价等独立指标，非策略阀门）----------
-  const n4 = (core._v4_neutral || {});
+  const n4 = (b._v4_neutral || {});
   const cards4 = [];
   if (n4.fcf_ev_pct != null) {
     cards4.push(`<div class="ck"><div class="cl">自由现金流÷企业价值</div><div class="cv">${n4.fcf_ev_pct}<small>%</small></div><div class="cn">FCF/EV · 独立指标</div></div>`);
@@ -415,7 +415,7 @@ function renderOverview(b) {
     return `<div class="fl ${cls}">${mark}${esc(r.text)}</div>`;
   }).join('');
   // V4 中性口径：双降即删票 → 中性「增长提示」，只陈述客观事实，不提策略动作
-  const growthHint = (core._v4_neutral || {}).growth_hint || '';
+  const growthHint = (b._v4_neutral || {}).growth_hint || '';
   const growthHtml = growthHint
     ? `<div class="fl y">⚠ 增长提示：${esc(growthHint)}（客观事实陈述，不提策略动作）</div>`
     : '';
@@ -699,24 +699,6 @@ export async function mountV3(view) {
   }
   if (!core) return;
 
-  // 第二优先级：异步补齐 modules（估值/风险事实块，core 层不含，失败不影响总览）
-  try {
-    const mods = await post(base, '/api/stockscore_v3_modules', code);
-    if (mods && core.modules) {
-      if (mods.valuation) {
-        const m = core.modules.price || {};
-        m.valuation_facts = mods.valuation.facts;
-        m.valuation_gaps = mods.valuation.gaps;
-      }
-      if (mods.risk) {
-        const m = core.modules.risk || {};
-        m.risk_facts = mods.risk.facts;
-        m.risk_flags = mods.risk.flags;
-        m.risk_gaps = mods.risk.gaps;
-      }
-    }
-  } catch (e) { /* modules 非核心，失败不阻塞总览/维度分页渲染 */ }
-
   const render = () => {
     const head = identBar(core) + navBar(core.code, view);
     const body = isOverview ? renderOverview(core) : renderModule(core, view);
@@ -732,7 +714,30 @@ export async function mountV3(view) {
     root.innerHTML = head + body + foot;
   };
 
+  // 第一优先级：core 到手立刻出页面，不等 modules（否则慢接口会把整页卡在「正在计算」）
   render();
+
+  // 第二优先级：异步补齐 modules（估值/风险事实块，core 层不含），回来再补渲染一次
+  try {
+    const mods = await post(base, '/api/stockscore_v3_modules', code);
+    let filled = false;
+    if (mods && core.modules) {
+      if (mods.valuation) {
+        const m = core.modules.price || {};
+        m.valuation_facts = mods.valuation.facts;
+        m.valuation_gaps = mods.valuation.gaps;
+        filled = true;
+      }
+      if (mods.risk) {
+        const m = core.modules.risk || {};
+        m.risk_facts = mods.risk.facts;
+        m.risk_flags = mods.risk.flags;
+        m.risk_gaps = mods.risk.gaps;
+        filled = true;
+      }
+    }
+    if (filled) render();
+  } catch (e) { /* modules 非核心，失败不阻塞总览/维度分页渲染 */ }
 
   // 总览页后台预热深度分析 → 用户点进深度页时近 0 秒读缓存
   // 顺序要点：必须等 bundle 拿到（v3 payload 已进后端 10 分钟内存缓存），
