@@ -767,6 +767,13 @@ def compute_v3(code):
                                 '行业层(β)与链内层(α)分开算，同一行业内不同公司不再同分',
                       'industry': bk_name,
                       'industry_peers': bk_row.get('n')})
+    # 合规（2026-10-23）：个人主体小程序不展示行业景气/板块涨幅类指标，
+    # 避免落入「金融业-股票信息服务平台」类目管辖。整维不可用，权重由
+    # api 端归一化（P3：缺失维不计分，严禁填 0 分）。
+    d6['available'] = False
+    d6['na_reason'] = '合规：个人主体小程序不展示行业景气/板块涨幅类指标（避免股票信息服务平台管辖）'
+    d6['score'] = None
+    d6['weighted_score'] = None
     if d6['available']:
         f6.append('本维是景气读数，不是质地评价；投入产出表（153 部门结构层）'
                   '尚未接入——数据源 WAF 拦截，暂以申万/东财二级行业横截面替代，'
@@ -868,6 +875,13 @@ def compute_v3(code):
                       'reliability': {'A': '融资余额/龙虎榜（真实披露）',
                                       'B': '主力净流入（大单推算，拆单失真）',
                                       'C': '北向（已停更，剔除）'}})
+    # 合规（2026-10-23）：个人主体小程序不展示资金动能/资金流向类指标，
+    # 避免落入「金融业-股票信息服务平台」类目管辖。整维不可用，权重由
+    # api 端归一化（P3：缺失维不计分，严禁填 0 分）。
+    d8['available'] = False
+    d8['na_reason'] = '合规：个人主体小程序不展示资金动能/资金流向类指标（避免股票信息服务平台管辖）'
+    d8['score'] = None
+    d8['weighted_score'] = None
 
     dims = [d1, d2, d3, d4, d5, d6, d7, d8]
 
@@ -1100,22 +1114,16 @@ def _build_pages(**k):
                                   f"（FCFF÷市值代理口径，未扣净债）。"},
         ],
     }
-    cp = d.get('chain_prosperity') or {}
     er = d.get('earnings_revision') or {}
-    cm = d.get('capital_momentum') or {}
     ch = k.get('chain') or {}
     chain_blocks = list(ch.get('narration') or [])
     p4 = {
         'title': '势能', 'score': g['M']['score'],
-        'headline': f"M {_f(g['M']['score'])}｜产业链景气 {_f(cp.get('score'))} · "
-                    f"预期修正 {_f(er.get('score'))} · 资金动能 {_f(cm.get('score'))}",
+        'headline': f"M {_f(g['M']['score'])}｜预期修正 {_f(er.get('score'))}",
         'blocks': chain_blocks + [
             {'h': '风从哪来', 't': f"所在行业近 20 个交易日市值变动 {_f(k['rel20'])}%。"},
             {'h': '预期', 't': f"近 120 天有 {k['reps'] if k.get('reps') is not None else 'N/A'} 篇研报覆盖；"
                             f"单季扣非同比 {_f(k['dnp_yoy'])}%。"},
-            {'h': '资金（带可靠性）', 't': f"融资余额近 20 日 {_f(k['rz20'])}%（A 级·真实披露）· "
-                                    f"龙虎榜净买入 {_f((k['bb'] or 0) / 1e8, 2) if k.get('bb') else 'N/A'} 亿（A 级）· "
-                                    f"主力净流入 20 日 {_f(k['net20'], 2)} 亿元（大单推算口径，拆单可能失真）"},
         ],
     }
     return {'overview': p1, 'quality': p2, 'price': p3, 'momentum': p4}

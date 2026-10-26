@@ -57,9 +57,12 @@ max-width:1000px;margin:0 auto;padding:0 4px 48px;color:var(--ink);font-size:14.
 .ss3 td{padding:8px 10px;border-bottom:1px solid var(--line2);color:var(--ink2);vertical-align:top}
 .ss3 tr:last-child td{border-bottom:none}
 .ss3 td.n{font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
-.ss3 .tagA,.ss3 .tagB{font-size:10.5px;font-weight:800;padding:1px 5px;border-radius:3px;white-space:nowrap}
+.ss3 .tagA,.ss3 .tagB,.ss3 .tagC{font-size:10.5px;font-weight:800;padding:1px 5px;border-radius:3px;white-space:nowrap}
 .ss3 .tagA{background:var(--green-l);color:var(--green);border:1px solid var(--green-b)}
 .ss3 .tagB{background:var(--gold-l);color:var(--gold);border:1px solid var(--gold-b)}
+/* 第2层角标（V4 中性口径）：棕底金字，≤2项，点击跳第三层锚点 */
+.ss3 .tagC{background:var(--brown-l,#f5efe6);color:var(--brown,#7a5a37);border:1px solid var(--brown-b,#d9c4a3);cursor:pointer}
+.ss3 .tagC:hover{background:var(--brown-b,#d9c4a3)}
 .ss3 .fl{font-size:12.5px;padding:7px 12px;border-radius:6px;margin-bottom:6px;line-height:1.6}
 .ss3 .fl.r{background:var(--red-l);border:1px solid var(--red-b);color:#8a4a41}
 .ss3 .fl.y{background:var(--gold-l);border:1px solid var(--gold-b);color:#6b5427}
@@ -288,6 +291,11 @@ function dimBlock(d) {
       `<div class="sc">N/A<small>权重 ${Math.round(d.weight * 100)}%</small></div></div>` +
       `<div class="fl n">${esc(d.na_reason || '该维不可用')}</div>`;
   }
+  // 第2层角标（V4 中性口径，≤2项）：棕底金字，点击跳第三层锚点
+  const tagsHtml = (d.tags || []).slice(0, 2).map((t) =>
+    `<span class="tagC" data-ss3-jump="${esc(t.anchor)}">${esc(t.text)}</span>`
+  ).join(' ');
+  const tagsWrap = tagsHtml ? `<div class="tags" style="margin-top:4px">${tagsHtml}</div>` : '';
   const rows = (d.metrics || []).map((m) => {
     const rel = m.reliability === 'A' ? '<br><span class="tagA">A级·真实披露</span>'
       : m.reliability === 'B' ? '<br><span class="tagB">B级·大单推算</span>' : '';
@@ -308,7 +316,7 @@ function dimBlock(d) {
       + ` × 总资产周转率 ${num(dp.turnover, 2)} 次 × 权益乘数 ${num(dp.equity_mult, 2)}</div>`
     : '';
   return `<div class="dimhead"><h3>${esc(d.label)}</h3>` +
-    `<div class="sc">${num(d.score, 1)}<small>权重 ${Math.round(d.weight * 100)}% · 置信 ${d.confidence}</small></div></div>` +
+    `<div class="sc">${num(d.score, 1)}<small>权重 ${Math.round(d.weight * 100)}% · 置信 ${d.confidence}</small></div></div>${tagsWrap}` +
     '<table><thead><tr><th>子指标</th><th style="text-align:right">数值</th>' +
     '<th style="text-align:right">分位/刻度</th><th style="text-align:right">维内权重</th>' +
     `<th style="text-align:right">置信</th></tr></thead><tbody>${rows}</tbody></table>${dpHtml}${flags}${thresh}`;
@@ -387,12 +395,30 @@ function renderOverview(b) {
         <span class="pill p-gray">风险项 ${(gate.red || []).length} · 关注项 ${(gate.yellow || []).length}</span></div></div>
     <div class="g3">${cards}</div></div>`;
 
+  // ---------- V4 中性：四张核心卡（FCF/EV、现价/合理价等独立指标，非策略阀门）----------
+  const n4 = (core._v4_neutral || {});
+  const cards4 = [];
+  if (n4.fcf_ev_pct != null) {
+    cards4.push(`<div class="ck"><div class="cl">自由现金流÷企业价值</div><div class="cv">${n4.fcf_ev_pct}<small>%</small></div><div class="cn">FCF/EV · 独立指标</div></div>`);
+  }
+  if (n4.price_to_fair_pct != null) {
+    cards4.push(`<div class="ck"><div class="cl">现价÷估算合理价</div><div class="cv">${n4.price_to_fair_pct}<small>%</small></div><div class="cn">中性参照，非买卖提示</div></div>`);
+  }
+  const cards4Html = cards4.length
+    ? `<div class="card"><h2 class="s">四张核心卡<span class="w">独立指标，非策略阀门</span></h2><div class="cgrid">${cards4.join('')}</div></div>`
+    : '';
+
   // ---------- 模块二：总体描述评价结果 ----------
   const risks = (o.key_risks || []).map((r) => {
     const cls = r.level === 'red' ? 'r' : (r.level === 'yellow' ? 'y' : 'f');
     const mark = r.level === 'red' ? '🔴 ' : (r.level === 'yellow' ? '🟡 ' : '⚑ ');
     return `<div class="fl ${cls}">${mark}${esc(r.text)}</div>`;
   }).join('');
+  // V4 中性口径：双降即删票 → 中性「增长提示」，只陈述客观事实，不提策略动作
+  const growthHint = (core._v4_neutral || {}).growth_hint || '';
+  const growthHtml = growthHint
+    ? `<div class="fl y">⚠ 增长提示：${esc(growthHint)}（客观事实陈述，不提策略动作）</div>`
+    : '';
   const gateNote = (gate.not_wired || []).length
     ? `<div class="fl n">未接入：${esc((gate.not_wired || []).join('、'))}（如实标注，不填 0）</div>` : '';
   const riskHtml = `<h2 class="s" style="margin-top:16px">已量化的风险</h2>`
@@ -400,6 +426,7 @@ function renderOverview(b) {
 
   const m2 = `<div class="card"><h2 class="s">总体描述评价结果<span class="w">先读这一段</span></h2>
     ${blocksHtml([{ h: '总体评价', t: o.one_liner || o.headline || '（暂无）' }])}
+    ${growthHtml}
     ${riskHtml}</div>`;
 
   // ---------- 模块三：松果个股打分卡的结构特点 ----------
@@ -417,7 +444,7 @@ function renderOverview(b) {
       风险项只报命中的，未命中不等于没有风险。</div>
     <a class="btn" href="${routeBase()}/quality/?code=${encodeURIComponent(b.code)}">从质地开始看 →</a></div>`;
 
-  return m1 + m2 + m3;
+  return m1 + cards4Html + m2 + m3;
 }
 
 /* ------------------------------------------------------------ 深度分页 */
@@ -437,7 +464,14 @@ function renderModule(b, key) {
       <div><div class="big">${m.score === null || m.score === undefined ? '—' : num(m.score, 1)}<small>${esc(m.title || '')}</small></div>
         ${verdictHtml}</div>
       <div class="meta"><span class="pill p-gray">外部深度数据 ${esc(b.coverage || '—')} 级</span>
-        <span class="pill p-gray">研报 ${esc(b.research_reports || 0)} 篇</span></div></div></div>`;
+        <span class="pill p-gray">研报 ${esc(b.research_reports || 0)} 篇</span>
+        ${(function(){
+          const n = (b._v4_neutral || {});
+          if (n.price_to_fair_pct != null) {
+            return `<span class="pill p-gray">现价/合理价 ${n.price_to_fair_pct}%</span>`;
+          }
+          return '';
+        })()}</div></div></div>`;
 
   const dimCard = dims
     ? `<div class="card"><h2 class="s">评分卡支撑数据<span class="w">这一页的维度</span></h2>${dims}</div>` : '';
@@ -488,7 +522,21 @@ function renderModule(b, key) {
   // blocks 自带 h='结论' 标题，页面不要再套一层，否则标题会重复出现两次。
   const concl = blocks ? `<div class="card">${blocks}</div>` : '';
 
-  return head + deepBox + dimCard + extra + concl;
+  // ---------- 第三层（V4 三层结构）：可折叠「松果策略怎么用这些指标」 ----------
+  // 角标（第2层）点击跳到这里，锚点 id = ss3-l3-<anchor>
+  const L3_TEXT = {
+    quality: '质地（Q）在松果策略中用于评估公司内在质量是否扎实：包含盈利质量、核心竞争力、成长质量、财务健康四个子维度。策略只把质地达标的股票纳入候选池，不达标的直接排除，不参与后续打分。质地分高低本身不构成买入或卖出信号，只回答「这家公司生意本身是否经得起看」。',
+    price: '价格（V）在松果策略中用于判断当前价格相对公司自身估值历史是否偏贵或偏便宜：包含估值分位、预期修正两个子维度。策略把估值分位作为仓位微调的参考之一，不作为独立买卖依据。估值低不等于一定会涨，估值高不等于一定会跌，只是说明当前价格在历史区间中的相对位置。',
+    momentum: '势能（M）在松果策略中用于跟踪行业景气与需求端的变化：包含行业景气度、需求端趋势两个子维度。策略用它来确认公司质地和价格的优势是否有行业景气的配合，没有配合的会被降档处理。势能是滞后确认指标，不用于预测，只用于验证。',
+  };
+  const l3Anchor = ({ quality: 'quality', price: 'price', momentum: 'momentum' })[key] || key;
+  const l3Html = `<div class="card" id="ss3-l3-${esc(l3Anchor)}">
+    <h2 class="s">松果投资策略怎么用这些指标</h2>
+    <details class="ss3-l3"><summary>展开策略视角说明（不影响上方打分，仅供理解）</summary>
+      <div class="note" style="margin-top:8px">${esc(L3_TEXT[l3Anchor] || '该维度说明暂未接入。')}</div>
+    </details></div>`;
+
+  return head + deepBox + dimCard + extra + concl + l3Html;
 }
 
 /* ------------------------------------------------------------ 深度正文增量轮询 */
@@ -633,11 +681,11 @@ export async function mountV3(view) {
     return;
   }
 
-  // bundle 失败重试（冷启动可能 504）
-  let bundle = null;
+  // 第一优先级：分段返回 —— 先拉核心层（总分/六维/闸门/行业/报价），快速渲染 P1
+  let core = null;
   for (let i = 1; i <= 6; i++) {
     try {
-      bundle = await post(base, '/api/stockscore_v3_bundle', code);
+      core = await post(base, '/api/stockscore_v3_core', code);
       break;
     } catch (e) {
       if (i === 6) {
@@ -649,14 +697,34 @@ export async function mountV3(view) {
       await sleep(20000);
     }
   }
-  if (!bundle) return;
+  if (!core) return;
+
+  // 第二优先级：异步补齐 modules（估值/风险事实块，core 层不含，失败不影响总览）
+  try {
+    const mods = await post(base, '/api/stockscore_v3_modules', code);
+    if (mods && core.modules) {
+      if (mods.valuation) {
+        const m = core.modules.price || {};
+        m.valuation_facts = mods.valuation.facts;
+        m.valuation_gaps = mods.valuation.gaps;
+      }
+      if (mods.risk) {
+        const m = core.modules.risk || {};
+        m.risk_facts = mods.risk.facts;
+        m.risk_flags = mods.risk.flags;
+        m.risk_gaps = mods.risk.gaps;
+      }
+    }
+  } catch (e) { /* modules 非核心，失败不阻塞总览/维度分页渲染 */ }
 
   const render = () => {
-    const head = identBar(bundle) + navBar(bundle.code, view);
-    const body = isOverview ? renderOverview(bundle) : renderModule(bundle, view);
-    const errs = (bundle.source_errors || []).length
-      ? '<br>取数告警：' + esc(bundle.source_errors.join('；')) : '';
-    const foot = `<div class="foot">总分 = 0.52×Q + 0.26×V + 0.22×M，再过闸门（🔴封顶59 / 🟡≥2降一档 / 🟡=1仅标注）。
+    const head = identBar(core) + navBar(core.code, view);
+    const body = isOverview ? renderOverview(core) : renderModule(core, view);
+    const errs = (core.source_errors || []).length
+      ? '<br>取数告警：' + esc(core.source_errors.join('；')) : '';
+    const segTag = core.contract === 'core_v1'
+      ? ' <span class="pill p-gray">核心层已返回 · 深度正文增量中</span>' : '';
+    const foot = `<div class="foot">总分 = 0.52×Q + 0.26×V + 0.22×M，再过闸门（🔴封顶59 / 🟡≥2降一档 / 🟡=1仅标注）。${segTag}
       缺失子项不进分母、整维缺失标 N/A 不填 0；每个分数带置信度，&lt;0.6 进低置信清单。<br>
       深度分析的每个数字都来自可溯源的公开数据或券商研报原文抽取；研报观点仅代表分析师判断，不构成本站观点。
       本页所有数字由公开数据按页面写明口径计算，数据可能有误、口径有局限，请自行复核。<br>
@@ -679,4 +747,18 @@ export async function mountV3(view) {
                      momentum: ['market'], risk: ['risk'] }[view] || null;
     pollDeep(base, code, render, expect);
   }
+}
+
+// ---------- 全局：第2层角标点击 → 展开同页第3层并滚动（V4 三层结构）----------
+if (typeof document !== 'undefined') {
+  document.addEventListener('click', (e) => {
+    const t = e.target.closest && e.target.closest('.tagC[data-ss3-jump]');
+    if (!t) return;
+    const anchor = t.getAttribute('data-ss3-jump');
+    const l3 = document.getElementById('ss3-l3-' + anchor);
+    if (!l3) return;
+    const det = l3.querySelector('details.ss3-l3');
+    if (det) det.open = true;
+    l3.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
 }

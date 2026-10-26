@@ -1154,7 +1154,7 @@ def stockscore_v3_bundle(req: Req):
 
     Q_KEYS = ['profit_quality', 'core_competence', 'growth', 'financial_health']
     V_KEYS = ['valuation']
-    M_KEYS = ['chain_prosperity', 'earnings_revision', 'capital_momentum']
+    M_KEYS = ['earnings_revision']
 
     # 关键风险：红旗 + 黄旗 + 风险模块的 flag，合并去重
     key_risks = []
@@ -1218,9 +1218,7 @@ def stockscore_v3_bundle(req: Req):
         'price': _mod('price', '价格', V_KEYS, ['numbers', 'valuation'], 'price',
                       extra={'valuation_facts': vb.get('facts') or [],
                              'valuation_gaps': vb.get('gaps') or []}),
-        'momentum': _mod('momentum', '势能', M_KEYS, ['market'], 'momentum',
-                         extra={'industry_facts': industry_facts,
-                                'industry': industry_raw}),
+        'momentum': _mod('momentum', '势能', M_KEYS, [], 'momentum'),
         'risk': _mod('risk', '风险与安全', [], ['risk'], 'overview',
                      extra={'verdict': _verdict_risk(gate, kb.get('flags') or [],
                                                      kb.get('gaps') or []),
@@ -1246,6 +1244,27 @@ def stockscore_v3_bundle(req: Req):
         'modules': modules,
         'contract': 'v1',
     }
+
+
+@app.post('/api/stockscore_v3_bundle_async')
+def stockscore_v3_bundle_async(req: Req):
+    """小程序专用：bundle + 后台预热 deep。
+
+    同步返回 overview + 4 个模块（含已缓存的 deep 段落，未缓存时 deep 为空）；
+    若 deep 未缓存，启动后台作业预热，front端可轮询 /api/stockscore_v3_deep_progress
+    拉取已完成段落。首次调用概览 <3s（缓存命中），deep 段落后台异步生成。
+    """
+    code = re.sub(r'\D', '', req.code or '')
+    if len(code) != 6:
+        raise HTTPException(400, '请输入6位股票代码')
+    bundle = stockscore_v3_bundle(Req(code=code))
+    deep = _ssdeep.get_cached(code)
+    if deep is None:
+        started = _ss_start_deep_job(code)
+        bundle['deep_state'] = 'started' if started else 'running'
+    else:
+        bundle['deep_state'] = 'cached'
+    return bundle
 
 
 @app.post('/api/stockscore_v3_summary')
