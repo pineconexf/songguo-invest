@@ -133,7 +133,20 @@
         function base() {
           var n = nav();
           return {
-            p: (location.pathname.replace(/^\/songguo-invest/, '') || '/').slice(0, 120),
+            p: (function () {
+              // 站点可能部署在子路径（GH Pages）或根路径（主站），
+              // 前缀从资源地址推导：不硬编码字面量，
+              // 上线脚本会对产物做前缀 sed 并 grep 残留，硬编码会被误伤。
+              var q = location.pathname || '/';
+              try {
+                var s = document.querySelector('script[src*="/_astro/"]');
+                var src = s ? (s.getAttribute('src') || '') : '';
+                var i = src ? src.indexOf('/_astro/') : -1;
+                var pre = i > 0 ? src.slice(0, i) : '';
+                if (pre && q.indexOf(pre) === 0) q = q.slice(pre.length) || '/';
+              } catch (e) { /* 取不到资源就不前缀 */ }
+              return q.slice(0, 120);
+            })(),
             t: (document.title || '').slice(0, 80),
             r: (function(){ try { return new URL(document.referrer || 'about:blank').hostname; } catch(e){ return ''; } })(),
             u: utms(), sid: sid,
