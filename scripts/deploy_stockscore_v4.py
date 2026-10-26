@@ -176,32 +176,43 @@ def smoke(tr, label, deep=True):
             return False, hint + '；_v4_neutral 缺失'
         return True, hint
 
-    def _expect():
-        st, d = tr.post_json('/api/stockscore_v3_core', {'code': CODE}, timeout=600)
-        e = d.get('expectation') or {}
-        return bool(e), 'expectation=%s' % json.dumps(e, ensure_ascii=False)[:110]
+    def _neutral():
+        """合规硬检查：对外页面/public 载荷不得出现内部策略术语。"""
+        banned = ['策略状态', '真空带', 'VC系数', '该买', '该卖', '删票', '不补位']
+        st, core = tr.post_json('/api/stockscore_v3_core', {'code': CODE}, timeout=600)
+        st2, deep = tr.post_json('/api/stockscore_v3_deep', {'code': CODE}, timeout=600)
+        blob = json.dumps(core, ensure_ascii=False) + json.dumps(deep, ensure_ascii=False)
+        hit = [w for w in banned if w in blob]
+        one = ((core.get('overview') or {}).get('one_liner') or '')
+        if hit:
+            return False, '出现禁用词 %s' % hit
+        if not one:
+            return False, 'overview.one_liner 为空'
+        return True, '无禁用词；one_liner=%s…' % one[:38]
 
     def _modules():
         st, d = tr.post_json('/api/stockscore_v3_modules', {'code': CODE}, timeout=600)
-        vb = len(((d.get('valuation') or {}).get('blocks')) or [])
-        kb = len(((d.get('risk') or {}).get('blocks')) or [])
+        vb = len(((d.get('valuation') or {}).get('facts')) or [])
+        kb = len(((d.get('risk') or {}).get('facts')) or [])
         if vb == 0 and kb == 0:
-            return False, '估值块 %d / 风险块 %d' % (vb, kb)
-        return (vb >= 5 and kb >= 5), '估值块 %d / 风险块 %d%s' % (
+            return False, '估值 fact %d / 风险 fact %d' % (vb, kb)
+        return (vb >= 5 and kb >= 5), '估值 fact %d / 风险 fact %d%s' % (
             vb, kb, '' if (vb >= 5 and kb >= 5) else '（低于预期 5）')
 
     def _deep():
         st, d = tr.post_json('/api/stockscore_v3_deep', {'code': CODE}, timeout=900)
-        res = d.get('research') or {}
-        cnt = res.get('count')
+        cnt = d.get('research_reports')
         if cnt is None:
-            cnt = len(res.get('reports') or [])
-        return (cnt or 0) >= 1, '研报 %s 篇，coverage=%s' % (cnt, d.get('coverage'))
+            cnt = (d.get('research') or {}).get('count') or 0
+        secs = len(d.get('sections') or [])
+        chars = d.get('total_chars') or 0
+        ok = secs >= 4 and chars >= 1000
+        return ok, '研报 %s 篇，正文 %s 段/%s 字，改写=%s' % (cnt, secs, chars, d.get('rewritten'))
 
     log('\n【冒烟验证 · %s】' % label)
     check('健康检查', _health)
     check('core 端点（V4）', _core)
-    check('expectation 字段', _expect, hard=False)
+    check('中性口径', _neutral)
     check('modules 端点', _modules, hard=False)
     if SKIP_DEEP:
         rows.append(('-', 'deep 端点', 'SKIP_DEEP=1 跳过'))
