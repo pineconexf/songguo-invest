@@ -8,7 +8,8 @@
 //   风险   /tools/stockscore/risk/       风险与安全 + 红旗 + 关键矛盾 + 审读意见
 //   口播   /tools/stockscore/talk/       手机端口播稿
 //
-// 数据契约：POST /api/stockscore_v3_bundle（overview + modules，一次拉全）
+// 数据契约：POST /api/stockscore_v3_core（总分/六维/闸门/行业/报价）
+//           POST /api/stockscore_v3_modules（估值/风险事实块）
 // 深度正文：POST /api/stockscore_v3_deep_progress（轮询，首段 8-10s 可见）
 // 预热：    POST /api/stockscore_v3_deep_prewarm（总览页后台触发，点深度页近 0s 读缓存）
 //
@@ -146,7 +147,7 @@ const VIEWS = [
 ];
 
 const esc = (s) => String(s == null ? '' : s)
-  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  .replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>').replace(/\"/g, '"');
 
 function num(v, nd = 2) {
   if (v === null || v === undefined) return 'N/A';
@@ -164,8 +165,7 @@ function num(v, nd = 2) {
  * （tushare daily_basic.total_mv 是万元、valmap.TOTAL_MARKET_CAP 是元），
  * 前端再兜一层，避免漏网的金额渲染成 8,020,700,357.22 元这种没法读的长数字。
  *
- * 只对金额类单位生效；%、pct、倍、天、年、分 这类一律不动。
- */
+ * 只对金额类单位生效；%、pct、倍、天、年、分 这类一律不动。 */
 const MONEY_UNITS = { '元': 1e8, '万元': 1e4 };
 function fmtMoney(value, unit, nd = 2) {
   if (value === null || value === undefined) return 'N/A';
@@ -199,7 +199,7 @@ const INTERNAL_WORDS = [
 ];
 // 禁词剔除：复核意见里可能引用被禁措辞（如"易被读成隐含目标价"）。
 // 用户端不能出现这些词本身，也不能出现同义的变相说法
-// （"上行空间""下行空间测算""价格中枢"本质仍是涨跌预测），
+// ("上行空间""下行空间测算""价格中枢"本质仍是涨跌预测)，
 // 所以命中即整句剔除，而不是换个说法保留。
 const BANNED_PHRASES = [
   /目标价/, /上涨空间/, /上行空间/, /下行空间/, /合理价位/, /价格中枢/,
@@ -364,8 +364,7 @@ function sectionHtml(s) {
  * 2026-10-22 重构。之前这里还有「一句话结论」「关键风险」「松果可投性」
  * 「四个深度分页」四张独立卡，且顶部挂了可投域 tag（域内候选/域外优质/红旗不碰），
  * 后两者都是"选不选它"的策略结论，已按需求移除。
- * 关键风险并入"总体描述评价结果"，不再单列。
- */
+ * 关键风险并入"总体描述评价结果"，不再单列。 */
 function renderOverview(b) {
   const o = b.overview || {};
   const gate = o.gate || {};
@@ -491,9 +490,10 @@ function renderModule(b, key) {
       || '<div class="fl n">确定性指标未触发任何风险阈值。只说明已量化的风险项没越线，不代表没有风险。</div>';
     const rf = factsHtml(m.risk_facts, m.risk_gaps);
     const contra = (m.contradictions || []);
+    // T5-5 TONE：跨段矛盾 → 跨段数据差异
     const contraHtml = contra.length
-      ? `<div class="card"><h2 class="s">跨段矛盾<span class="w">${contra.length} 处</span></h2>
-        <ul class="issues">${contra.map((c) => `<li><span class="ty high">矛盾</span>${esc(c.detail)}
+      ? `<div class="card"><h2 class="s">跨段数据差异<span class="w">${contra.length} 处</span></h2>
+        <ul class="issues">${contra.map((c) => `<li><span class="ty high">差异</span>${esc(c.detail)}
           ${c.a_text ? `<br><span class="src">${esc(c.a)}：${esc(c.a_text)}</span>` : ''}
           ${c.b_text ? `<br><span class="src">${esc(c.b)}：${esc(c.b_text)}</span>` : ''}</li>`).join('')}</ul></div>` : '';
     // 2026-10-22：去掉内部质检术语（审读意见 / 二审重写 / 未解问题 / 内容自检）。
@@ -524,15 +524,18 @@ function renderModule(b, key) {
 
   // ---------- 第三层（V4 三层结构）：可折叠「松果策略怎么用这些指标」 ----------
   // 角标（第2层）点击跳到这里，锚点 id = ss3-l3-<anchor>
+  // T5-5 TONE：第三层标题/内容也做中性化
   const L3_TEXT = {
     quality: '质地（Q）在松果策略中用于评估公司内在质量是否扎实：包含盈利质量、核心竞争力、成长质量、财务健康四个子维度。策略只把质地达标的股票纳入候选池，不达标的直接排除，不参与后续打分。质地分高低本身不构成买入或卖出信号，只回答「这家公司生意本身是否经得起看」。',
     price: '价格（V）在松果策略中用于判断当前价格相对公司自身估值历史是否偏贵或偏便宜：包含估值分位、预期修正两个子维度。策略把估值分位作为仓位微调的参考之一，不作为独立买卖依据。估值低不等于一定会涨，估值高不等于一定会跌，只是说明当前价格在历史区间中的相对位置。',
     momentum: '势能（M）在松果策略中用于跟踪行业景气与需求端的变化：包含行业景气度、需求端趋势两个子维度。策略用它来确认公司质地和价格的优势是否有行业景气的配合，没有配合的会被降档处理。势能是滞后确认指标，不用于预测，只用于验证。',
   };
   const l3Anchor = ({ quality: 'quality', price: 'price', momentum: 'momentum' })[key] || key;
+  // T5-4 UX-01：质地页的第三层默认展开（open=true）；价格/势能保持折叠
+  const defaultOpen = (key === 'quality') ? ' open' : '';
   const l3Html = `<div class="card" id="ss3-l3-${esc(l3Anchor)}">
     <h2 class="s">松果投资策略怎么用这些指标</h2>
-    <details class="ss3-l3"><summary>展开策略视角说明（不影响上方打分，仅供理解）</summary>
+    <details class="ss3-l3"${defaultOpen}><summary>展开策略视角说明（不影响上方打分，仅供理解）</summary>
       <div class="note" style="margin-top:8px">${esc(L3_TEXT[l3Anchor] || '该维度说明暂未接入。')}</div>
     </details></div>`;
 
@@ -645,6 +648,68 @@ function mountForm(root, prefill) {
   else input.focus();
 }
 
+/* ------------------------------------------------------------ 从 core.dims/groups 构建 modules（供四页渲染） */
+function buildModulesFromCore(core) {
+  const dims = core.dims || [];
+  const groups = core.groups || {};
+  const gate = core.gate || {};
+
+  // 维度键到 Q/V/M 的映射
+  const dimToGroup = {
+    profit_quality: 'Q', core_competence: 'Q', growth: 'Q', financial_health: 'Q',
+    valuation: 'V', earnings_revision: 'V',
+    chain_prosperity: 'M', capital_momentum: 'M',
+  };
+
+  // 分组维度
+  const groupDims = { Q: [], V: [], M: [] };
+  dims.forEach((d) => {
+    const g = dimToGroup[d.key];
+    if (g) groupDims[g].push(d);
+  });
+
+  // 通用模块骨架
+  const mkMod = (key, title, groupKey, extra = {}) => {
+    const g = groups[groupKey] || {};
+    return {
+      key,
+      title,
+      score: g.score ?? null,
+      weight: g.weight ?? 0,
+      headline: g.headline || '',
+      verdict: '',
+      dims: groupDims[groupKey] || [],
+      sections: [],
+      blocks: [],
+      ...extra,
+    };
+  };
+
+  return {
+    quality: mkMod('quality', '质地', 'Q'),
+    price: mkMod('price', '价格', 'V', { valuation_facts: [], valuation_gaps: [] }),
+    momentum: mkMod('momentum', '势能', 'M', { industry_facts: [] }),
+    risk: {
+      key: 'risk',
+      title: '风险',
+      score: null,
+      weight: 0,
+      headline: '',
+      verdict: '不参与打分，只做风险核查',
+      dims: [],
+      sections: [],
+      blocks: [],
+      risk_facts: [],
+      risk_flags: [],
+      risk_gaps: [],
+      contradictions: [],
+      critic: { issues: [], summary: '' },
+      unresolved: [],
+      gate,
+    },
+  };
+}
+
 /* ------------------------------------------------------------ 入口 */
 export async function mountV3(view) {
   const root = document.getElementById('ss3-root');
@@ -690,7 +755,7 @@ export async function mountV3(view) {
     } catch (e) {
       if (i === 6) {
         root.innerHTML = `<div class="card"><div class="fl r">查询失败：${esc(e.message)}</div>
-          <div class="note"><a href="${location.pathname}">重新输入代码</a></div></div>`;
+            <div class="note"><a href="${location.pathname}">重新输入代码</a></div></div>`;
         return;
       }
       root.innerHTML = `<div class="card"><div class="note">后端正在建全市场横截面宇宙，已自动重试 ${i}/6 次…</div></div>`;
@@ -698,6 +763,9 @@ export async function mountV3(view) {
     }
   }
   if (!core) return;
+
+  // 从 core.dims + core.groups 构建 modules 结构（质地/价格/势能/风险四页所需）
+  core.modules = buildModulesFromCore(core);
 
   const render = () => {
     const head = identBar(core) + navBar(core.code, view);
@@ -707,7 +775,7 @@ export async function mountV3(view) {
     const segTag = core.contract === 'core_v1'
       ? ' <span class="pill p-gray">核心层已返回 · 深度正文增量中</span>' : '';
     const foot = `<div class="foot">总分 = 0.52×Q + 0.26×V + 0.22×M，再过闸门（🔴封顶59 / 🟡≥2降一档 / 🟡=1仅标注）。${segTag}
-      缺失子项不进分母、整维缺失标 N/A 不填 0；每个分数带置信度，&lt;0.6 进低置信清单。<br>
+      缺失子项不进分母、整维缺失标 N/A 不填 0；每个分数带置信度，<0.6 进低置信清单。<br>
       深度分析的每个数字都来自可溯源的公开数据或券商研报原文抽取；研报观点仅代表分析师判断，不构成本站观点。
       本页所有数字由公开数据按页面写明口径计算，数据可能有误、口径有局限，请自行复核。<br>
       结构化读数不构成投资建议，不预测涨跌，不含任何买卖意见。${errs}</div>`;

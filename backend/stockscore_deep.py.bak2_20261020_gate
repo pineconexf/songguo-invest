@@ -1,0 +1,1156 @@
+# -*- coding: utf-8 -*-
+"""深度分析层：逐段生成 + 数字回验 + 矛盾清单 + critic（2026-10-20）
+
+## 定位
+
+facts 层给"数字"，research 层给"行业与竞争"，narrative 层给"这个分数啥意思"。
+本层给的是**一篇完整的深度分析**，体量对标微信公众号个股深度稿。
+
+## 为什么不能"一次让模型写完"
+
+一次性生成 3000 字必然出现三类问题：
+  1. 数字漂移 —— 同一个指标前后不一致，或凭空多出没给过的数字
+  2. 段落互相矛盾 —— 前文说壁垒强，后文说现金流差，两段都"对"但合起来自相矛盾
+  3. 灌水 —— 外部数据缺失时，模型会靠常识补一段行业描述，看起来像那么回事
+
+本层的解法是**分段生成 + 全局校验**：
+
+  Step 1  切段：按 6 段固定骨架（业务结构/市场空间/竞争壁垒/数字检验/估值与预期/风险与安全）
+  Step 2  逐段生成：每段只喂该段需要的 facts，不喂其他段，避免跨段串味
+  Step 3  数字回验：全文每个数字都必须能在 facts 清单里找到，否则标为"待核"并重生成该段
+  Step 4  矛盾清单：跨段检查同一主体的定性描述是否互斥，输出 contradictions
+  Step 5  critic：让模型扮演挑刺的编辑，专门找问题（不是重写，是提意见）
+  Step 6  裁决：按 critic 意见 + 矛盾清单决定是否重生成有问题的段
+
+## 分层丰满度
+
+外部数据覆盖度决定体量（对应 research.coverage_level）：
+  A 级 → 六段全写，允许 2000–3000 字
+  B 级 → 写能写的段（通常 4 段），缺失段落显式声明"该维度无公开数据源"
+  C 级 → "短而实"：只写数字检验 + 风险与安全两段，800–1200 字，不注水
+
+铁律：**宁可短，不注水**。缺口必须在正文里显式说出来。
+"""
+import json
+import os
+import re
+import threading
+import time
+
+import requests
+
+LLM_URL = 'https://api.deepseek.com/chat/completions'
+LLM_MODEL = 'deepseek-v4-flash'
+LLM_TIMEOUT = 180
+
+CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'deep')
+
+# 生成逻辑版本号：任何影响正文的改动都要 +1，让旧缓存自动失效
+# 2026-10-20 v8：coverage 改为由调用方统一传入（研报通道 + 行业结构层），
+# 避免 deep 页与 modules/口播页报出不同等级。
+PIPELINE_VERSION = 16   # v16: 重写闭环三修(fix 下传/结构性medium进队列/未解明示); v15: prompt 规则22(核心数字不跨段重复)/23(禁价格高低措辞)/24(TTM结论要说清季度构成); v14: 段内禁自相矛盾
+_lock = threading.Lock()
+_mem = {}
+
+# 段落的禁用词（与 narrative 层同一把尺子：不给操作建议）
+BANNED_RE = re.compile(
+    r'买入|卖出|加仓|减仓|建仓|清仓|目标价|必涨|稳赚|推荐|抄底|逃顶|'
+    r'值得买|可以买|该买|该卖|满仓|空仓|加仓点|减仓点|目标价位')
+
+# 变相目标价：2026-10-20 critic 实测抓到的。
+# 「PE 回到历史中位 64.19，对应 24.4% 空间」——用分位倒算涨跌空间，
+# 哪怕后面加「不是对股价的判断」的免责声明，实质仍然是价格预测。
+# 所以这些表达直接禁掉，命中整句丢弃。
+BANNED_PREDICT_RE = re.compile(
+    r'对应\s*\d+(\.\d+)?\s*%?\s*(的)?\s*(上涨|下行|上行|涨幅|跌幅|空间)|'
+    r'(上涨|下行|上行)\s*空间\s*(约|大概|为)?\s*\d|'
+    r'若\s*PE\b.{0,20}\s*(回到|涨到|跌到)\s*\d|'
+    r'对应\s*(的)?\s*\d+(\.\d+)?\s*%\s*(的)?(上涨|下行|空间)|'
+    r'最坏情况下.{0,40}\d+(\.\d+)?\s*%|'
+    r'跌到\s*\d|涨到\s*\d')
+
+# 数字提取：含小数、百分号、万亿、倍
+NUM_RE = re.compile(r'[-+]?\d+(?:\.\d+)?\s*(?:%|倍|亿|万亿|万|元|个百分点|pp)?')
+
+
+# ================================================================== 段骨架
+SECTIONS = [
+    {'key': 'business', 'title': '业务结构',
+     'brief': '公司靠什么赚钱，有哪些业务板块，各自占比和增速，商业模式的关键特征是什么',
+     'min_chars': 180, 'max_chars': 600},
+    {'key': 'market', 'title': '市场空间',
+     'brief': '行业市场规模、增速、集中度，公司在其中的位置，需求来自哪里',
+     'min_chars': 180, 'max_chars': 600},
+    {'key': 'moat', 'title': '差异化壁垒',
+     'brief': '公司凭什么赢，壁垒是技术、渠道、规模还是转换成本，护城河能不能守住',
+     'min_chars': 180, 'max_chars': 600},
+    {'key': 'numbers', 'title': '数字检验',
+     'brief': '用财务数字检验前面三段的说法：增长是否真实、盈利质量如何、现金流是否跟上',
+     'min_chars': 220, 'max_chars': 700},
+    {'key': 'valuation', 'title': '估值与预期',
+     'brief': '当前估值处在什么位置，市场预期是什么，与实际经营是否匹配，适用哪种估值方法',
+     'min_chars': 200, 'max_chars': 600},
+    {'key': 'risk', 'title': '风险与安全',
+     'brief': '有哪些已兑现的风险、哪些是待观察的，安全边际有多大，最坏情况是什么',
+     'min_chars': 200, 'max_chars': 700},
+]
+
+# 哪些段落依赖外部深度数据（research）
+RESEARCH_DEPENDENT = {'business', 'market', 'moat'}
+
+# 行业结构数据（stockscore_industry）作为第三个 facts 源。
+# 定位：它不是"研报观点"，是自己从 tushare 成分股算出来的结构数据，
+# 所以走 facts 通道而不是 research 通道（research 通道会被 coverage 降级裁掉）。
+# 注入的段落：market（市场空间与竞争格局）、moat（竞争格局）、business（生意）。
+INDUSTRY_FEED_SECTIONS = {'market', 'moat', 'business'}
+
+
+# ================================================================== LLM
+def _call(messages, key, temperature=0.3, max_tokens=3000, retries=2,
+          with_meta=False):
+    """调用 LLM。
+
+    坑（2026-10-20 实测）：deepseek-v4-flash 会把 max_tokens 花在 reasoning_content 上，
+    正文 content 直接返回空串、finish_reason='length'。段落生成时 max_tokens=1800 就踩过。
+    修法：content 为空且 finish_reason='length' 时，**自动加倍预算重试**，
+    而不是当作失败直接丢弃这一段。
+
+    with_meta=True 时返回 (content, meta)，meta 含 finish_reason / 是否截断 /
+    reasoning 字符数。
+    坑（2026-10-20 实测·第二轮）：critic 形同虚设的根因是
+    **调用方看不到 finish_reason**——被截断了还以为写完了，
+    于是只按残缺 JSON 抢救，17 条意见只救回 1 条。截断信息必须从源头透出来。
+    """
+    body = {'model': LLM_MODEL, 'messages': messages,
+            'temperature': temperature, 'max_tokens': max_tokens}
+    last = None
+    budget = max_tokens
+    for attempt in range(retries + 1):
+        try:
+            body['max_tokens'] = budget
+            r = requests.post(LLM_URL, json=body, timeout=LLM_TIMEOUT,
+                              headers={'Authorization': 'Bearer ' + key,
+                                       'Content-Type': 'application/json'})
+            if r.status_code != 200:
+                last = 'HTTP %d %s' % (r.status_code, r.text[:150])
+                if r.status_code in (402, 403):
+                    raise RuntimeError(last)
+                time.sleep(2 + attempt * 3)
+                continue
+            j = r.json()
+            choice = (j.get('choices') or [{}])[0]
+            content = (choice.get('message') or {}).get('content') or ''
+            reasoning = (choice.get('message') or {}).get('reasoning_content') or ''
+            fr = choice.get('finish_reason')
+            meta = {'finish_reason': fr, 'truncated': fr == 'length',
+                    'reasoning_chars': len(reasoning), 'max_tokens': budget}
+            if not content.strip() and fr == 'length' and budget < 16000:
+                # 预算被 reasoning 吃光 —— 加倍再试
+                budget = min(budget * 2, 16000)
+                continue
+            if not content.strip():
+                # 没被截断却也空：换更保守的提示再试一次
+                budget = min(budget * 2, 16000)
+                if attempt < retries:
+                    continue
+                last = 'LLM 返回空内容 (finish_reason=%s)' % fr
+                break
+            if with_meta:
+                return content.strip(), meta
+            return content.strip()
+        except RuntimeError:
+            raise
+        except Exception as e:                       # noqa: BLE001
+            last = '%s: %s' % (type(e).__name__, e)
+            time.sleep(2 + attempt * 3)
+    raise RuntimeError(last or 'LLM 调用失败')
+
+
+# ================================================================== 事实打包
+def _num_only(x):
+    """把一个值规范化成可匹配的数字串集合。"""
+    try:
+        f = float(x)
+    except (TypeError, ValueError):
+        return set()
+    out = {'%g' % f}
+    if f == int(f):
+        out.add(str(int(f)))
+    out.add(('%.1f' % f).rstrip('0').rstrip('.'))
+    out.add(('%.2f' % f).rstrip('0').rstrip('.'))
+    # 千分位/万/亿 变体
+    for mul, suf in ((1e8, '亿'), (1e4, '万')):
+        v = f * mul
+        out.add('%g' % v)
+        if v == int(v):
+            out.add(str(int(v)))
+        out.add(('%g' % v) + suf)
+    return out
+
+
+def build_whitelist(facts_blocks, research_facts, industry_facts=None):
+    """建立"允许出现的数字"白名单。
+
+    来自：所有 facts 的 value 字段 + text 里出现的数字 + research 抽取项里的数字
+    + 行业结构数据里的数字（2026-10-20 新增）。
+    """
+    wl = set()
+    for blk in (facts_blocks or []):
+        for f in (blk if isinstance(blk, list) else blk.get('facts') or []):
+            if not isinstance(f, dict):
+                continue
+            v = f.get('value')
+            if isinstance(v, (int, float)):
+                wl |= _num_only(v)
+            for m in NUM_RE.finditer(str(f.get('text') or '')):
+                tok = m.group(0).replace(' ', '')
+                num = re.match(r'[-+]?\d+(?:\.\d+)?', tok)
+                if num:
+                    wl |= _num_only(num.group(0))
+    for f in (research_facts or []):
+        for m in NUM_RE.finditer(json.dumps(f, ensure_ascii=False)):
+            tok = m.group(0).replace(' ', '')
+            num = re.match(r'[-+]?\d+(?:\.\d+)?', tok)
+            if num:
+                wl |= _num_only(num.group(0))
+    for t in (industry_facts or []):
+        for m in NUM_RE.finditer(str(t)):
+            tok = m.group(0).replace(' ', '')
+            num = re.match(r'[-+]?\d+(?:\.\d+)?', tok)
+            if num:
+                wl |= _num_only(num.group(0))
+    return wl
+
+
+# ================================================================== 段落生成
+SECTION_SYSTEM = """你是一位资深买方研究员，写个股深度分析。你拿到的是**已经核实过的数字清单**，
+现在要把这些数字组织成一段可读的分析。
+
+铁律：
+1. **只能用清单里的数字**，一个字都不许改。清单里没有的数字绝对不许出现。
+2. 禁止出现：买入、卖出、加仓、减仓、建仓、清仓、目标价、必涨、稳赚、推荐、抄底、逃顶、
+   值得买、可以买、该买、该卖、满仓、空仓。
+3. 不预测涨跌，不给操作建议。只分析公司现在的状态。
+4. 少用术语，必须用时立刻跟一句人话解释。
+5. 句子短，一段 3–6 句。不要排比，不要"综上所述""不难看出"这类套话。
+6. 指标名照抄清单里的叫法，不要自己换算成别的指标，不要把两个指标混着说。
+7. 清单里明确写了"数据不可得"的，就直说这个维度拿不到数据，**不许用常识补**。
+8. 如果清单给的信息不足以支撑一个完整判断，就写得短而实，**不许注水凑字数**。
+9. **不要重复别的段落已经用过的数字**。本段只讲本段的事，前面段落讲过的核心数字不要再抄一遍。
+   除非本段必须引用它做对照（那就一句话带过，不要展开）。
+10. 本段尽量引入清单里**别的段落还没用**的数字，让各段信息量不重复。
+11. **绝对不许用历史分位倒算涨跌空间**。不许写"PE 回到历史中位对应多少空间"、
+    "跌到某个位置意味着多少跌幅"这类话。分位只能说明"现在的价格在历史什么位置"，
+    停在刻度上，不许往前推价格。
+12. 如果本段主题的核心数据清单里没有，就**明说"这个维度拿不到数据"**，
+    然后写能拿到的部分。**不许用别的段落的数字凑数、不许用常识补、不许注水。**
+    宁可本段只有两三句实话。
+13. **"数据不可得"和"数据为负"是两回事，不许混用**。
+    清单里写了"不可得/缺失"，才是拿不到；清单里给了具体负数，
+    就说"是负的"，**不许写成"不可得"**。同理，
+    清单里没给 EBITDA 却给了 FCF，就不能说"FCF 不可得"。
+    宁可只说清单里有的那个。
+14. 引用阈值时必须同时给出阈值的来源口径（哪来的、什么标准），
+    清单里没写阈值的就不要提具体百分比。
+15. **不许自己算清单里没有的派生数字**。清单给了 6.64 亿元和上年 6.35 亿元，
+    你不许自己算出"增长 4.6%"——要写增长就引用清单里已有的同比口径。
+    清单给了"同比下降 45.7%"，就不许再用两个绝对值反算出别的幅度。
+    派生数字一律不许出现，宁可只说绝对值。
+16. **不许把别的段落的数字抄过来充数**。本段主题的数据如果就那么点，
+    就把那几个数字讲透（讲清楚它是什么、跟什么比、口径是什么），
+    不要靠复述别段已经说过的内容来撑长度。
+    如果本段确实没有独有信息，就写清楚"这块没有可核验数据"然后收尾，
+    不要写满字数。**宁可短，不注水**。
+
+17. **估值一律以扣非口径为主**。清单里如果给了「扣非归母净利」「扣非归母净利(TTM)」
+    「PE(扣非TTM)」，就必须以扣非口径陈述，表观 PE 只能作为一句对照，
+    并说明它的分母含非经常性损益。清单说扣非口径 PE 不成立（扣非亏损）时，
+    就直说「扣非口径 PE 不成立，PE 这个指标在这里没有意义」，
+    **不许把表观 PE 写成估值结论**。不给扣非口径数字时，不许自己拿归母净利减非经常损益凑一个。
+18. 归母净利与扣非归母净利差距大时，差距本身就是结论，要讲出来
+    （利润里有多少不是主业挣的）。
+19. **引述研报数字必须标报告期，并说明与最新财报期的口径差**。
+    研报用的是它披露日的报表期（常常是上一期中报），清单里的「报告期」是更新的期次，
+    两者数字不一样是正常的口径差。但必须写清楚「研报口径为 X 期，最新财报为 Y 期」，
+    不许让读者以为是同一个数的两个版本，更不许用「以清单为准」一句话把差异盖过去。
+21. **同一段内不许出现互相矛盾的表述**。每段写完自查一遍：
+    前半句说「资产端缓冲还算厚」、后半句说「不构成安全垫」，这就是矛盾，统一成一个结论。
+    另外两条硬约束：
+    - 市值占比 ≠ 收入份额。**不许**用「占行业市值 0.07%」论证规模壁垒或规模劣势；
+      清单里没有收入份额就明说「收入份额数据不可得」。
+    - 清单里标了「不成立」「仅供参考」「不构成…判断」的指标，后续推理不许拿它当结论依据。
+22. **核心数字不要在多段重复**。同一组数字（扣非净利、经营现金流、自由现金流、
+    「扣非 PE 不成立」）只在最能说明问题的那一段展开写，其他段落只引用结论、不复述数字，
+    不许三段近乎逐字重复。
+23. **不许用「价格位置不高/偏低/处于低估区」这类措辞下结论**。分位数字就写分位数字；
+    数据源自带的判定词（合理偏低/低估区）最多引一次，且要说明它基于表观口径、含非经常性损益。
+24. **用 TTM 口径下结论时必须说清构成**。比如报告期扣非为正、TTM 扣非为负，
+    要说明是哪个季度由盈转亏，或明说季度构成不可得，不许只说「已经亏损」。
+25. 引述研报的 EPS / PE 前先做一次自洽检查：研报 EPS × 股本 ≈ 市值。
+    与清单总市值对不上，说明研报用的是另一个价格日或另一个股本口径，
+    要么写明差异来源，要么不写这个数——不许把两个互斥的数字并排放进正文。
+
+只输出 JSON：{"text":"这段分析"}"""
+
+
+def _section_prompt(sec, facts_lines, research_lines, name, code, coverage,
+                    industry_lines=None):
+    parts = []
+    parts.append('公司：%s（%s）' % (name, code))
+    parts.append('本段任务（%s）：%s' % (sec['title'], sec['brief']))
+    parts.append('目标字数：%d–%d 字' % (sec['min_chars'], sec['max_chars']))
+    if industry_lines:
+        parts.append('\n【行业结构数据（从申万行业成分股实算，可直接引用）】\n'
+                     + '\n'.join(industry_lines))
+    if research_lines:
+        parts.append('\n【券商研报正文抽取的事实（已逐字回验，可直接引用）】\n'
+                     + '\n'.join(research_lines))
+    else:
+        parts.append('\n【券商研报正文抽取的事实】\n（本次没有抓到可回验的研报要点。'
+                     '如果本段需要行业空间/竞争格局这类研报信息，你必须直说"该维度无公开数据源"，'
+                     '不许用常识或印象编写。）')
+    parts.append('\n【可用数字与事实清单（唯一可引用的来源）】\n'
+                 + ('\n'.join(facts_lines) if facts_lines else '（本段无数字清单）'))
+    if coverage == 'C':
+        parts.append('\n【注意】本股外部深度数据覆盖度为 C 级。若清单不足以写满，'
+                     '就写短一些并显式说明缺什么，不要注水。')
+    return '\n'.join(parts)
+
+
+def _pick_facts(all_facts, sec_key, max_lines=28, used_idx=None):
+    """按段落主题挑相关 facts。
+
+    做法：每个 facts 条目带 label，按关键词打分匹配，取分最高的。
+    落选的也保留若干条通用财务条，保证不漏关键数字。
+
+    used_idx：前面段落已经用过的 fact 下标。这些条目**降权但不排除**——
+    坑（2026-10-20 实测）：同一组数字在五个板块被反复照抄，
+    critic 专门挑出了这条。降权让后续段落优先用没出现过的数字。
+    """
+    kw = {
+        'business': ['业务', '主营', '分部', '构成', '产品', '客户', '收入'],
+        'market': ['行业', '市场', '空间', '景气', '份额', '市占', '需求', '规模', '增速'],
+        'moat': ['壁垒', '竞争', '毛利', 'ROIC', '研发', '技术', '优势', '护城河', '定价'],
+        'numbers': ['现金流', '毛利', '净利', 'ROIC', 'ROE', '应收', '存货', '负债', '增长',
+                    '同比', '费用', '周转', '毛利', '净现', '扣非', '非经常', '归母'],
+        'valuation': ['估值', 'PE', 'PB', 'PS', '分位', '市值', 'EPS', '预期', 'PEG',
+                      '股息', 'DCF', 'EV'],
+        # 2026-10-20 修：risk 段原来挑不到「PE(扣非TTM)」这条 fact，
+        # 于是 risk 段写「扣非口径的PE清单里没有给」，而 valuation 段写「扣非 PE 不成立」，
+        # 两段自相矛盾（688508 实测）。补上 PE/扣非/估值 关键词。
+        'risk': ['风险', 'Beta', '回撤', '波动', '商誉', '杠杆', '负债', '质押', '解禁',
+                 '换手', '成交', '安全边际', '现金', '覆盖', 'PE', '扣非', '估值', '非经常'],
+    }.get(sec_key, [])
+    used = used_idx or set()
+
+    scored = []
+    for i, f in enumerate(all_facts):
+        lab = str(f.get('label') or '')
+        txt = str(f.get('text') or '')
+        s = sum(2 for k in kw if k in lab) + sum(1 for k in kw if k in txt)
+        if i in used:
+            s -= 3                      # 前面用过了，降权（不是排除）
+        scored.append((s, -i, i, f))
+    scored.sort(key=lambda x: (-x[0], -x[1]))
+    return [(f, i) for _, _, i, f in scored[:max_lines]]
+
+
+def _extract_text(raw):
+    """从模型原始输出里稳健地抽出正文。
+
+    三个失败模式都要兜住：
+      1. 正常 JSON {"text": "..."}
+      2. 包了 ```json 代码块
+      3. 被 max_tokens 截断的 JSON —— 丢掉 JSON 外壳，把字符串内容救出来
+    """
+    if not raw:
+        return ''
+    s = raw.strip()
+    s = re.sub(r'^```(?:json)?\s*', '', s)
+    s = re.sub(r'\s*```$', '', s).strip()
+    i, j = s.find('{'), s.rfind('}')
+    if i >= 0 and j > i:
+        try:
+            obj = json.loads(s[i:j + 1])
+            if isinstance(obj, dict) and obj.get('text'):
+                return str(obj['text']).strip()
+        except Exception:
+            pass
+    # 截断兜底：抓 "text" 后面那段字符串
+    m = re.search(r'"text"\s*:\s*"(.*)', s, re.S)
+    if m:
+        t = m.group(1)
+        # 截断在转义中间，先去掉尾部不完整转义
+        t = re.sub(r'\\$', '', t)
+        t = t.replace('\\n', '\n').replace('\\t', '\t').replace('\\"', '"')
+        t = re.sub(r'\\u[0-9a-fA-F]{4}', '', t)
+        return t.strip().strip('"').strip()
+    return s
+
+
+def _gen_section(sec, facts, research_facts, name, code, coverage, key,
+                 extra_note='', used_idx=None, industry_facts=None):
+    facts_lines = []
+    picked = _pick_facts(facts, sec['key'], used_idx=used_idx)
+    for f, _idx in picked:
+        lab = f.get('label') or ''
+        txt = f.get('text') or ''
+        src = f.get('source') or ''
+        if txt:
+            facts_lines.append('- [%s] %s%s' % (lab, txt, ('（来源：%s）' % src) if src else ''))
+    research_lines = []
+    for f in research_facts:
+        research_lines.append('- [%s] %s' % (f.get('label'), f.get('text')))
+    # 行业结构数据：只投给用得上的段落（market/moat/business）
+    industry_lines = []
+    if industry_facts and sec['key'] in INDUSTRY_FEED_SECTIONS:
+        industry_lines = ['- %s' % t for t in industry_facts]
+
+    user = _section_prompt(sec, facts_lines, research_lines, name, code, coverage,
+                            industry_lines=industry_lines)
+    if extra_note:
+        user += '\n\n【重写要求】上一次生成被校验拦下，问题：' + extra_note
+
+    try:
+        raw = _call([{'role': 'system', 'content': SECTION_SYSTEM},
+                     {'role': 'user', 'content': user}], key,
+                     temperature=0.35, max_tokens=2600)
+        text = _extract_text(raw)
+        # 截断检测（2026-10-20 实测）：critic 抓到过一段
+        # "……预期与经营的差距"戛然而止——句子没有谓语也没有结论。
+        # 根因是 max_tokens 用完（finish_reason=length），
+        # JSON 虽然能解析但正文被砍在半句。检测到就重试一次。
+        for _try in range(2):
+            if not _looks_truncated(text):
+                break
+            raw = _call([{'role': 'system', 'content': SECTION_SYSTEM},
+                         {'role': 'user', 'content': user +
+                          '\n\n【注意】上一版结尾被截断了，'
+                          '请把最后一段写完整，说完这句话。'}], key,
+                        temperature=0.35, max_tokens=3200)
+            text = _extract_text(raw)
+        return text, [i for _, i in picked]
+    except Exception as e:                           # noqa: BLE001
+        return '（本段生成失败：%s）' % (str(e)[:60],), []
+
+
+def _looks_truncated(text):
+    """判断一段文本是否被截断在半句。"""
+    t = (text or '').strip()
+    if not t:
+        return True
+    if t[-1] not in '。！？!?）)」”"…':
+        return True
+    # 末句太短（<8 字）且没有标点 → 典型的半句截断
+    last = re.split(r'[。！？!?\n]', t)[-1] if t else ''
+    if last and len(last.strip()) < 8 and '，' in t[-30:]:
+        return True
+    return False
+
+
+# ================================================================== 数字回验
+def verify_numbers(text, whitelist, sec_facts):
+    """找出文中不在白名单的数字。返回 {'bad': [...], 'ok': bool}"""
+    bad = []
+    src = ' '.join(str(f.get('text') or '') for f in sec_facts)
+    for m in NUM_RE.finditer(text or ''):
+        tok = m.group(0).replace(' ', '')
+        num_m = re.match(r'[-+]?\d+(?:\.\d+)?', tok)
+        if not num_m:
+            continue
+        raw = num_m.group(0)
+        # 排除年份、序号、常见小整数
+        if raw in ('1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '100'):
+            continue
+        # 排除所有年份（1900-2099）。坑（2026-10-20 实测）：硬编码只排到 2027，
+        # 研报里出现"2028 年量产"就被判成未核实数字。
+        if len(raw) == 4 and raw.isdigit() and 1900 <= int(raw) <= 2099:
+            continue
+        if _num_only(raw) & whitelist:
+            continue
+        # 允许 1.1 倍这种由白名单除出来的？严格起见不算
+        if raw in src:
+            continue
+        bad.append(raw)
+    # 去重保序
+    seen, uniq = set(), []
+    for b in bad:
+        if b not in seen:
+            seen.add(b)
+            uniq.append(b)
+    return {'bad': uniq, 'ok': not uniq}
+
+
+def _guard_banned(text):
+    """命中禁词整句丢弃。返回 (清洗后文本, 命中词列表)"""
+    hits = BANNED_RE.findall(text or '')
+    pred_hits = BANNED_PREDICT_RE.findall(text or '')
+    if not hits and not pred_hits:
+        return text or '', []
+    parts = re.split(r'(?<=[。！？!?；;])', str(text))
+    keep = [s for s in parts
+            if s.strip() and not BANNED_RE.search(s) and not BANNED_PREDICT_RE.search(s)]
+    return ''.join(keep).strip(), sorted(set(hits) | set(p[0] if isinstance(p, tuple) else p
+                                                      for p in pred_hits))
+
+
+# ================================================================== 矛盾检测
+# 指标别名 → 极性词。同一个指标出现相反极性词，才算真矛盾。
+# 只比"同一指标"，不同指标一升一降是正常现象（收入增、现金流降），不算矛盾。
+METRIC_POLARITY = [
+    (r'毛利率', ('提升', '上升', '提高', '改善', '回升'), ('下降', '下滑', '回落', '走低', '承压', '减少')),
+    (r'净利率|利润率', ('提升', '上升', '提高', '改善'), ('下降', '下滑', '回落', '走低', '承压')),
+    (r'ROIC|ROE|投入资本回报|净资产收益', ('提升', '上升', '提高', '改善'), ('下降', '下滑', '回落', '走低')),
+    (r'现金流', ('改善', '转正', '回升', '增长'), ('为负', '转负', '恶化', '下滑', '流出')),
+    (r'收入|营收|销售额', ('高增长', '高速增长', '快速增长'), ('下滑', '负增长', '萎缩')),
+    (r'份额|市占率', ('提升', '上升', '提高'), ('下降', '下滑', '回落', '丢失')),
+    (r'负债率|杠杆', ('上升', '提高', '恶化'), ('下降', '回落', '改善')),
+    (r'存货周转|应收周转', ('加快', '改善', '提升'), ('变慢', '恶化', '拉长', '下降')),
+]
+
+# 明确互斥的定性词对（同一主体才比）
+EXCLUSIVE_PAIRS = [
+    ('壁垒稳固', '壁垒不牢'),
+    ('有壁垒', '无壁垒'),
+    ('净现金', '净负债'),
+    ('龙头', '出局者'),
+    ('低估', '高估'),
+]
+
+# 某些词有多义，必须带上下文锚点才算数。
+# 坑（2026-10-20 实测）：「市销率已在低估区」vs「只看归母净利润会高估这家公司
+# 当期主业赚到的钱」——第二个「高估」说的是利润不是估值，被误判成估值矛盾。
+# 修法：命中词所在小句必须同时出现锚点词，否则该命中不算。
+PAIR_ANCHORS = {
+    '低估': ('估值', '市盈率', '市净率', '市销率', 'PE', 'PB', 'PS',
+             '分位', '价格', '股价', '区间', '刻度'),
+    '高估': ('估值', '市盈率', '市净率', '市销率', 'PE', 'PB', 'PS',
+             '分位', '价格', '股价', '区间', '刻度'),
+}
+
+
+def _sentences(text):
+    return [s for s in re.split(r'[。！？!?\n]', text or '') if s.strip()]
+
+
+def _clauses(sent):
+    """把句子按标点切成小句。极性词必须和指标在**同一小句**才算数。
+
+    否则「研发费率同比提高 1.55pct，毛利率同比下降」会被误判成毛利率既升又降。
+    """
+    parts = re.split(r'[，,、；;：:]', sent)
+    return [p for p in parts if p.strip()]
+
+
+def detect_contradictions(sections):
+    """跨段矛盾检测（精确版）。
+
+    规则：同一指标、同一小句里出现相反极性词才算矛盾。
+    不同指标一升一降是正常现象（收入增、现金流降），不算。
+    """
+    out = []
+    texts = {s['key']: s.get('text', '') for s in sections}
+    titles = {s['key']: s['title'] for s in sections}
+
+    # 1) 同指标极性冲突
+    for metric_re, up_words, down_words in METRIC_POLARITY:
+        hit_up, hit_down = [], []
+        for key, txt in texts.items():
+            for sent in _sentences(txt):
+                for cl in _clauses(sent):
+                    if not re.search(metric_re, cl):
+                        continue
+                    if any(w in cl for w in up_words):
+                        hit_up.append((key, cl))
+                    if any(w in cl for w in down_words):
+                        hit_down.append((key, cl))
+        if hit_up and hit_down:
+            ku, su = hit_up[0]
+            kd, sd = hit_down[0]
+            if ku == kd:
+                continue
+            out.append({
+                'type': 'contradiction',
+                'detail': '同一指标「%s」前后表述相反' % metric_re,
+                'a': titles.get(ku, ku), 'b': titles.get(kd, kd),
+                'a_text': su[:140], 'b_text': sd[:140]})
+
+    # 2) 定性互斥词对
+    #    坑（2026-10-20）：「账面上的净现金是负的」和「处于净负债状态」说的是同一件事，
+    #    却被判成矛盾。修法：命中词所在小句里若带否定词（负/不是/没有/缺/不足），
+    #    该命中视为"被否定的表述"，不算数。
+    NEG = ('负', '不是', '没有', '缺', '不足', '低于', '小于', '为零', '没有净')
+    for wa, wb in EXCLUSIVE_PAIRS:
+        def _hits(word):
+            """某词的有效命中：命中词 + 无否定 + 满足锚点要求。"""
+            anchors = PAIR_ANCHORS.get(word)
+            res = []
+            for k, t in texts.items():
+                for sent in _sentences(t):
+                    for cl in _clauses(sent):
+                        if word not in cl:
+                            continue
+                        if any(n in cl for n in NEG):
+                            continue
+                        if anchors and not any(a in cl for a in anchors):
+                            continue
+                        res.append((k, cl))
+                        break
+            return res
+
+        ka = _hits(wa)
+        kb = _hits(wb)
+        if ka and kb and ka[0][0] != kb[0][0]:
+            out.append({'type': 'contradiction',
+                        'detail': '「%s」与「%s」互斥' % (wa, wb),
+                        'a': titles.get(ka[0][0], ka[0][0]),
+                        'b': titles.get(kb[0][0], kb[0][0]),
+                        'a_text': ka[0][1][:140], 'b_text': kb[0][1][:140]})
+    # 3) 段内自相矛盾：同一段里先说"方向不一致"又说"方向一致"
+    #    坑（2026-10-20 实测）：估值段前半句"三个分位给出的方向并不一致"，
+    #    后半句"拉长到10年，三者分位分别是…方向一致"——同一段自己打自己。
+    #    这是纯逻辑错误，必须查出来。
+    CONSIST = re.compile(r'方向\s*(并)?不?一致|结论\s*(并)?不?一致|不一致')
+    CONSIST_REV = re.compile(r'方向\s*一致|结论\s*一致')
+    for key, txt in texts.items():
+        if not txt:
+            continue
+        c1 = CONSIST.search(txt)
+        c2 = CONSIST_REV.search(txt)
+        if c1 and c2:
+            # 确认不是同一处文字（"方向不一致"里也含"一致"）
+            if c1.start() != c2.start():
+                out.append({
+                    'type': 'contradiction',
+                    'detail': '同一段内先说不一致、又说一致',
+                    'a': titles.get(key, key), 'b': titles.get(key, key),
+                    'a_text': txt[max(0, c1.start() - 40):c1.start() + 60],
+                    'b_text': txt[max(0, c2.start() - 40):c2.start() + 60]})
+                break
+    return out
+
+
+# ================================================================== critic
+CRITIC_SYSTEM = """你是一位严格到近乎苛刻的证券研究编辑，负责审阅一篇个股深度分析。
+你**只提意见，不重写文章**。
+
+你要检查：
+1. **数字一致性**：同一指标在文中不同段落出现的数字是否一致？有没有和事实清单矛盾？
+2. **逻辑自洽**：前文的判断能不能支撑后文的结论？有没有自相矛盾？
+3. **注水**：哪些段落是空话、没有信息量？哪些是常识凑数？
+4. **越界**：有没有出现操作建议、目标价、涨跌预测？
+5. **缺口**：该说"数据不可得"的地方，是不是用常识糊过去了？
+
+只输出 JSON：
+{"issues":[{"type":"数字不一致|逻辑矛盾|注水|越界|缺口掩盖|表述不清",
+  "target":"business|market|moat|numbers|valuation|risk",
+  "problem":"具体问题",
+  "fix":"具体怎么改","severity":"high|medium|low"}],
+ "summary":"整体质量判断，一句话"}
+
+【输出长度硬约束】（2026-10-20 实测：不限长度时输出被 max_tokens 截断，
+17 条意见只救回 1 条，critic 等于没有）
+- 最多 8 条意见，按严重度从高到低排，只报真正影响结论的
+- 每条 problem 不超过 30 字，fix 不超过 30 字
+- summary 不超过 40 字
+- 宁可少报，不可写不完"""
+
+
+def run_critic(sections, key):
+    body = '\n\n'.join('[%s]\n%s' % (s['title'], s['text']) for s in sections
+                       if s.get('text'))
+    # 坑（2026-10-20 实测·第二轮）：原来这里靠「返回文本里是否含'被截断'字样」
+    # 判断要不要重试——但 LLM 正文里根本不会出现这种字样，判断恒为假，
+    # 于是被截断的输出被当成完整结果直接用，critic 形同虚设。
+    # 正确做法：从 _call 拿 finish_reason 真相（truncated 标志），据此决定重试。
+    last = ''
+    truncated = False
+    attempt = 0
+    budgets = [6000, 12000, 12000]
+    for attempt in range(3):
+        extra = ''
+        if attempt >= 1:
+            extra = ('\n\n【重试提示】上一次输出超长被截断。'
+                     '这次最多 5 条意见，每条不超过 25 字，只报最关键的问题。')
+        try:
+            raw, meta = _call(
+                [{'role': 'system', 'content': CRITIC_SYSTEM},
+                 {'role': 'user',
+                  'content': '请审阅以下个股深度分析：\n\n' + body + extra}],
+                key, temperature=0.2, max_tokens=budgets[attempt], with_meta=True)
+        except Exception as e:                       # noqa: BLE001
+            return {'issues': [], 'summary': 'critic 不可用：%s' % (str(e)[:60],)}
+        last = raw or ''
+        truncated = bool(meta.get('truncated'))
+        if not truncated:
+            break
+    out = _parse_critic(last)
+    out['truncated'] = truncated
+    out['retry_rounds'] = attempt + 1
+    return out
+
+
+def _parse_critic(raw):
+    """解析 critic 输出。截断时逐个 issue 抢救，不整体丢弃。
+
+    坑（2026-10-20 实测·第二轮）：原来的抢救正则要求
+    type→target→problem→fix→severity **严格按此顺序出现**且中间不能有别的字段。
+    模型换个字段顺序、或少给一个字段，整条意见就整条丢掉——
+    实测 17 条意见只救回 1 条。
+    修法：先按大括号切出每个 issue 块，再逐字段独立提取，
+    字段顺序无关、缺字段也能救回。
+    """
+    s = (raw or '').strip()
+    s = re.sub(r'^```(?:json)?\s*', '', s)
+    s = re.sub(r'\s*```$', '', s).strip()
+    i, j = s.find('{'), s.rfind('}')
+    if i >= 0 and j > i:
+        try:
+            obj = json.loads(s[i:j + 1])
+            if isinstance(obj, dict):
+                obj.setdefault('issues', [])
+                return obj
+        except Exception:
+            pass
+    # 截断兜底：切叶子块，逐块逐字段提取（字段顺序无关）
+    issues = []
+    seen = set()
+    for blk in _leaf_blocks(s):
+        if '"type"' not in blk and '"problem"' not in blk:
+            continue
+        it = {}
+        for field in ('type', 'target', 'problem', 'fix', 'severity'):
+            m = re.search(r'"%s"\s*:\s*"((?:[^"\\]|\\.)*)"' % field, blk)
+            if m:
+                it[field] = _clean(m.group(1))
+        if not (it.get('problem') or it.get('type')):
+            continue
+        sig = (it.get('target', ''), it.get('problem', '')[:40])
+        if sig in seen:
+            continue
+        seen.add(sig)
+        issues.append(it)
+    if issues:
+        return {'issues': issues,
+                'summary': 'critic 输出被截断，已抢救 %d 条意见' % len(issues)}
+    return {'issues': [], 'summary': 'critic 输出无法解析'}
+
+
+def _json_blocks(s):
+    """切出文本里所有闭合的 {...} 块（含嵌套层）。
+
+    坑（2026-10-20 实测·第三轮）：只取「顶层」块时，
+    critic 输出形如 {"issues":[{...},{...}]}，
+    外层 {} 因截断永远不闭合 → 整段被当成**一个**块，
+    于是 4 条意见仍然只救回 1 条。
+    修法：栈式扫描，把每一层闭合的块都吐出来，由调用方按字段挑。
+    """
+    out = []
+    stack = []
+    in_str = False
+    esc = False
+    for i, ch in enumerate(s):
+        if in_str:
+            if esc:
+                esc = False
+            elif ch == '\\':
+                esc = True
+            elif ch == '"':
+                in_str = False
+            continue
+        if ch == '"':
+            in_str = True
+        elif ch == '{':
+            stack.append(i)
+        elif ch == '}':
+            if stack:
+                st = stack.pop()
+                out.append(s[st:i + 1])
+    # 尾部被截断的残块（无闭合 }）——按栈里剩余的起点逐个补捞
+    for st in stack:
+        out.append(s[st:])
+    return out
+
+
+def _leaf_blocks(s):
+    """只取不含嵌套 '{' 的叶子块——也就是一条条 issue 本身。"""
+    return [b for b in _json_blocks(s) if '{' not in b[1:]]
+
+
+def _clean(s):
+    """清理 JSON 转义残留（截断抢救时残留的 \\ 和半截引号）。"""
+    s = (s or '').replace('\\"', '"').replace("\\'", "'").replace('\\n', ' ')
+    s = s.replace('\\\\', '').strip()
+    return s.strip('"').strip()
+
+
+# ================================================================== 组装
+def _assemble(sections, coverage, code, name, tier_note):
+    blocks = []
+    for s in sections:
+        if not s.get('text'):
+            continue
+        blocks.append({'key': s['key'], 'title': s['title'], 'text': s['text'],
+                       'chars': len(s['text']),
+                       'note': s.get('note') or '',
+                       'unverified_numbers': s.get('unverified_numbers') or [],
+                       'facts_used': s.get('facts_used') or 0})
+    total = sum(b['chars'] for b in blocks)
+    return {
+        'code': code, 'name': name, 'coverage': coverage,
+        'sections': blocks, 'total_chars': total,
+        'tier_note': tier_note,
+        'coverage_note': _coverage_note(coverage, blocks),
+    }
+
+
+def _coverage_note(coverage, blocks):
+    have = {b['key'] for b in blocks}
+    missing = [s['title'] for s in SECTIONS if s['key'] not in have]
+    if coverage == 'A':
+        return '外部深度数据覆盖完整，六段全出。'
+    if missing:
+        return '外部深度数据覆盖 %s 级，%s 因无可核验数据源未展开（不做常识补写）。' % (
+            coverage, '、'.join(missing))
+    return '外部深度数据覆盖 %s 级。' % coverage
+
+
+# ================================================================== 主流程
+def build_deep(code, name, facts_blocks, research, payload=None, key=None,
+               coverage=None, regenerate=True):
+    """生成深度分析。
+
+    facts_blocks: list of facts 列表（每项 {'key','label','value','text','source'}）
+    research: research block（stockscore_research.get_research 的返回）
+    payload: v3 打分 payload（用于取 tier_note）
+    """
+    from stockscore_research import facts_for_writer, coverage_level
+    research_facts = facts_for_writer(research)
+
+    # 行业结构数据（外部深度数据补漏机制的核心件）
+    # 定位：research 通道拿不到行业规模/集中度/份额（研报不写、也不可核），
+    # 这一层自己从申万成分股实算，数字可复算、可溯源。
+    # 拿不到就静默降级（industry_facts 为空 → 不进 prompt），
+    # 不许用常识补。
+    industry_facts = []
+    industry_raw = None
+    try:
+        from stockscore_industry import get_industry, facts_for_writer as _ind_facts
+        industry_raw = get_industry(code)
+        industry_facts = _ind_facts(industry_raw)
+    except Exception as e:                          # noqa: BLE001
+        industry_facts = []
+        industry_raw = {'error': str(e)[:80]}
+
+    # coverage 必须在拿到行业数据之后算：行业层能把 B/C 票升级到 A
+    coverage = coverage or coverage_level(research, industry_raw)
+
+    # 全部 facts 拉平
+    all_facts = []
+    for blk in (facts_blocks or []):
+        if isinstance(blk, list):
+            all_facts.extend(blk)
+        elif isinstance(blk, dict) and blk.get('facts'):
+            all_facts.extend(blk['facts'])
+    whitelist = build_whitelist([all_facts], research_facts, industry_facts)
+
+    # 决定要写哪几段
+    # 2026-10-20：coverage 由"研报通道 + 行业结构数据层"共同决定。
+    # 即使还是 C 级，只要有行业层数据（集中度/份额/景气），
+    # market 和 moat 两段就有可核数据可写——不能因为研报没有就整段留白。
+    has_ind = bool(industry_facts) and any(
+        ('集中度' in t) or ('行业市值占比' in t) or ('行业景气' in t)
+        for t in industry_facts)
+    if coverage == 'C':
+        wanted = [s for s in SECTIONS
+                  if s['key'] in ('numbers', 'valuation', 'risk')]
+        if has_ind:
+            wanted = [s for s in SECTIONS
+                      if s['key'] in ('numbers', 'valuation', 'risk',
+                                      'market', 'moat')]
+    elif coverage == 'B':
+        wanted = list(SECTIONS)
+    else:
+        wanted = list(SECTIONS)
+
+    sections = []
+    used_idx = set()          # 已经喂过的 fact 下标，后续段落降权
+    for sec in wanted:
+        text, picked_idx = _gen_section(sec, all_facts, research_facts, name, code,
+                                         coverage, key, used_idx=used_idx,
+                                         industry_facts=industry_facts)
+        text, hits = _guard_banned(text)
+        note = ''
+        if hits:
+            note = '出现禁词 %s' % '、'.join(hits)
+        v = verify_numbers(text, whitelist, all_facts)
+        if not v['ok'] and regenerate:
+            text, picked_idx = _gen_section(
+                sec, all_facts, research_facts, name, code, coverage, key,
+                used_idx=used_idx,
+                industry_facts=industry_facts,
+                extra_note='文中出现了事实清单里没有的数字 %s，'
+                           '请只使用清单中的数字重写。' % '、'.join(v['bad'][:8]))
+            text, hits2 = _guard_banned(text)
+            if hits2:
+                note = (note + '；' if note else '') + '重写后仍出现禁词 %s' % '、'.join(hits2)
+            v2 = verify_numbers(text, whitelist, all_facts)
+            if v2['ok']:
+                v = v2
+        used_idx.update(picked_idx)
+        sections.append({'key': sec['key'], 'title': sec['title'], 'text': text,
+                         'facts_used': len(picked_idx),
+                         '_picked_idx': picked_idx,
+                         'unverified_numbers': v['bad'], 'note': note})
+
+    contradictions = detect_contradictions(sections)
+    critic = run_critic(sections, key) if key else {'issues': [], 'summary': '未运行'}
+
+    # 裁决：critic 标 high 且指向某段 → 重生成该段。
+    # 轮次上限从 2 提到 3（2026-10-20 改）：原来写「两轮基本收敛」是建立在
+    # critic 每次只报 1 条意见的假象上（那时的截断 bug 让 17 条只剩 1 条）。
+    # critic 修好之后实测发现：第 2 轮复审会**新报出**第 1 轮没有的 high 问题
+    # （688508 实例：business 段「称收入结构已向新品类倾斜」与前文「三块金额拿不到」打架），
+    # 而最后一轮复审的结果只进页面、不再被处理 → 页面上挂着 high 级意见但正文没改。
+    # 现在允许第 3 轮把「复审新报出的 high」也改掉。
+    # 另加收敛判断：某轮复审的 high 数量没下降 → 停，避免无意义烧 token。
+    rewritten = False
+    rounds_used = 0
+    stuck = []          # 连续两轮复现的 issue 指纹 → 判定「改不动」，页面上明示
+    if regenerate and key:
+        sec_by_key = {s['key']: s for s in SECTIONS}
+        sec_by_title = {s['title']: s for s in SECTIONS}
+        prev_high = None
+        prev_fps = set()
+        for _round in range(3):
+            rounds_used = _round + 1
+            high_by_sec = {}
+            # 2026-10-20 改（三处）：
+            # ① 结构性问题（越界/注水/表述不清/缺口掩盖）即使是 medium 也进队列。
+            #    旧代码只挑 high，于是 5 条 medium 在结构上不可能被修。
+            # ② 把 critic 的 fix 一并传给写手。旧代码只传 problem，写手知道有病不知道药方，
+            #    整段重生成会再踩同一个坑（688508 实测：moat 段打了「已按审读意见重写」标记，
+            #    「商誉 0.6% → 技术自研」一字未改）。
+            # ③（在循环尾部）收敛判断不假装收敛：复现两轮的 issue 记成未解并明示。
+            STRUCT_FIX = {'越界', '注水', '表述不清', '缺口掩盖', '逻辑矛盾'}
+            for it in (critic.get('issues') or []):
+                sev = (it.get('severity') or '').strip().lower()
+                typ = (it.get('type') or '').strip()
+                if sev != 'high' and typ not in STRUCT_FIX:
+                    continue
+                tgt = (it.get('target') or '').strip()
+                sec = sec_by_key.get(tgt) or sec_by_title.get(tgt)
+                if not sec:
+                    # target 里可能夹带中文说明，取第一个能匹配上的段名
+                    for k2, s2 in sec_by_key.items():
+                        if tgt and (tgt in s2['title'] or tgt in k2):
+                            sec = s2
+                            break
+                if not sec:
+                    continue
+                prob = (it.get('problem') or '').strip()
+                fix = (it.get('fix') or '').strip()
+                entry = ('%s → 改法：%s' % (prob, fix)) if fix else prob
+                high_by_sec.setdefault(sec['key'], []).append(entry)
+            # 数字回验不通过的段落也要重写。
+            # 坑（2026-10-20 实测）：原来 verify_numbers 只把 bad 记到段上，
+            # 但没人拿它当触发条件——自造派生数字（19.69、4.6）算出来了却没人管。
+            for s in sections:
+                if s.get('unverified_numbers'):
+                    high_by_sec.setdefault(s['key'], []).append(
+                        '文中出现了数据清单里没有的数字：%s。'
+                        '这些是自行推算的派生值，'
+                        '请删掉或者换成清单里已有的口径。'
+                        % '、'.join(s['unverified_numbers'][:6]))
+            if not high_by_sec:
+                break
+            for sec_key, probs in high_by_sec.items():
+                sec = sec_by_key.get(sec_key)
+                if not sec:
+                    continue
+                probs = [p for p in probs if p]
+                # 重写时把本段自己用过的 fact 从 used_idx 里摘掉：
+                # 否则降权机制会让重写版换掉自己那组数字，等于把问题换了个样。
+                own = set()
+                for s in sections:
+                    if s['key'] == sec_key:
+                        own = set(s.get('_picked_idx') or [])
+                        break
+                rewrite_used = used_idx - own
+                text, new_picked = _gen_section(
+                    sec, all_facts, research_facts, name, code,
+                    coverage, key, used_idx=rewrite_used,
+                    industry_facts=industry_facts,
+                    extra_note=('编辑审读发现以下问题，请修正：'
+                                + '；'.join(probs[:3])) if probs else '')
+                text, _ = _guard_banned(text)
+                for s in sections:
+                    if s['key'] == sec_key:
+                        s['text'] = text
+                        # note 只保留最新一次重写标记。
+                        # 坑（2026-10-20 实测）：原来按 rewritten 布尔值判断 tag，
+                        # 结果 note 累积成"（已按审读意见重写）（二审重写）"。
+                        # 现在直接替换，页面上永远只有一个标记。
+                        tag = ('（已按审读意见重写）' if not s.get('_rewritten')
+                               else '（二审重写）')
+                        base = (s.get('note') or '').split('（')[0].strip()
+                        s['note'] = (base + tag) if base else tag
+                        s['_rewritten'] = True
+                        s['unverified_numbers'] = verify_numbers(
+                            text, whitelist, all_facts)['bad']
+                        s['_picked_idx'] = new_picked
+                        rewritten = True
+            # 本轮重写完，重新检测+复审，作为下一轮的输入
+            contradictions = detect_contradictions(sections)
+            critic = run_critic(sections, key) if key else {'issues': [], 'summary': '未运行'}
+            if critic.get('issues'):
+                critic['rereviewed'] = True
+            # 收敛判断：复审出的 high 数量没比上一轮少 → 不再往下改。
+            # 判据是「数量」，不是「有没有」：改不动的问题会稳定在同一个数量上，
+            # 继续重写只是把同样的文字换个说法，token 翻倍。
+            # 2026-10-20 改：break 不等于「已改好」。把连续两轮复现的 issue 记进 stuck，
+            # 后面在段落 note 与 payload 里明示——旧代码只 break，页面看不出还有 high 挂着。
+            cur_fps = {}
+            for it in (critic.get('issues') or []):
+                if (it.get('severity') or '').strip().lower() != 'high':
+                    continue
+                fp = '%s|%s' % ((it.get('type') or '').strip(),
+                                (it.get('target') or '').strip())
+                cur_fps[fp] = it
+            _known = {x['fp'] for x in stuck}
+            for fp, it in cur_fps.items():
+                if fp in prev_fps and fp not in _known:
+                    stuck.append({'fp': fp, 'type': it.get('type'),
+                                  'target': it.get('target'),
+                                  'problem': it.get('problem'),
+                                  'fix': it.get('fix')})
+            high_now = len(cur_fps)
+            if prev_high is not None and high_now >= prev_high:
+                break
+            prev_high = high_now
+            prev_fps = set(cur_fps)
+
+    if stuck:
+        # 连续两轮改不完的意见 → 在受影响段落上明示，不假装收敛
+        _stuck_tgt = {(x.get('target') or '').strip() for x in stuck}
+        for s in sections:
+            if s.get('key') in _stuck_tgt or s.get('title') in _stuck_tgt:
+                if '未解' not in (s.get('note') or ''):
+                    s['note'] = ((s.get('note') or '') + '（仍有审读意见未解）').strip()
+
+    tier_note = ''
+    if payload:
+        tier_note = '%s 分，%s。%s' % (
+            payload.get('total'), payload.get('tier'),
+            (payload.get('tag') or {}).get('desc') or '')
+
+    # 注意：矛盾检测与 critic 的结果来自上面重写循环内部的复检，
+    # 报的是**最终文本**，不是改之前的版本。
+
+    out = _assemble(sections, coverage, code, name, tier_note)
+    out['contradictions'] = contradictions
+    out['critic'] = critic
+    # 重写痕迹要透出：页面上要能看出"这段被审读意见改过"
+    out['rewritten'] = rewritten
+    out['rewrite_rounds'] = rounds_used
+    out['sections_rewritten'] = [s['key'] for s in sections if s.get('_rewritten')]
+    # 改不动的审读意见：透出到 payload，页面/排查都能看到，不假装已收敛
+    out['unresolved'] = [{k: v for k, v in x.items() if k != 'fp'} for x in stuck]
+    out['research_note'] = (research or {}).get('note') or ''
+    out['research_reports'] = (research or {}).get('report_count', 0)
+    out['unverified_numbers'] = sorted({n for s in sections for n in s.get('unverified_numbers', [])})
+    # 行业结构数据（外部深度数据补漏机制的产出，前端可展示、可溯源）
+    if industry_raw:
+        out['industry'] = {
+            'classification': industry_raw.get('industry') or {},
+            'concentration': industry_raw.get('concentration'),
+            'growth': industry_raw.get('growth'),
+            'index': industry_raw.get('industry_index'),
+            'notes': industry_raw.get('notes') or [],
+        }
+    out['generated_at'] = time.time()
+    return out
+
+
+# ================================================================== 缓存
+def _cache_path(code, asof):
+    # 带 PIPELINE_VERSION：生成逻辑一改，旧缓存自动失效。
+    # 坑（2026-10-20 实测）：改了禁词规则和 critic 重写逻辑后，
+    # 缓存 key 仍是 (code, asof)，结果 API 返回的还是改之前的旧文本。
+    return os.path.join(CACHE_DIR, '%s_%s_v%d.json' % (code, asof, PIPELINE_VERSION))
+
+
+def get_cached(code, asof=None):
+    """只读已缓存的深度分析，不触发生成。
+
+    给"手机端口播版"用：口播稿不需要现算六段深度分析，
+    有缓存就用（免费且能对齐口径），没缓存就返回 None 让口播稿独立成稿。
+    """
+    asof = asof or time.strftime('%Y%m%d')
+    with _lock:
+        if (code, asof) in _mem:
+            return _mem[(code, asof)]
+    path = _cache_path(code, asof)
+    if not os.path.exists(path):
+        return None
+    try:
+        with open(path, encoding='utf-8') as f:
+            obj = json.load(f)
+    except Exception:
+        return None
+    with _lock:
+        _mem[(code, asof)] = obj
+    return obj
+
+
+def get_or_build(code, name, facts_blocks, research, payload=None, key=None,
+                 asof=None, force=False, coverage=None):
+    asof = asof or time.strftime('%Y%m%d')
+    with _lock:
+        if (code, asof) in _mem and not force:
+            return _mem[(code, asof)]
+    path = _cache_path(code, asof)
+    if not force and os.path.exists(path):
+        try:
+            with open(path, encoding='utf-8') as f:
+                obj = json.load(f)
+            with _lock:
+                _mem[(code, asof)] = obj
+            return obj
+        except Exception:
+            pass
+    obj = build_deep(code, name, facts_blocks, research, payload=payload, key=key,
+                      coverage=coverage)
+    try:
+        os.makedirs(CACHE_DIR, exist_ok=True)
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(obj, f, ensure_ascii=False, indent=1, default=str)
+    except Exception:
+        pass
+    with _lock:
+        _mem[(code, asof)] = obj
+    return obj
+
+
+if __name__ == '__main__':
+    import sys
+    sys.path.insert(0, '.')
+    import api as _api
+    import stockscore_v3 as V
+    import stockscore_facts as FA
+    import stockscore_research as RS
+    import stockscore_modules as M
+
+    code = sys.argv[1] if len(sys.argv) > 1 else '688508'
+    payload, _ = V.compute_v3(code)
+    r = RS.get_research(code, '20261020', _api.DS_KEY)
+    fk = FA.build_facts(code)
+    vb = M.build_valuation_block(code, research=r)
+    kb = M.build_risk_block(code, research=r, payload=payload) if False else \
+        M.build_risk_block(code, research=r)
+    out = build_deep(code, payload.get('name', code),
+                     [fk.get('facts') or [], vb['facts'], kb['facts']],
+                     r, payload=payload, key=_api.DS_KEY)
+    with open('deep_out.json', 'w', encoding='utf-8') as f:
+        json.dump(out, f, ensure_ascii=False, indent=1, default=str)
+    print('written deep_out.json chars=%s cov=%s' % (out['total_chars'], out['coverage']))
